@@ -1,5 +1,7 @@
+import { useNavigate } from 'react-router-dom'
 import { ExternalLink } from 'lucide-react'
 import { Tier, TIER_COLORS, TIER_LABELS } from '../../types/tier'
+import Button from '../common/Button'
 
 interface Problem {
     id: string
@@ -40,6 +42,12 @@ const mockProblems: Problem[] = [
 export default function RecommendedProblems({
     problems = mockProblems,
 }: RecommendedProblemsProps) {
+    const navigate = useNavigate()
+
+    const handleSolve = (problemId: string) => {
+        navigate(`/problems/${problemId}`)
+    }
+
     return (
         <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-xl font-semibold text-gray-800 mb-4">
@@ -55,7 +63,7 @@ export default function RecommendedProblems({
                             key={problem.id}
                             className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
                         >
-                            <div className="flex items-start justify-between">
+                            <div className="flex items-start justify-between mb-3">
                                 <div className="flex-1">
                                     <div className="flex items-center gap-3 mb-2">
                                         <span
@@ -79,10 +87,19 @@ export default function RecommendedProblems({
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="ml-4 p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                                    title="백준 문제 페이지 열기"
                                 >
                                     <ExternalLink className="w-5 h-5" />
                                 </a>
                             </div>
+                            <Button
+                                variant="primary"
+                                size="sm"
+                                fullWidth
+                                onClick={() => handleSolve(problem.id)}
+                            >
+                                풀러 가기
+                            </Button>
                         </div>
                     )
                 })}
