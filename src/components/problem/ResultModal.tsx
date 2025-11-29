@@ -62,7 +62,7 @@ export default function ResultModal({
                         onClick={handleGoToDashboard}
                         fullWidth
                     >
-                        대시보드로 이동
+                        메인으로
                     </Button>
                 ) : (
                     <Button

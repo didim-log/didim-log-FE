@@ -4,9 +4,13 @@ import Button from '../common/Button'
 
 interface DashboardLayoutProps {
     children: React.ReactNode
+    fullHeight?: boolean
 }
 
-export default function DashboardLayout({ children }: DashboardLayoutProps) {
+export default function DashboardLayout({
+    children,
+    fullHeight = false,
+}: DashboardLayoutProps) {
     const navigate = useNavigate()
 
     const handleLogout = () => {
@@ -14,8 +18,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            <nav className="bg-white shadow-sm border-b border-gray-200">
+        <div className={`${fullHeight ? 'h-screen' : 'min-h-screen'} bg-gray-50 flex flex-col`}>
+            <nav className="bg-white shadow-sm border-b border-gray-200 flex-shrink-0">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-16">
                         <div className="flex items-center">
@@ -36,7 +40,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 </div>
             </nav>
 
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <main className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ${fullHeight ? 'flex-1 overflow-hidden' : 'py-8'}`}>
                 {children}
             </main>
         </div>
