@@ -14,11 +14,11 @@
 - [x] **[Setup]** Tailwind CSS 설정 및 폴더 구조 생성
 - [ ] **[Setup]** Firebase Hosting 설정
 - [ ] **[Config]** React Query Provider 설정
-- [ ] **[Config]** React Router 설정 및 기본 라우팅 구성
+- [x] **[Config]** React Router 설정 및 기본 라우팅 구성
 
 ### 4-2. 인증 및 사용자 관리
-- [ ] **[FE]** 로그인 페이지 UI 구현 (BOJ ID 입력)
-- [ ] **[FE]** BOJ ID 검증 로직 구현
+- [x] **[FE]** 로그인 페이지 UI 구현 (BOJ ID 입력)
+- [x] **[FE]** BOJ ID 검증 로직 구현
 - [ ] **[FE]** 사용자 정보 조회 API 연동
 - [ ] **[FE]** 로그인 상태 관리 (Context 또는 React Query)
 
