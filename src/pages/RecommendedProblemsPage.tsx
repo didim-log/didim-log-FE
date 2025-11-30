@@ -1,5 +1,4 @@
 import { useState, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { RefreshCw } from 'lucide-react'
 import DashboardLayout from '../components/layout/DashboardLayout'
@@ -31,7 +30,6 @@ const mockProblems: Problem[] = [
 ]
 
 export default function RecommendedProblemsPage() {
-    const navigate = useNavigate()
     const [selectedTier, setSelectedTier] = useState<Tier | '전체'>('전체')
     const [selectedCategory, setSelectedCategory] = useState('전체')
 

@@ -10,7 +10,7 @@ interface TimerProps {
 export default function Timer({ onTimeUpdate, shouldPause = false }: TimerProps) {
     const [seconds, setSeconds] = useState(0)
     const [isRunning, setIsRunning] = useState(true)
-    const intervalRef = useRef<NodeJS.Timeout | null>(null)
+    const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
     useEffect(() => {
         if (shouldPause) {

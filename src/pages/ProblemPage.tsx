@@ -37,7 +37,7 @@ const mockProblem: Problem = {
 }
 
 export default function ProblemPage() {
-    const { problemId } = useParams<{ problemId: string }>()
+    useParams<{ problemId: string }>()
     const [code, setCode] = useState('')
     const [language, setLanguage] = useState('python')
     const [timeTaken, setTimeTaken] = useState(0)

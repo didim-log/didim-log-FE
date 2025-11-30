@@ -3,11 +3,6 @@ interface TestCase {
     expectedOutput: string
 }
 
-interface ProblemTestCase {
-    problemId: string
-    testCases: TestCase[]
-}
-
 const problemTestCases: Record<string, TestCase[]> = {
     '1000': [
         {
@@ -125,19 +120,19 @@ function executeJavaScript(code: string, input: string): string {
     }
 }
 
-function executeJava(code: string, input: string): string {
+function executeJava(_code: string, _input: string): string {
     return 'Java 실행은 서버에서 처리해야 합니다.'
 }
 
-function executeKotlin(code: string, input: string): string {
+function executeKotlin(_code: string, _input: string): string {
     return 'Kotlin 실행은 서버에서 처리해야 합니다.'
 }
 
-function executeCpp(code: string, input: string): string {
+function executeCpp(_code: string, _input: string): string {
     return 'C++ 실행은 서버에서 처리해야 합니다.'
 }
 
-function executeSwift(code: string, input: string): string {
+function executeSwift(_code: string, _input: string): string {
     return 'Swift 실행은 서버에서 처리해야 합니다.'
 }
 

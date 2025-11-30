@@ -1,11 +1,13 @@
-export enum Tier {
-    BRONZE = 'BRONZE',
-    SILVER = 'SILVER',
-    GOLD = 'GOLD',
-    PLATINUM = 'PLATINUM',
-    DIAMOND = 'DIAMOND',
-    RUBY = 'RUBY',
-}
+export const Tier = {
+    BRONZE: 'BRONZE',
+    SILVER: 'SILVER',
+    GOLD: 'GOLD',
+    PLATINUM: 'PLATINUM',
+    DIAMOND: 'DIAMOND',
+    RUBY: 'RUBY',
+} as const
+
+export type Tier = (typeof Tier)[keyof typeof Tier]
 
 export const TIER_LEVEL_RANGES: Record<Tier, { minLevel: number; maxLevel: number }> = {
     [Tier.BRONZE]: { minLevel: 1, maxLevel: 5 },
