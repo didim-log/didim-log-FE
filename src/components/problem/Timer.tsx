@@ -4,15 +4,22 @@ import Button from '../common/Button'
 
 interface TimerProps {
     onTimeUpdate?: (seconds: number) => void
+    shouldPause?: boolean
 }
 
-export default function Timer({ onTimeUpdate }: TimerProps) {
+export default function Timer({ onTimeUpdate, shouldPause = false }: TimerProps) {
     const [seconds, setSeconds] = useState(0)
     const [isRunning, setIsRunning] = useState(true)
     const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
     useEffect(() => {
-        if (isRunning) {
+        if (shouldPause) {
+            setIsRunning(false)
+        }
+    }, [shouldPause])
+
+    useEffect(() => {
+        if (isRunning && !shouldPause) {
             intervalRef.current = setInterval(() => {
                 setSeconds((prev) => {
                     const newSeconds = prev + 1
@@ -33,7 +40,7 @@ export default function Timer({ onTimeUpdate }: TimerProps) {
                 clearInterval(intervalRef.current)
             }
         }
-    }, [isRunning, onTimeUpdate])
+    }, [isRunning, shouldPause, onTimeUpdate])
 
     const handlePause = () => {
         setIsRunning(false)

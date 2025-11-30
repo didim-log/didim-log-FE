@@ -1,7 +1,9 @@
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Modal from '../common/Modal'
 import Button from '../common/Button'
 import { CheckCircle, XCircle } from 'lucide-react'
+import { fireConfetti } from '../../utils/confetti'
 
 interface ResultModalProps {
     isOpen: boolean
@@ -17,6 +19,23 @@ export default function ResultModal({
     timeTaken,
 }: ResultModalProps) {
     const navigate = useNavigate()
+    const [shouldShake, setShouldShake] = useState(false)
+
+    useEffect(() => {
+        if (!isOpen) {
+            return
+        }
+
+        if (isSuccess) {
+            fireConfetti()
+        } else {
+            setShouldShake(true)
+            const timer = setTimeout(() => {
+                setShouldShake(false)
+            }, 500)
+            return () => clearTimeout(timer)
+        }
+    }, [isOpen, isSuccess])
 
     const formatTime = (totalSeconds: number): string => {
         const minutes = Math.floor(totalSeconds / 60)
@@ -37,6 +56,7 @@ export default function ResultModal({
             isOpen={isOpen}
             onClose={onClose}
             title={isSuccess ? '축하합니다!' : '아쉽네요'}
+            className={shouldShake ? 'animate-shake' : ''}
         >
             <div className="text-center">
                 {isSuccess ? (

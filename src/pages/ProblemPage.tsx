@@ -6,6 +6,7 @@ import ResultModal from '../components/problem/ResultModal'
 import TierBadge from '../components/dashboard/TierBadge'
 import Button from '../components/common/Button'
 import { Tier } from '../types/tier'
+import { runCode } from '../utils/codeRunner'
 
 interface Problem {
     id: string
@@ -50,8 +51,12 @@ export default function ProblemPage() {
     }
 
     const handleSubmit = () => {
-        const randomSuccess = Math.random() > 0.5
-        setIsSuccess(randomSuccess)
+        if (!code.trim()) {
+            return
+        }
+
+        const result = runCode(code, language, problem.id)
+        setIsSuccess(result.success)
         setIsModalOpen(true)
     }
 
@@ -124,7 +129,10 @@ export default function ProblemPage() {
 
                     <div className="flex flex-col h-full overflow-hidden space-y-6">
                         <div className="flex-shrink-0">
-                            <Timer onTimeUpdate={handleTimeUpdate} />
+                            <Timer
+                                onTimeUpdate={handleTimeUpdate}
+                                shouldPause={isModalOpen && isSuccess}
+                            />
                         </div>
 
                         <div className="bg-white rounded-lg shadow-md p-6 flex flex-col flex-1 min-h-0">

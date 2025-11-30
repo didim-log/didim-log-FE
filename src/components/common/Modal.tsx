@@ -7,6 +7,7 @@ interface ModalProps {
     title: string
     children: React.ReactNode
     footer?: React.ReactNode
+    className?: string
 }
 
 export default function Modal({
@@ -15,6 +16,7 @@ export default function Modal({
     title,
     children,
     footer,
+    className = '',
 }: ModalProps) {
     if (!isOpen) {
         return null
@@ -22,7 +24,7 @@ export default function Modal({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div className={`bg-white rounded-lg shadow-xl max-w-md w-full mx-4 ${className}`}>
                 <div className="flex items-center justify-between p-6 border-b border-gray-200">
                     <h2 className="text-xl font-semibold text-gray-800">
                         {title}
