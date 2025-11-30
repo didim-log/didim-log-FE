@@ -127,7 +127,7 @@ export default function ProblemPage() {
                         </div>
                     </div>
 
-                    <div className="flex flex-col h-full overflow-hidden space-y-6">
+                    <div className="flex flex-col h-full overflow-hidden space-y-4">
                         <div className="flex-shrink-0">
                             <Timer
                                 onTimeUpdate={handleTimeUpdate}
@@ -135,11 +135,11 @@ export default function ProblemPage() {
                             />
                         </div>
 
-                        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 flex flex-col flex-1 min-h-0">
-                            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
+                        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 flex flex-col flex-[2] min-h-0 overflow-hidden">
+                            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4 flex-shrink-0">
                                 코드 작성
                             </h3>
-                            <div className="mb-4">
+                            <div className="mb-4 flex-shrink-0">
                                 <label
                                     htmlFor="language"
                                     className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
@@ -160,10 +160,10 @@ export default function ProblemPage() {
                                     <option value="swift">Swift</option>
                                 </select>
                             </div>
-                            <div className="flex-1 mb-4 min-h-0">
+                            <div className="flex-1 flex flex-col min-h-0 mb-4">
                                 <label
                                     htmlFor="code"
-                                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex-shrink-0"
                                 >
                                     코드
                                 </label>
@@ -172,10 +172,10 @@ export default function ProblemPage() {
                                     value={code}
                                     onChange={(e) => setCode(e.target.value)}
                                     placeholder="코드를 입력하세요..."
-                                    className="w-full h-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm resize-none bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
+                                    className="w-full flex-1 min-h-0 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm resize-none bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
                                 />
                             </div>
-                            <div className="flex-shrink-0">
+                            <div className="flex-shrink-0 mt-auto">
                                 <Button
                                     variant="primary"
                                     fullWidth

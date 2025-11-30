@@ -6,6 +6,7 @@ const DashboardPage = lazy(() => import('./pages/DashboardPage'))
 const ProblemPage = lazy(() => import('./pages/ProblemPage'))
 const RetrospectiveWritePage = lazy(() => import('./pages/RetrospectiveWritePage'))
 const RecommendedProblemsPage = lazy(() => import('./pages/RecommendedProblemsPage'))
+const MyPage = lazy(() => import('./pages/MyPage'))
 
 export const router = createBrowserRouter([
     {
@@ -27,6 +28,10 @@ export const router = createBrowserRouter([
     {
         path: '/retrospectives/new/:problemId',
         element: <RetrospectiveWritePage />,
+    },
+    {
+        path: '/mypage',
+        element: <MyPage />,
     },
 ])
 
