@@ -1,0 +1,16 @@
+<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <!-- 검은 배경에 파란색 계단형 로고 -->
+  <rect width="32" height="32" fill="#000000"/>
+  
+  <!-- 첫 번째 단계 (왼쪽 아래, 어두운 파란색) - C 형태 -->
+  <path d="M 4 24 L 4 20 L 10 20 L 10 22 L 6 22 L 6 24 Z" fill="#1e40af"/>
+  <path d="M 4 20 L 10 20 L 10 22 L 6 22 Z" fill="#3b82f6" opacity="0.6"/>
+  
+  <!-- 두 번째 단계 (중간, 중간 파란색) - U 형태 -->
+  <path d="M 8 20 L 8 16 L 14 16 L 14 18 L 10 18 L 10 20 Z" fill="#3b82f6"/>
+  <path d="M 8 16 L 14 16 L 14 18 L 10 18 Z" fill="#60a5fa" opacity="0.6"/>
+  
+  <!-- 세 번째 단계 (숫자 2 형태, 밝은 파란색) -->
+  <path d="M 12 16 L 18 16 L 18 14 L 14 14 L 14 16 L 18 16 L 18 12 L 12 12 L 12 14 L 16 14 L 16 12 Z" fill="#60a5fa"/>
+  <path d="M 12 12 L 18 12 L 18 14 L 14 14 Z" fill="#93c5fd" opacity="0.6"/>
+</svg>
