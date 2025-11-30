@@ -65,21 +65,21 @@ export default function Timer({ onTimeUpdate, shouldPause = false }: TimerProps)
     }
 
     const timerColor = isRunning
-        ? 'text-blue-600'
-        : 'text-gray-500'
+        ? 'text-blue-600 dark:text-blue-400'
+        : 'text-gray-500 dark:text-gray-400'
 
     return (
-        <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
                 타이머
             </h3>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div
-                    className={`text-4xl font-bold ${timerColor} transition-colors`}
+                    className={`text-3xl sm:text-4xl font-bold ${timerColor} transition-colors`}
                 >
                     {formatTime(seconds)}
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 w-full sm:w-auto">
                     {isRunning ? (
                         <Button
                             variant="secondary"

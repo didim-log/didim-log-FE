@@ -72,13 +72,13 @@ export default function ResultModal({
                 ) : (
                     <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
                 )}
-                <p className="text-lg text-gray-700 mb-2">
+                <p className="text-lg text-gray-700 dark:text-gray-300 mb-2">
                     {isSuccess
                         ? '문제를 성공적으로 해결했습니다!'
                         : '정답이 아닙니다. 다시 시도해보세요.'}
                 </p>
                 {isSuccess && (
-                    <p className="text-sm text-gray-500 mb-4">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
                         소요 시간: {formatTime(timeTaken)}
                     </p>
                 )}

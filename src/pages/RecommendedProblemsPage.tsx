@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 import { RefreshCw } from 'lucide-react'
 import DashboardLayout from '../components/layout/DashboardLayout'
 import ProblemCard from '../components/problem/ProblemCard'
@@ -46,14 +47,14 @@ export default function RecommendedProblemsPage() {
     }, [selectedTier, selectedCategory])
 
     const handleRefresh = () => {
-        window.alert('새로운 추천 문제를 가져왔습니다')
+        toast.success('새로운 추천 문제를 가져왔습니다')
     }
 
     return (
         <DashboardLayout>
             <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                    <h1 className="text-3xl font-bold text-gray-800">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-gray-200">
                         오늘의 추천 문제
                     </h1>
                     <Button
