@@ -2,6 +2,7 @@ import DashboardLayout from '../components/layout/DashboardLayout'
 import TierBadge from '../components/dashboard/TierBadge'
 import ActivityGraph from '../components/dashboard/ActivityGraph'
 import RecommendedProblems from '../components/dashboard/RecommendedProblems'
+import Card from '../components/common/Card'
 import { Tier, getNextTier, TIER_LABELS } from '../types/tier'
 
 export default function DashboardPage() {
@@ -13,7 +14,7 @@ export default function DashboardPage() {
         <DashboardLayout>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-3">
-                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                    <Card>
                         <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">
                             내 정보
                         </h2>
@@ -34,7 +35,7 @@ export default function DashboardPage() {
                                 )}
                             </div>
                         </div>
-                    </div>
+                    </Card>
                 </div>
 
                 <div className="lg:col-span-2">

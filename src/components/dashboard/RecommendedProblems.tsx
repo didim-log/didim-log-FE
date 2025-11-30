@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { ExternalLink, ChevronRight } from 'lucide-react'
 import { Tier, TIER_COLORS, TIER_LABELS, getLevelRangeForLevel } from '../../types/tier'
 import Button from '../common/Button'
+import Card from '../common/Card'
 
 interface Problem {
     id: string
@@ -122,18 +123,20 @@ export default function RecommendedProblems({
     }
 
     return (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+        <Card>
             <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
                     추천 문제
                 </h2>
-                <button
+                <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={handleViewAll}
-                    className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1 transition"
+                    className="flex items-center gap-1"
                 >
                     더보기
                     <ChevronRight className="w-4 h-4" />
-                </button>
+                </Button>
             </div>
             <div className="space-y-4">
                 {recommendedProblems.map((problem) => {
@@ -186,7 +189,7 @@ export default function RecommendedProblems({
                     )
                 })}
             </div>
-        </div>
+        </Card>
     )
 }
 

@@ -33,22 +33,24 @@ export default function DashboardLayout({
                             </button>
                         </div>
                         <div className="flex items-center gap-3">
-                            <button
+                            <Button
+                                variant="ghost"
+                                size="sm"
                                 onClick={(e) => {
                                     e.preventDefault()
                                     e.stopPropagation()
                                     toggleTheme()
                                 }}
-                                className="p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
                                 title={theme === 'light' ? '다크 모드로 전환' : '라이트 모드로 전환'}
                                 type="button"
+                                className="p-2"
                             >
                                 {theme === 'light' ? (
                                     <Moon className="w-5 h-5" />
                                 ) : (
                                     <Sun className="w-5 h-5" />
                                 )}
-                            </button>
+                            </Button>
                             <Button
                                 variant="secondary"
                                 size="sm"

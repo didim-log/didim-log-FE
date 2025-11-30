@@ -1,4 +1,5 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import Card from '../common/Card'
 
 interface ActivityData {
     date: string
@@ -21,8 +22,8 @@ const mockData: ActivityData[] = [
 
 export default function ActivityGraph({ data = mockData }: ActivityGraphProps) {
     return (
-        <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">
+        <Card>
+            <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">
                 최근 풀이 활동
             </h2>
             <ResponsiveContainer width="100%" height={300}>
@@ -54,7 +55,7 @@ export default function ActivityGraph({ data = mockData }: ActivityGraphProps) {
                     />
                 </LineChart>
             </ResponsiveContainer>
-        </div>
+        </Card>
     )
 }
 
