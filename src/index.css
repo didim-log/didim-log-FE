@@ -2,6 +2,38 @@
 @tailwind components;
 @tailwind utilities;
 
+/* MDEditor 전체 너비 사용 */
+.w-md-editor {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100% !important;
+}
+
+.w-md-editor-text-pre {
+    width: 100% !important;
+}
+
+.w-md-editor-preview {
+    background-color: white !important;
+    color: #333 !important;
+}
+
+.w-md-editor-preview-wrapper {
+    background-color: white !important;
+}
+
+.w-md-editor-text {
+    width: 100% !important;
+}
+
+.w-md-editor-text-textarea {
+    width: 100% !important;
+}
+
+.w-md-editor-text-input {
+    width: 100% !important;
+}
+
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;

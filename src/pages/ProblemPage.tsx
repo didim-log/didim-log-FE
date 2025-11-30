@@ -195,6 +195,7 @@ export default function ProblemPage() {
                 onClose={handleCloseModal}
                 isSuccess={isSuccess}
                 timeTaken={timeTaken}
+                problemId={problem.id}
             />
         </DashboardLayout>
     )

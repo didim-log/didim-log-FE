@@ -10,6 +10,7 @@ interface ResultModalProps {
     onClose: () => void
     isSuccess: boolean
     timeTaken: number
+    problemId?: string
 }
 
 export default function ResultModal({
@@ -17,6 +18,7 @@ export default function ResultModal({
     onClose,
     isSuccess,
     timeTaken,
+    problemId,
 }: ResultModalProps) {
     const navigate = useNavigate()
     const [shouldShake, setShouldShake] = useState(false)
@@ -47,6 +49,12 @@ export default function ResultModal({
         navigate('/dashboard')
     }
 
+    const handleWriteRetrospective = () => {
+        if (problemId) {
+            navigate(`/retrospectives/new/${problemId}`)
+        }
+    }
+
     const handleRetry = () => {
         onClose()
     }
@@ -75,15 +83,24 @@ export default function ResultModal({
                     </p>
                 )}
             </div>
-            <div className="flex justify-center gap-2 mt-6">
+            <div className="flex flex-col gap-2 mt-6">
                 {isSuccess ? (
-                    <Button
-                        variant="primary"
-                        onClick={handleGoToDashboard}
-                        fullWidth
-                    >
-                        메인으로
-                    </Button>
+                    <>
+                        <Button
+                            variant="primary"
+                            onClick={handleWriteRetrospective}
+                            fullWidth
+                        >
+                            회고 작성하기
+                        </Button>
+                        <Button
+                            variant="secondary"
+                            onClick={handleGoToDashboard}
+                            fullWidth
+                        >
+                            메인으로
+                        </Button>
+                    </>
                 ) : (
                     <Button
                         variant="primary"
