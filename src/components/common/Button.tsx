@@ -25,12 +25,12 @@ export default function Button({
     
     const variantStyles = {
         primary: isDisabled
-            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-            : 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500',
+            ? 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+            : 'bg-blue-600 dark:bg-blue-500 text-white hover:bg-blue-700 dark:hover:bg-blue-600 focus:ring-blue-500',
         secondary: isDisabled
-            ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-            : 'bg-gray-200 text-gray-700 hover:bg-gray-300 focus:ring-gray-500',
-        disabled: 'bg-gray-300 text-gray-500 cursor-not-allowed',
+            ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+            : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 focus:ring-gray-500',
+        disabled: 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed',
     }
 
     const sizeStyles = {

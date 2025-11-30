@@ -3,6 +3,7 @@ import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
 import ProblemPage from './pages/ProblemPage'
 import RetrospectiveWritePage from './pages/RetrospectiveWritePage'
+import RecommendedProblemsPage from './pages/RecommendedProblemsPage'
 
 export const router = createBrowserRouter([
     {
@@ -12,6 +13,10 @@ export const router = createBrowserRouter([
     {
         path: '/dashboard',
         element: <DashboardPage />,
+    },
+    {
+        path: '/problems',
+        element: <RecommendedProblemsPage />,
     },
     {
         path: '/problems/:problemId',
