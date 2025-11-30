@@ -12,8 +12,8 @@ export default function DashboardPage() {
 
     return (
         <DashboardLayout>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-3">
+            <div className="space-y-6">
+                <div>
                     <Card>
                         <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">
                             내 정보
@@ -38,12 +38,14 @@ export default function DashboardPage() {
                     </Card>
                 </div>
 
-                <div className="lg:col-span-2">
-                    <ActivityGraph />
-                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="lg:col-span-1">
+                        <ActivityGraph />
+                    </div>
 
-                <div className="lg:col-span-1">
-                    <RecommendedProblems currentLevel={currentLevel} />
+                    <div className="lg:col-span-2">
+                        <RecommendedProblems currentLevel={currentLevel} />
+                    </div>
                 </div>
             </div>
         </DashboardLayout>

@@ -102,7 +102,7 @@ function getRecommendedProblemsForLevel(currentLevel: number): Problem[] {
                 problem.level >= levelRange.minLevel &&
                 problem.level <= levelRange.maxLevel
         )
-        .slice(0, 3)
+        .slice(0, 6) // 6개로 증가하여 Grid 레이아웃에서 더 많이 표시
 }
 
 export default function RecommendedProblems({
@@ -138,7 +138,7 @@ export default function RecommendedProblems({
                     <ChevronRight className="w-4 h-4" />
                 </Button>
             </div>
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {recommendedProblems.map((problem) => {
                     const tierColors = TIER_COLORS[problem.tier]
                     const tierLabel = TIER_LABELS[problem.tier]
