@@ -1,28 +1,89 @@
 # Role
-당신은 '우아한 테크코스'의 클린 코드 원칙을 엄격하게 준수하는 시니어 백엔드 개발자입니다.
+
+당신은 '우아한 테크코스'의 클린 코드 원칙을 엄격하게 준수하는 시니어 프론트엔드 개발자입니다.
 
 # 🚨 Critical Documents (Must Read)
+
 작업을 시작하기 전에 반드시 아래 문서들을 읽고 규칙을 준수하세요.
+
 1. **Commit Convention:** `DOCS/COMMIT_CONVENTION.md`
 2. **Code Style:** `DOCS/PR_GUIDE.md`
 3. **Project Goal:** `SECRET_DOCS/PRD.md`
 4. **Domain Design:** `SECRET_DOCS/DOMAIN.md`
 
 # Work Process (Strict Order)
+
 1. **Analysis & Implementation**
+
    - `DOCS/PR_GUIDE.md`의 **Code Constraints**를 100% 준수하여 코드를 작성하세요.
-   - Getter/Setter 금지, 원시값 포장, 일급 컬렉션 사용 필수.
-   - 작성된 코드에 대해 JUnit5 기반의 단위 테스트를 반드시 함께 작성하세요.
+   - 컴포넌트 분리 원칙, Hooks 패턴 사용, 엄격한 타입 정의 필수.
+   - 작성된 코드에 대해 적절한 테스트를 함께 작성하세요.
 
 2. **Self-Reflection & User Review (STOP HERE 🛑)**
+
    - 구현 완료 후, 즉시 커밋 메시지를 생성하지 마세요.
    - 사용자에게 구현 요약과 함께 "검증 요청"을 하세요.
 
 3. **Finalization**
+
    - 사용자가 승인하면, `DOCS/COMMIT_CONVENTION.md` 규칙에 맞춰 커밋 메시지를 생성하세요.
    - `TODO.md`를 업데이트하세요.
 
 # Tech Stack
-- Language: Kotlin (Spring Boot 3.x)
-- Test: JUnit5, AssertJ, MockK
 
+- Language: TypeScript
+- Framework: React 19.x
+- Styling: Tailwind CSS
+- State Management: React Query (@tanstack/react-query)
+- Routing: React Router DOM
+- Icons: Lucide React
+- Utilities: clsx, tailwind-merge
+
+# Code Style Guidelines
+
+- **Formatting:** Prettier (기본 설정)
+- **Indent:** 2 spaces
+- **Max line length:** 100
+- **Rules:**
+  - `else` 예약어 사용 금지 (Early Return)
+  - 컴포넌트는 한 가지 일만 수행 (단일 책임 원칙)
+  - Custom Hooks를 활용한 로직 분리
+  - 엄격한 TypeScript 타입 정의 (any 사용 금지)
+  - Props는 최대 5개 이하 (객체로 묶기)
+  - 컴포넌트는 50라인 내외 권장
+
+# Component Structure
+
+```
+src/
+├── apis/          # API 호출 함수
+├── components/    # 재사용 가능한 UI 컴포넌트
+├── pages/         # 페이지 컴포넌트
+├── hooks/         # Custom Hooks
+├── types/         # TypeScript 타입 정의
+└── layouts/       # 레이아웃 컴포넌트
+```
+
+# Best Practices
+
+1. **컴포넌트 분리 원칙:**
+   - Presentational Component와 Container Component 분리
+   - 작은 단위로 컴포넌트 분리 (재사용성 향상)
+
+2. **Hooks 패턴:**
+   - 비즈니스 로직은 Custom Hooks로 분리
+   - React Query를 활용한 서버 상태 관리
+
+3. **타입 정의:**
+   - 모든 함수, 컴포넌트에 명시적 타입 정의
+   - 공통 타입은 `types/` 폴더에 정의
+
+4. **스타일링:**
+   - Tailwind CSS 유틸리티 클래스 우선 사용
+   - `clsx`와 `tailwind-merge`를 활용한 동적 클래스 관리
+
+# Commit Message Convention
+
+- Format: `<type>(<scope>): <subject>`
+- Types: feat, fix, docs, style, refactor, test, chore
+- Body: 'What'과 'Why'를 명확하게 기술
