@@ -2,6 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+    .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+    .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+    }
+}
+
 /* MDEditor 전체 너비 사용 */
 .w-md-editor {
     width: 100% !important;
@@ -40,6 +50,12 @@ html {
   width: 100%;
   margin: 0;
   padding: 0;
+  /* 텍스트 색상은 html 레벨에서 지정 (body보다 우선순위 높음) */
+  color: #111827; /* text-gray-900 */
+}
+
+.dark html {
+  color: #f9fafb; /* text-gray-50 */
 }
 
 body {
@@ -53,15 +69,13 @@ body {
   font-weight: 400;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  /* 기본 배경색 (라이트 모드) */
+  /* color 제거 - html에서 상속됨 */
   background-color: #f9fafb; /* bg-gray-50 */
-  color: #111827; /* text-gray-900 */
 }
 
-/* 다크 모드 배경색 */
 .dark body {
+  /* color 제거 - html에서 상속됨 */
   background-color: #111827; /* dark:bg-gray-900 */
-  color: #f9fafb; /* dark:text-gray-50 */
 }
 
 #root {
