@@ -2,13 +2,14 @@
  * 코드 명언 위젯 컴포넌트
  */
 
+import type { FC } from 'react';
 import type { QuoteResponse } from '../../../types/api/quote.types';
 
 interface QuoteCardProps {
     quote: QuoteResponse | null;
 }
 
-export const QuoteCard: React.FC<QuoteCardProps> = ({ quote }) => {
+export const QuoteCard: FC<QuoteCardProps> = ({ quote }) => {
     // quote가 없으면 렌더링하지 않음 (저자는 Unknown이어도 표시)
     if (!quote) {
         return null;

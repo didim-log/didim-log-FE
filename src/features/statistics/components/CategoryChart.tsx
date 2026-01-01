@@ -2,11 +2,13 @@
  * 카테고리 차트 컴포넌트
  */
 
+import type { FC } from 'react';
+
 interface CategoryChartProps {
     data: Record<string, number>;
 }
 
-export const CategoryChart: React.FC<CategoryChartProps> = ({ data }) => {
+export const CategoryChart: FC<CategoryChartProps> = ({ data }) => {
     const entries = Object.entries(data).sort((a, b) => b[1] - a[1]);
     const maxCount = entries.length > 0 ? entries[0][1] : 1;
 
@@ -36,4 +38,5 @@ export const CategoryChart: React.FC<CategoryChartProps> = ({ data }) => {
         </div>
     );
 };
+
 

@@ -2,15 +2,16 @@
  * 인증 필요 라우트 컴포넌트
  */
 
+import type { FC, ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../stores/auth.store';
 import { Spinner } from '../components/ui/Spinner';
 
 interface PrivateRouteProps {
-    children: React.ReactNode;
+    children: ReactNode;
 }
 
-export const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
+export const PrivateRoute: FC<PrivateRouteProps> = ({ children }) => {
     const { isAuthenticated, token, _hasHydrated } = useAuthStore();
     const location = useLocation();
 

@@ -2,6 +2,7 @@
  * 문제 상세 페이지
  */
 
+import type { FC } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useProblemDetail } from '../../../hooks/api/useProblem';
 import { ProblemDetail } from '../components/ProblemDetail';
@@ -9,7 +10,7 @@ import { Spinner } from '../../../components/ui/Spinner';
 import { Layout } from '../../../components/layout/Layout';
 import { Button } from '../../../components/ui/Button';
 
-export const ProblemDetailPage: React.FC = () => {
+export const ProblemDetailPage: FC = () => {
     const { problemId } = useParams<{ problemId: string }>();
     const navigate = useNavigate();
     const { data: problem, isLoading, error } = useProblemDetail(problemId || '');
@@ -59,4 +60,5 @@ export const ProblemDetailPage: React.FC = () => {
         </Layout>
     );
 };
+
 

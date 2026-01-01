@@ -3,6 +3,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import type { FC } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useCreateRetrospective, useStaticTemplate } from '../../../hooks/api/useRetrospective';
 import { useProblemDetail } from '../../../hooks/api/useProblem';
@@ -16,7 +17,7 @@ import { toast } from 'sonner';
 import { Copy } from 'lucide-react';
 import type { RetrospectiveRequest } from '../../../types/api/retrospective.types';
 
-export const RetrospectiveWritePage: React.FC = () => {
+export const RetrospectiveWritePage: FC = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const createMutation = useCreateRetrospective();

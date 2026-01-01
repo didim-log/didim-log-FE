@@ -3,15 +3,16 @@
  */
 
 import { useEffect } from 'react';
+import type { FC, ReactNode } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../stores/auth.store';
 import { Spinner } from '../components/ui/Spinner';
 
 interface PublicRouteProps {
-    children: React.ReactNode;
+    children: ReactNode;
 }
 
-export const PublicRoute: React.FC<PublicRouteProps> = ({ children }) => {
+export const PublicRoute: FC<PublicRouteProps> = ({ children }) => {
     const { isAuthenticated, token, _hasHydrated } = useAuthStore();
     const navigate = useNavigate();
     const location = useLocation();

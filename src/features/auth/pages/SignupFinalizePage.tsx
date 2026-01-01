@@ -3,6 +3,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import type { FC } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { authApi } from '../../../api/endpoints/auth.api';
@@ -13,7 +14,7 @@ import { Input } from '../../../components/ui/Input';
 import { validation } from '../../../utils/validation';
 import type { SignupFinalizeRequest } from '../../../types/api/auth.types';
 
-export const SignupFinalizePage: React.FC = () => {
+export const SignupFinalizePage: FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { setToken, setUser } = useAuthStore();
@@ -183,4 +184,5 @@ export const SignupFinalizePage: React.FC = () => {
         </div>
     );
 };
+
 

@@ -3,6 +3,7 @@
  */
 
 import { useState } from 'react';
+import type { FC } from 'react';
 import { UserManagement } from '../components/UserManagement';
 import { QuoteManagement } from '../components/QuoteManagement';
 import { FeedbackManagement } from '../components/FeedbackManagement';
@@ -11,7 +12,7 @@ import { Layout } from '../../../components/layout/Layout';
 
 type TabType = 'users' | 'quotes' | 'feedbacks' | 'problems';
 
-export const AdminUsersPage: React.FC = () => {
+export const AdminUsersPage: FC = () => {
     const [activeTab, setActiveTab] = useState<TabType>('users');
 
     const tabs = [
@@ -59,4 +60,5 @@ export const AdminUsersPage: React.FC = () => {
         </Layout>
     );
 };
+
 

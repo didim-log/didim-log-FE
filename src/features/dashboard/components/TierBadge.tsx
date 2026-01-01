@@ -3,6 +3,7 @@
  */
 
 import { useState } from 'react';
+import type { FC } from 'react';
 
 interface TierBadgeProps {
     tierLevel: number; // Solved.ac 레벨 (1~30)
@@ -10,7 +11,7 @@ interface TierBadgeProps {
     className?: string;
 }
 
-export const TierBadge: React.FC<TierBadgeProps> = ({ tierLevel, size = 'md', className = '' }) => {
+export const TierBadge: FC<TierBadgeProps> = ({ tierLevel, size = 'md', className = '' }) => {
     const [imageError, setImageError] = useState(false);
     
     // 티어 레벨이 유효한 범위인지 확인 (1~30)

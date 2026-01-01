@@ -3,6 +3,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import type { FC } from 'react';
 import { Button } from '../../../components/ui/Button';
 import { ONBOARDING_TOUR_STEPS, useOnboardingStore } from '../../../stores/onboarding.store';
 
@@ -14,7 +15,7 @@ const TOOLTIP_MARGIN = 16;
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 
-export const OnboardingTour: React.FC = () => {
+export const OnboardingTour: FC = () => {
     const {
         isNewUser,
         hasCompletedOnboarding,

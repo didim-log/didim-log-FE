@@ -2,6 +2,7 @@
  * 알고리즘 차트 컴포넌트
  */
 
+import type { FC } from 'react';
 import type { TopUsedAlgorithmResponse } from '../../../types/api/statistics.types';
 
 interface AlgorithmChartProps {
@@ -9,7 +10,7 @@ interface AlgorithmChartProps {
     distribution: Record<string, number>;
 }
 
-export const AlgorithmChart: React.FC<AlgorithmChartProps> = ({ topAlgorithms, distribution }) => {
+export const AlgorithmChart: FC<AlgorithmChartProps> = ({ topAlgorithms, distribution }) => {
     const entries = Object.entries(distribution).sort((a, b) => b[1] - a[1]);
     const maxCount = entries.length > 0 ? entries[0][1] : 1;
 

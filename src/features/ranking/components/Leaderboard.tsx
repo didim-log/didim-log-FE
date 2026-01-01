@@ -2,6 +2,7 @@
  * 리더보드 컴포넌트
  */
 
+import type { FC } from 'react';
 import { Link } from 'react-router-dom';
 import type { LeaderboardResponse } from '../../../types/api/ranking.types';
 
@@ -9,7 +10,7 @@ interface LeaderboardProps {
     data: LeaderboardResponse[];
 }
 
-export const Leaderboard: React.FC<LeaderboardProps> = ({ data }) => {
+export const Leaderboard: FC<LeaderboardProps> = ({ data }) => {
     const getTierColor = (tier: string) => {
         const tierColors: Record<string, string> = {
             BRONZE: 'bg-amber-600 text-white',

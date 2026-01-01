@@ -3,6 +3,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import type { FC } from 'react';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { validation } from '../../../utils/validation';
@@ -19,7 +20,7 @@ interface ProfileEditFormProps {
     error: Error | null;
 }
 
-export const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
+export const ProfileEditForm: FC<ProfileEditFormProps> = ({
     initialNickname,
     initialPrimaryLanguage,
     bojId,

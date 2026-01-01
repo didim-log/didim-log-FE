@@ -2,6 +2,8 @@
  * 코드 에디터 컴포넌트
  */
 
+import type { FC } from 'react';
+
 interface CodeEditorProps {
     value: string;
     onChange: (value: string) => void;
@@ -9,7 +11,7 @@ interface CodeEditorProps {
     placeholder?: string;
 }
 
-export const CodeEditor: React.FC<CodeEditorProps> = ({ value, onChange, language = 'text', placeholder = '코드를 입력하세요...' }) => {
+export const CodeEditor: FC<CodeEditorProps> = ({ value, onChange, language = 'text', placeholder = '코드를 입력하세요...' }) => {
     return (
         <div className="w-full">
             <div className="flex items-center justify-between mb-2">
@@ -26,4 +28,5 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({ value, onChange, languag
         </div>
     );
 };
+
 

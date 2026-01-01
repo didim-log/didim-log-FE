@@ -2,10 +2,11 @@
  * 푸터 컴포넌트
  */
 
-import React, { useState } from 'react';
+import { useState } from 'react';
+import type { FC } from 'react';
 import FeedbackForm from '../feedback/FeedbackForm';
 
-export const Footer: React.FC = () => {
+export const Footer: FC = () => {
     const [showFeedbackModal, setShowFeedbackModal] = useState(false);
 
     return (

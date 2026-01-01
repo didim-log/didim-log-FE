@@ -3,6 +3,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import type { FC } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useProblemDetail } from '../../../hooks/api/useProblem';
 import { useSubmitSolution } from '../../../hooks/api/useStudy';
@@ -40,7 +41,7 @@ const PRIMARY_LANGUAGE_MAP: Record<string, string> = {
     TEXT: 'text',
 };
 
-export const StudyPage: React.FC = () => {
+export const StudyPage: FC = () => {
     const { problemId } = useParams<{ problemId: string }>();
     const navigate = useNavigate();
     const { user } = useAuthStore();

@@ -4,6 +4,7 @@
  */
 
 import { useState, useRef, KeyboardEvent } from 'react';
+import type { FC } from 'react';
 import { X } from 'lucide-react';
 import { ALGORITHM_CATEGORIES, getCategoryLabel } from '../../utils/constants';
 
@@ -15,7 +16,7 @@ interface TagInputProps {
     showRecommendedTags?: boolean; // 추천 태그 버튼 표시 여부
 }
 
-export const TagInput: React.FC<TagInputProps> = ({
+export const TagInput: FC<TagInputProps> = ({
     value = [],
     onChange,
     placeholder = '알고리즘을 입력하고 Enter를 누르세요',
@@ -122,4 +123,5 @@ export const TagInput: React.FC<TagInputProps> = ({
         </div>
     );
 };
+
 

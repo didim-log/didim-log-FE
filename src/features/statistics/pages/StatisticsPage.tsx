@@ -2,7 +2,7 @@
  * 통계 페이지 (Bento Grid 레이아웃)
  */
 
-import React from 'react';
+import type { FC } from 'react';
 import { useStatistics } from '../../../hooks/api/useStatistics';
 import { StatCard } from '../components/StatCard';
 import { RadarChartCard } from '../components/RadarChartCard';
@@ -12,7 +12,7 @@ import { Spinner } from '../../../components/ui/Spinner';
 import { Layout } from '../../../components/layout/Layout';
 import { BookOpen, FileText, Clock, Target } from 'lucide-react';
 
-export const StatisticsPage: React.FC = () => {
+export const StatisticsPage: FC = () => {
     const { data: statistics, isLoading, error } = useStatistics();
 
     if (isLoading) {

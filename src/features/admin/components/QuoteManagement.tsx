@@ -3,13 +3,14 @@
  */
 
 import { useState } from 'react';
+import type { FC } from 'react';
 import { useAdminQuotes, useCreateQuote, useDeleteQuote } from '../../../hooks/api/useAdmin';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { Spinner } from '../../../components/ui/Spinner';
 import type { QuoteCreateRequest } from '../../../types/api/admin.types';
 
-export const QuoteManagement: React.FC = () => {
+export const QuoteManagement: FC = () => {
     const [page, setPage] = useState(1);
     const [content, setContent] = useState('');
     const [author, setAuthor] = useState('');

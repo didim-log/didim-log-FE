@@ -3,11 +3,12 @@
  */
 
 import { useEffect } from 'react';
+import type { FC } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useOAuth } from '../../../hooks/auth/useOAuth';
 import { Spinner } from '../../../components/ui/Spinner';
 
-export const OAuthCallbackPage: React.FC = () => {
+export const OAuthCallbackPage: FC = () => {
     const [searchParams] = useSearchParams();
     const { handleOAuthCallback } = useOAuth();
 
@@ -17,4 +18,5 @@ export const OAuthCallbackPage: React.FC = () => {
 
     return <Spinner />;
 };
+
 

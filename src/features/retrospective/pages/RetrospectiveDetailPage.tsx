@@ -2,6 +2,7 @@
  * 회고 상세 페이지
  */
 
+import type { FC } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -15,7 +16,7 @@ import { useAuthStore } from '../../../stores/auth.store';
 import { toast } from 'sonner';
 import { Copy, Trash2 } from 'lucide-react';
 
-export const RetrospectiveDetailPage: React.FC = () => {
+export const RetrospectiveDetailPage: FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const { user, token } = useAuthStore();

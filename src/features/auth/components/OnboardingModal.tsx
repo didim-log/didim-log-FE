@@ -2,6 +2,7 @@
  * 신규 유저 온보딩 모달
  */
 
+import type { FC } from 'react';
 import { Button } from '../../../components/ui/Button';
 import { useOnboardingStore } from '../../../stores/onboarding.store';
 
@@ -10,7 +11,7 @@ interface OnboardingModalProps {
     onClose: () => void;
 }
 
-export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClose }) => {
+export const OnboardingModal: FC<OnboardingModalProps> = ({ isOpen, onClose }) => {
     const { completeOnboarding } = useOnboardingStore();
 
     if (!isOpen) {
@@ -59,4 +60,5 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
         </div>
     );
 };
+
 

@@ -6,7 +6,6 @@ import Button from '../common/Button'
 import { updateProfile } from '../../apis/authApi'
 import { toast } from 'sonner'
 import type { AxiosError } from 'axios'
-import type { ApiErrorResponse } from '../../types/api/error'
 import { getErrorMessage, type ApiErrorResponse } from '../../utils/errorHandler'
 
 interface SettingsTabProps {

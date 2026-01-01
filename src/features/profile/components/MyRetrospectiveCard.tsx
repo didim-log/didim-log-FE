@@ -3,6 +3,7 @@
  * 제목, 한 줄 요약, 메타 정보를 명확하게 표시
  */
 
+import type { FC } from 'react';
 import { Link } from 'react-router-dom';
 import type { RetrospectiveResponse } from '../../../types/api/retrospective.types';
 import { formatDateToKST } from '../../../utils/date';
@@ -13,7 +14,7 @@ interface MyRetrospectiveCardProps {
     retrospective: RetrospectiveResponse;
 }
 
-export const MyRetrospectiveCard: React.FC<MyRetrospectiveCardProps> = ({ retrospective }) => {
+export const MyRetrospectiveCard: FC<MyRetrospectiveCardProps> = ({ retrospective }) => {
     const { data: problem } = useProblemDetail(retrospective.problemId);
 
     // 제목 생성: "1060번 좋은 수 실패 회고" (괄호 제거)

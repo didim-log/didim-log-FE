@@ -5,7 +5,7 @@ import Button from '../common/Button'
 import { toggleBookmark } from '../../apis/retrospectiveApi'
 import { toast } from 'sonner'
 import type { AxiosError } from 'axios'
-import type { ApiErrorResponse } from '../../types/api/error'
+import type { ApiErrorResponse } from '../../utils/errorHandler'
 import type { RetrospectiveResponse } from '../../types/api/dtos'
 import { formatDateTimeToKorea } from '../../utils/dateUtils'
 

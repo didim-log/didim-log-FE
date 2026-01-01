@@ -8,3 +8,4 @@ export interface QuoteResponse {
     author: string;
 }
 
+

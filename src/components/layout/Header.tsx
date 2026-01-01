@@ -2,11 +2,12 @@
  * 헤더 컴포넌트
  */
 
+import type { FC } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/auth.store';
 import { useUIStore } from '../../stores/ui.store';
 
-export const Header: React.FC = () => {
+export const Header: FC = () => {
     const { logout, user } = useAuthStore();
     const { theme, toggleTheme } = useUIStore();
     const navigate = useNavigate();

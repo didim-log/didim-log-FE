@@ -2,6 +2,7 @@
  * 회고 카드 컴포넌트
  */
 
+import type { FC } from 'react';
 import { Link } from 'react-router-dom';
 import type { RetrospectiveResponse } from '../../../types/api/retrospective.types';
 import { useProblemDetail } from '../../../hooks/api/useProblem';
@@ -14,7 +15,7 @@ interface RetrospectiveCardProps {
     isOwner?: boolean;
 }
 
-export const RetrospectiveCard: React.FC<RetrospectiveCardProps> = ({
+export const RetrospectiveCard: FC<RetrospectiveCardProps> = ({
     retrospective,
     onToggleBookmark,
     onDelete,

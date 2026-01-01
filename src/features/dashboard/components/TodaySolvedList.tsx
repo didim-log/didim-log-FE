@@ -2,6 +2,7 @@
  * 오늘 푼 문제 목록 컴포넌트
  */
 
+import type { FC } from 'react';
 import { Link } from 'react-router-dom';
 import type { TodaySolvedProblemResponse } from '../../../types/api/dashboard.types';
 import { formatDateToKST } from '../../../utils/date';
@@ -11,7 +12,7 @@ interface TodaySolvedListProps {
     count: number;
 }
 
-export const TodaySolvedList: React.FC<TodaySolvedListProps> = ({ problems, count }) => {
+export const TodaySolvedList: FC<TodaySolvedListProps> = ({ problems, count }) => {
     const getResultColor = (result: string) => {
         const colors: Record<string, string> = {
             SUCCESS: 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30',

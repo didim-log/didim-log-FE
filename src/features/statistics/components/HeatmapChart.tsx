@@ -2,13 +2,14 @@
  * 잔디 차트 컴포넌트
  */
 
+import type { FC } from 'react';
 import type { HeatmapDataResponse } from '../../../types/api/statistics.types';
 
 interface HeatmapChartProps {
     data: HeatmapDataResponse[];
 }
 
-export const HeatmapChart: React.FC<HeatmapChartProps> = ({ data }) => {
+export const HeatmapChart: FC<HeatmapChartProps> = ({ data }) => {
     const getIntensity = (count: number) => {
         if (count === 0) return 'bg-gray-100 dark:bg-gray-800';
         if (count <= 2) return 'bg-green-200 dark:bg-green-900';
@@ -53,4 +54,5 @@ export const HeatmapChart: React.FC<HeatmapChartProps> = ({ data }) => {
         </div>
     );
 };
+
 

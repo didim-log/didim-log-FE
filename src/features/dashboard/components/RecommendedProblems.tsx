@@ -3,6 +3,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
+import type { FC } from 'react';
 import { Link } from 'react-router-dom';
 import { useProblemRecommend } from '../../../hooks/api/useProblem';
 import type { ProblemResponse } from '../../../types/api/problem.types';
@@ -32,7 +33,7 @@ interface RecommendedProblemsProps {
     category?: string;
 }
 
-export const RecommendedProblems: React.FC<RecommendedProblemsProps> = ({ count = 4, category: initialCategory }) => {
+export const RecommendedProblems: FC<RecommendedProblemsProps> = ({ count = 4, category: initialCategory }) => {
     const [selectedCategory, setSelectedCategory] = useState<string | null>(initialCategory || null);
     const { data: problems, isLoading, error } = useProblemRecommend({ count, category: selectedCategory || undefined });
     const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -138,7 +139,7 @@ interface ProblemCardProps {
     problem: ProblemResponse;
 }
 
-const ProblemCard: React.FC<ProblemCardProps> = ({ problem }) => {
+const ProblemCard: FC<ProblemCardProps> = ({ problem }) => {
     const getTierColor = (tier: string) => {
         const tierColors: Record<string, string> = {
             BRONZE: 'bg-amber-600 text-white',

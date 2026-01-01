@@ -3,6 +3,7 @@
  */
 
 import { useEffect } from 'react';
+import type { FC } from 'react';
 import { OnboardingTour } from '../../auth/components/OnboardingTour';
 import { useDashboard } from '../../../hooks/api/useDashboard';
 import { TierProgress } from '../components/TierProgress';
@@ -15,7 +16,7 @@ import { useOnboardingStore } from '../../../stores/onboarding.store';
 import { useAuthStore } from '../../../stores/auth.store';
 import { Layout } from '../../../components/layout/Layout';
 
-export const DashboardPage: React.FC = () => {
+export const DashboardPage: FC = () => {
     const { data: dashboard, isLoading, error } = useDashboard();
     const { isNewUser, hasCompletedOnboarding } = useOnboardingStore();
     const { setUser, user } = useAuthStore();

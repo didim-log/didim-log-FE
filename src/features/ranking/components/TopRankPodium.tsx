@@ -2,6 +2,7 @@
  * Top 3 랭킹 시상대 컴포넌트
  */
 
+import type { FC } from 'react';
 import { Crown } from 'lucide-react';
 import { TierBadge } from '../../dashboard/components/TierBadge';
 import { formatTierFromDifficulty } from '../../../utils/tier';
@@ -11,7 +12,7 @@ interface TopRankPodiumProps {
     ranks: LeaderboardResponse[];
 }
 
-export const TopRankPodium: React.FC<TopRankPodiumProps> = ({ ranks }) => {
+export const TopRankPodium: FC<TopRankPodiumProps> = ({ ranks }) => {
     // 순위별로 정렬 (1등, 2등, 3등)
     const first = ranks.find((r) => r.rank === 1);
     const second = ranks.find((r) => r.rank === 2);

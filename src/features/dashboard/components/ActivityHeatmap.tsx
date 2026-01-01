@@ -2,7 +2,8 @@
  * 활동 히트맵 컴포넌트 (GitHub 스타일 1년치)
  */
 
-import React, { useState } from 'react';
+import { useState } from 'react';
+import type { FC } from 'react';
 import { useStatistics } from '../../../hooks/api/useStatistics';
 import { Spinner } from '../../../components/ui/Spinner';
 
@@ -16,7 +17,7 @@ interface HeatmapCell {
     dateObj: Date;
 }
 
-export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = () => {
+export const ActivityHeatmap: FC<ActivityHeatmapProps> = () => {
     const { data: statistics, isLoading, error } = useStatistics();
     const [tooltip, setTooltip] = useState<{ x: number; y: number; text: string } | null>(null);
 

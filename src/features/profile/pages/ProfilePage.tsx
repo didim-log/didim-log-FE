@@ -3,6 +3,7 @@
  */
 
 import { useState } from 'react';
+import type { FC } from 'react';
 import { useDashboard } from '../../../hooks/api/useDashboard';
 import { useUpdateProfile, useDeleteAccount } from '../../../hooks/api/useStudent';
 import { useRetrospectives } from '../../../hooks/api/useRetrospective';
@@ -18,7 +19,7 @@ import { CategorySelect } from '../../../components/ui/CategorySelect';
 import { ArrowRight, ChevronDown, ChevronUp } from 'lucide-react';
 import type { UpdateProfileRequest } from '../../../types/api/student.types';
 
-export const ProfilePage: React.FC = () => {
+export const ProfilePage: FC = () => {
     const { data: dashboard, isLoading } = useDashboard();
     const { user, logout } = useAuthStore();
     const updateProfileMutation = useUpdateProfile();

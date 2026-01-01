@@ -3,6 +3,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import type { FC } from 'react';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { useBojVerify } from '../../../hooks/auth/useBojVerify';
@@ -18,7 +19,7 @@ interface BojVerifyStepProps {
     onErrorClear?: () => void;
 }
 
-export const BojVerifyStep: React.FC<BojVerifyStepProps> = ({ onNext, onBack, duplicateError, onErrorClear }) => {
+export const BojVerifyStep: FC<BojVerifyStepProps> = ({ onNext, onBack, duplicateError, onErrorClear }) => {
     const [bojId, setBojId] = useState('');
     const [error, setError] = useState<string | null>(null);
     const { issueCode, verify, code, isLoading } = useBojVerify();

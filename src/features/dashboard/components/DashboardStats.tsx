@@ -2,7 +2,7 @@
  * 대시보드 통계 섹션 컴포넌트 (Bento Grid 스타일)
  */
 
-import React from 'react';
+import type { FC } from 'react';
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
 import { useStatistics } from '../../../hooks/api/useStatistics';
 import { Spinner } from '../../../components/ui/Spinner';
@@ -27,7 +27,7 @@ const mockMetrics = {
     successRate: 72, // 퍼센트
 };
 
-export const DashboardStats: React.FC<DashboardStatsProps> = () => {
+export const DashboardStats: FC<DashboardStatsProps> = () => {
     const { data: statistics, isLoading, error } = useStatistics();
 
     // 카테고리 레이더 차트 데이터 준비

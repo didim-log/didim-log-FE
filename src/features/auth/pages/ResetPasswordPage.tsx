@@ -3,13 +3,14 @@
  */
 
 import { useState } from 'react';
+import type { FC } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authApi } from '../../../api/endpoints/auth.api';
 import { Button } from '../../../components/ui/Button';
 import { validation } from '../../../utils/validation';
 import { toast } from 'sonner';
 
-export const ResetPasswordPage: React.FC = () => {
+export const ResetPasswordPage: FC = () => {
     const navigate = useNavigate();
     const [resetCode, setResetCode] = useState('');
     const [newPassword, setNewPassword] = useState('');
@@ -220,4 +221,5 @@ export const ResetPasswordPage: React.FC = () => {
         </div>
     );
 };
+
 

@@ -3,6 +3,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import type { FC } from 'react';
 import type { RetrospectiveRequest } from '../../../types/api/retrospective.types';
 import { TagInput } from '../../../components/ui/TagInput';
 
@@ -16,7 +17,7 @@ interface RetrospectiveEditorProps {
     onContentChange?: (content: string) => void;
 }
 
-export const RetrospectiveEditor: React.FC<RetrospectiveEditorProps> = ({
+export const RetrospectiveEditor: FC<RetrospectiveEditorProps> = ({
     initialContent = '',
     initialSummary = '',
     initialResultType = '',

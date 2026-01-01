@@ -3,6 +3,7 @@
  */
 
 import { useState } from 'react';
+import type { FC } from 'react';
 import { Copy, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatTierFromDifficulty, getTierColor } from '../../../utils/tier';
@@ -13,7 +14,7 @@ interface ProblemDetailProps {
     isBlurred: boolean;
 }
 
-export const ProblemDetail: React.FC<ProblemDetailProps> = ({ problem, isBlurred }) => {
+export const ProblemDetail: FC<ProblemDetailProps> = ({ problem, isBlurred }) => {
     const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
     const handleCopySampleInput = async (input: string, index: number) => {

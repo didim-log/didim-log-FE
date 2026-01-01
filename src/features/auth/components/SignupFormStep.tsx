@@ -3,6 +3,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
+import type { FC } from 'react';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { validation } from '../../../utils/validation';
@@ -20,7 +21,7 @@ interface SignupFormStepProps {
     } | null;
 }
 
-export const SignupFormStep: React.FC<SignupFormStepProps> = ({ bojId, onComplete, onBack, apiError }) => {
+export const SignupFormStep: FC<SignupFormStepProps> = ({ bojId, onComplete, onBack, apiError }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [passwordConfirm, setPasswordConfirm] = useState('');

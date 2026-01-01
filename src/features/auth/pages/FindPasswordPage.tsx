@@ -3,13 +3,14 @@
  */
 
 import { useState } from 'react';
+import type { FC } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authApi } from '../../../api/endpoints/auth.api';
 import { Button } from '../../../components/ui/Button';
 import { validation } from '../../../utils/validation';
 import { toast } from 'sonner';
 
-export const FindPasswordPage: React.FC = () => {
+export const FindPasswordPage: FC = () => {
     const navigate = useNavigate();
     const [email, setEmail] = useState('');
     const [bojId, setBojId] = useState('');
@@ -199,4 +200,5 @@ export const FindPasswordPage: React.FC = () => {
         </div>
     );
 };
+
 

@@ -3,6 +3,7 @@
  */
 
 import { useState } from 'react';
+import type { FC } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SignupWizard } from '../components/SignupWizard';
 import { authApi } from '../../../api/endpoints/auth.api';
@@ -10,7 +11,7 @@ import { useOnboardingStore } from '../../../stores/onboarding.store';
 import { useAuthStore } from '../../../stores/auth.store';
 import { toast } from 'sonner';
 
-export const SignupPage: React.FC = () => {
+export const SignupPage: FC = () => {
     const navigate = useNavigate();
     const { setIsNewUser } = useOnboardingStore();
     const { setToken, setUser } = useAuthStore();

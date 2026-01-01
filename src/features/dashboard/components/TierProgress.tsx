@@ -2,6 +2,7 @@
  * 티어 진행률 시각화 컴포넌트
  */
 
+import type { FC } from 'react';
 import type { DashboardResponse } from '../../../types/api/dashboard.types';
 import { TierBadge } from './TierBadge';
 
@@ -9,7 +10,7 @@ interface TierProgressProps {
     dashboard: DashboardResponse;
 }
 
-export const TierProgress: React.FC<TierProgressProps> = ({ dashboard }) => {
+export const TierProgress: FC<TierProgressProps> = ({ dashboard }) => {
     // 데이터 안전장치: dashboard 또는 studentProfile이 없는 경우
     if (!dashboard || !dashboard.studentProfile) {
         return (

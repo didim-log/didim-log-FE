@@ -2,6 +2,7 @@
  * 메인 프로필 카드 컴포넌트
  */
 
+import type { FC } from 'react';
 import { TierBadge } from '../../dashboard/components/TierBadge';
 import { Button } from '../../../components/ui/Button';
 import { Edit2 } from 'lucide-react';
@@ -26,7 +27,7 @@ const LANGUAGE_LABELS: Record<string, string> = {
     TEXT: 'Text',
 };
 
-export const ProfileCard: React.FC<ProfileCardProps> = ({ dashboard, primaryLanguage, onEdit }) => {
+export const ProfileCard: FC<ProfileCardProps> = ({ dashboard, primaryLanguage, onEdit }) => {
     const { studentProfile, currentTierTitle } = dashboard;
     const tierLevel = studentProfile.currentTierLevel || 1;
 
@@ -100,4 +101,5 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ dashboard, primaryLang
         </div>
     );
 };
+
 

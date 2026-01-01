@@ -2,14 +2,15 @@
  * 입력 컴포넌트
  */
 
+import type { FC, InputHTMLAttributes } from 'react';
 import { clsx } from 'clsx';
 
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
     label?: string;
     error?: string;
 }
 
-export const Input: React.FC<InputProps> = ({ label, error, className, ...props }) => {
+export const Input: FC<InputProps> = ({ label, error, className, ...props }) => {
     return (
         <div className="w-full">
             {label && (
@@ -29,4 +30,5 @@ export const Input: React.FC<InputProps> = ({ label, error, className, ...props 
         </div>
     );
 };
+
 

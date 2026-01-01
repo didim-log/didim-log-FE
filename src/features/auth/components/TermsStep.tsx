@@ -3,13 +3,14 @@
  */
 
 import { useState } from 'react';
+import type { FC } from 'react';
 import { Button } from '../../../components/ui/Button';
 
 interface TermsStepProps {
     onNext: (agreed: boolean) => void;
 }
 
-export const TermsStep: React.FC<TermsStepProps> = ({ onNext }) => {
+export const TermsStep: FC<TermsStepProps> = ({ onNext }) => {
     const [isAgreed, setIsAgreed] = useState(false);
 
     const handleNext = () => {

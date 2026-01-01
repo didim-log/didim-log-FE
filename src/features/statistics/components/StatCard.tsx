@@ -2,18 +2,18 @@
  * 통계 지표 카드 컴포넌트
  */
 
-import React from 'react';
+import type { FC, ComponentType } from 'react';
 
 interface StatCardProps {
     title: string;
     value: string | number;
-    icon: React.ComponentType<{ className?: string }>;
+    icon: ComponentType<{ className?: string }>;
     iconColor: string;
     bgColor: string;
     borderColor: string;
 }
 
-export const StatCard: React.FC<StatCardProps> = ({
+export const StatCard: FC<StatCardProps> = ({
     title,
     value,
     icon: Icon,

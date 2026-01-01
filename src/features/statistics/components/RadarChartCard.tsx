@@ -2,14 +2,14 @@
  * 레이더 차트 카드 컴포넌트
  */
 
-import React from 'react';
+import type { FC } from 'react';
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
 
 interface RadarChartCardProps {
     data: Array<{ category: string; value: number }>;
 }
 
-export const RadarChartCard: React.FC<RadarChartCardProps> = ({ data }) => {
+export const RadarChartCard: FC<RadarChartCardProps> = ({ data }) => {
     return (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-3 border border-gray-200 dark:border-gray-700">
             <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">

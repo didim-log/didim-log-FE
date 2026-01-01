@@ -4,6 +4,7 @@
  */
 
 import { useState, useRef, useEffect } from 'react';
+import type { FC } from 'react';
 import { ALGORITHM_CATEGORIES, getCategoryLabel } from '../../utils/constants';
 
 interface CategorySelectProps {
@@ -14,7 +15,7 @@ interface CategorySelectProps {
     variant?: 'select' | 'autocomplete';
 }
 
-export const CategorySelect: React.FC<CategorySelectProps> = ({
+export const CategorySelect: FC<CategorySelectProps> = ({
     value,
     onChange,
     placeholder = '카테고리를 선택하세요',
@@ -153,4 +154,5 @@ export const CategorySelect: React.FC<CategorySelectProps> = ({
         </div>
     );
 };
+
 

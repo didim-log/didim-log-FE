@@ -2,12 +2,14 @@
  * 문제 가리기 컴포넌트
  */
 
+import type { FC } from 'react';
+
 interface ProblemBlurProps {
     isBlurred: boolean;
     onStart: () => void;
 }
 
-export const ProblemBlur: React.FC<ProblemBlurProps> = ({ isBlurred, onStart }) => {
+export const ProblemBlur: FC<ProblemBlurProps> = ({ isBlurred, onStart }) => {
     if (!isBlurred) {
         return null;
     }
@@ -48,4 +50,5 @@ export const ProblemBlur: React.FC<ProblemBlurProps> = ({ isBlurred, onStart }) 
         </div>
     );
 };
+
 

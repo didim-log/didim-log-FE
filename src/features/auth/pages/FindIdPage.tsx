@@ -3,13 +3,14 @@
  */
 
 import { useState } from 'react';
+import type { FC } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authApi } from '../../../api/endpoints/auth.api';
 import { Button } from '../../../components/ui/Button';
 import { validation } from '../../../utils/validation';
 import { toast } from 'sonner';
 
-export const FindIdPage: React.FC = () => {
+export const FindIdPage: FC = () => {
     const navigate = useNavigate();
     const [email, setEmail] = useState('');
     const [error, setError] = useState<string | null>(null);
@@ -150,4 +151,5 @@ export const FindIdPage: React.FC = () => {
         </div>
     );
 };
+
 

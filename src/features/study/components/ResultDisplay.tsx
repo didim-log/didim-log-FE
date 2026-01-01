@@ -2,6 +2,7 @@
  * 결과 표시 컴포넌트
  */
 
+import type { FC } from 'react';
 import { Button } from '../../../components/ui/Button';
 import type { SolutionSubmitResponse } from '../../../types/api/study.types';
 
@@ -12,7 +13,7 @@ interface ResultDisplayProps {
     onClose: () => void;
 }
 
-export const ResultDisplay: React.FC<ResultDisplayProps> = ({ result, isSuccess, onWriteRetrospective, onClose }) => {
+export const ResultDisplay: FC<ResultDisplayProps> = ({ result, isSuccess, onWriteRetrospective, onClose }) => {
     if (!result) {
         return null;
     }
@@ -75,4 +76,5 @@ export const ResultDisplay: React.FC<ResultDisplayProps> = ({ result, isSuccess,
         </div>
     );
 };
+
 

@@ -3,12 +3,13 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
+import type { FC } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useLogin } from '../../../hooks/auth/useLogin';
 import { Button } from '../../../components/ui/Button';
 import { validation } from '../../../utils/validation';
 
-export const LoginPage: React.FC = () => {
+export const LoginPage: FC = () => {
     const navigate = useNavigate();
     const [bojId, setBojId] = useState('');
     const [password, setPassword] = useState('');

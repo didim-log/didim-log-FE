@@ -3,6 +3,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import type { FC } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useProblemRecommend } from '../../../hooks/api/useProblem';
 import { Spinner } from '../../../components/ui/Spinner';
@@ -12,7 +13,7 @@ import { CategorySelect } from '../../../components/ui/CategorySelect';
 import { formatTierFromDifficulty, getTierColor } from '../../../utils/tier';
 import type { ProblemResponse } from '../../../types/api/problem.types';
 
-export const ProblemListPage: React.FC = () => {
+export const ProblemListPage: FC = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     
     // URL 파라미터에서 초기값 가져오기

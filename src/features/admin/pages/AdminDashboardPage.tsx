@@ -3,6 +3,7 @@
  */
 
 import { useState } from 'react';
+import type { FC } from 'react';
 import { useAdminDashboardStats } from '../../../hooks/api/useAdmin';
 import { AdminStatsChart } from '../components/AdminStatsChart';
 import { UserManagement } from '../components/UserManagement';
@@ -14,7 +15,7 @@ import { Layout } from '../../../components/layout/Layout';
 
 type TabType = 'dashboard' | 'users' | 'quotes' | 'feedbacks' | 'problems';
 
-export const AdminDashboardPage: React.FC = () => {
+export const AdminDashboardPage: FC = () => {
     const [activeTab, setActiveTab] = useState<TabType>('dashboard');
     const { data: stats, isLoading, error } = useAdminDashboardStats();
 

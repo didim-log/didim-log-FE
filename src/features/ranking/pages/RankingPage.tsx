@@ -3,6 +3,7 @@
  */
 
 import { useState, useMemo } from 'react';
+import type { FC } from 'react';
 import { useRanking } from '../../../hooks/api/useRanking';
 import { Leaderboard } from '../components/Leaderboard';
 import { TopRankPodium } from '../components/TopRankPodium';
@@ -13,7 +14,7 @@ import { TierBadge } from '../../dashboard/components/TierBadge';
 import { formatTierFromDifficulty } from '../../../utils/tier';
 import type { RankingPeriod, LeaderboardResponse } from '../../../types/api/ranking.types';
 
-export const RankingPage: React.FC = () => {
+export const RankingPage: FC = () => {
     const [period, setPeriod] = useState<RankingPeriod>('TOTAL');
     const [limit, setLimit] = useState(100);
     const { user } = useAuthStore();

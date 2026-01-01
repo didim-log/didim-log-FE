@@ -4,6 +4,7 @@
  */
 
 import { useState, useRef, useEffect } from 'react';
+import type { FC } from 'react';
 import { X } from 'lucide-react';
 import { ALGORITHM_CATEGORIES, getCategoryLabel } from '../../utils/constants';
 
@@ -14,7 +15,7 @@ interface CreatableMultiSelectProps {
     className?: string;
 }
 
-export const CreatableMultiSelect: React.FC<CreatableMultiSelectProps> = ({
+export const CreatableMultiSelect: FC<CreatableMultiSelectProps> = ({
     value = [],
     onChange,
     placeholder = '알고리즘을 선택하거나 입력하세요',

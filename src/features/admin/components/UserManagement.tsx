@@ -3,13 +3,14 @@
  */
 
 import { useState } from 'react';
+import type { FC } from 'react';
 import { useAdminUsers, useDeleteUser, useUpdateUser } from '../../../hooks/api/useAdmin';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { Spinner } from '../../../components/ui/Spinner';
 import type { AdminUserListRequest, AdminUserUpdateDto } from '../../../types/api/admin.types';
 
-export const UserManagement: React.FC = () => {
+export const UserManagement: FC = () => {
     const [searchParams, setSearchParams] = useState<AdminUserListRequest>({
         page: 1,
         size: 20,

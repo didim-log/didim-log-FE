@@ -20,3 +20,4 @@ export interface LeaderboardResponse {
     profileImageUrl: string | null;
 }
 
+

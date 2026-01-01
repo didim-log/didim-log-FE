@@ -3,6 +3,7 @@
  */
 
 import { useState } from 'react';
+import type { FC } from 'react';
 import { useRetrospectives, useToggleBookmark, useDeleteRetrospective } from '../../../hooks/api/useRetrospective';
 import { RetrospectiveCard } from '../components/RetrospectiveCard';
 import { Spinner } from '../../../components/ui/Spinner';
@@ -13,7 +14,7 @@ import { useAuthStore } from '../../../stores/auth.store';
 import type { RetrospectiveListRequest } from '../../../types/api/retrospective.types';
 import { toast } from 'sonner';
 
-export const RetrospectiveListPage: React.FC = () => {
+export const RetrospectiveListPage: FC = () => {
     const [searchParams, setSearchParams] = useState<RetrospectiveListRequest>({
         page: 1,
         size: 10,

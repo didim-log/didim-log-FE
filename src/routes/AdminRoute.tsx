@@ -3,15 +3,16 @@
  */
 
 import { useEffect } from 'react';
+import type { FC, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/auth.store';
 import { Spinner } from '../components/ui/Spinner';
 
 interface AdminRouteProps {
-    children: React.ReactNode;
+    children: ReactNode;
 }
 
-export const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
+export const AdminRoute: FC<AdminRouteProps> = ({ children }) => {
     const { isAuthenticated, token, user } = useAuthStore();
     const navigate = useNavigate();
 
@@ -32,4 +33,5 @@ export const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
 
     return <>{children}</>;
 };
+
 

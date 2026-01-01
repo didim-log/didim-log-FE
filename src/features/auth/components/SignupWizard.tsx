@@ -3,6 +3,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import type { FC } from 'react';
 import { Check } from 'lucide-react';
 import { TermsStep } from './TermsStep';
 import { BojVerifyStep } from './BojVerifyStep';
@@ -20,7 +21,7 @@ interface SignupWizardProps {
     } | null;
 }
 
-export const SignupWizard: React.FC<SignupWizardProps> = ({ onComplete, apiError }) => {
+export const SignupWizard: FC<SignupWizardProps> = ({ onComplete, apiError }) => {
     const [currentStep, setCurrentStep] = useState<Step>(1);
     const [isTermsAgreed, setIsTermsAgreed] = useState(false);
     const [bojId, setBojId] = useState('');

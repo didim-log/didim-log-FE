@@ -3,11 +3,12 @@
  */
 
 import { useState } from 'react';
+import type { FC } from 'react';
 import { useCollectMetadata, useCollectDetails } from '../../../hooks/api/useAdmin';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 
-export const ProblemCollector: React.FC = () => {
+export const ProblemCollector: FC = () => {
     const [start, setStart] = useState('');
     const [end, setEnd] = useState('');
 

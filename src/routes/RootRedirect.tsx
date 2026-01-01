@@ -3,11 +3,12 @@
  * persist 복원이 완료될 때까지 대기 후 인증 상태에 따라 리다이렉트
  */
 
+import type { FC } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/auth.store';
 import { Spinner } from '../components/ui/Spinner';
 
-export const RootRedirect: React.FC = () => {
+export const RootRedirect: FC = () => {
     const { isAuthenticated, token, _hasHydrated } = useAuthStore();
 
     // persist 복원이 완료될 때까지 로딩 표시

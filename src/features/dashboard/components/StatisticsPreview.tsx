@@ -2,13 +2,13 @@
  * 통계 미리보기 카드 컴포넌트 (대시보드용)
  */
 
-import React from 'react';
 import { Link } from 'react-router-dom';
+import type { FC } from 'react';
 import { useStatistics } from '../../../hooks/api/useStatistics';
 import { Spinner } from '../../../components/ui/Spinner';
 import { BookOpen, Clock, Target, TrendingUp } from 'lucide-react';
 
-export const StatisticsPreview: React.FC = () => {
+export const StatisticsPreview: FC = () => {
     const { data: statistics, isLoading } = useStatistics();
 
     // 시간 포맷 유틸리티 함수 (초 단위를 "MM분" 형식으로 변환)

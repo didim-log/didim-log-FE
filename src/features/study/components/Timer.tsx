@@ -3,13 +3,14 @@
  */
 
 import { useEffect, useState } from 'react';
+import type { FC } from 'react';
 
 interface TimerProps {
     isRunning: boolean;
     onTimeUpdate?: (seconds: number) => void;
 }
 
-export const Timer: React.FC<TimerProps> = ({ isRunning, onTimeUpdate }) => {
+export const Timer: FC<TimerProps> = ({ isRunning, onTimeUpdate }) => {
     const [seconds, setSeconds] = useState(0);
 
     useEffect(() => {
@@ -53,4 +54,5 @@ export const Timer: React.FC<TimerProps> = ({ isRunning, onTimeUpdate }) => {
         </div>
     );
 };
+
 

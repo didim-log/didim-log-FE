@@ -3,12 +3,13 @@
  */
 
 import { useState } from 'react';
+import type { FC } from 'react';
 import { useAdminFeedbacks, useUpdateFeedbackStatus, useDeleteFeedback } from '../../../hooks/api/useAdmin';
 import { Button } from '../../../components/ui/Button';
 import { Spinner } from '../../../components/ui/Spinner';
 import type { FeedbackStatus } from '../../../types/api/feedback.types';
 
-export const FeedbackManagement: React.FC = () => {
+export const FeedbackManagement: FC = () => {
     const [page, setPage] = useState(1);
 
     const { data, isLoading, error } = useAdminFeedbacks({ page, size: 20 });
