@@ -28,19 +28,33 @@ export const LoginPage: FC = () => {
 
     // 유지보수 상태 확인
     useEffect(() => {
+        let isMounted = true;
+
         const checkMaintenanceStatus = async () => {
             try {
                 const status = await systemApi.getSystemStatus();
-                setMaintenanceStatus(status);
+                if (isMounted) {
+                    setMaintenanceStatus(status);
+                }
             } catch (err) {
                 console.error('유지보수 상태 확인 실패:', err);
                 // 에러가 발생해도 로그인은 가능하도록 함
+                // 503 에러(유지보수 모드)인 경우에도 정상적으로 처리
+                if (isMounted) {
+                    setMaintenanceStatus(null);
+                }
             } finally {
-                setIsCheckingMaintenance(false);
+                if (isMounted) {
+                    setIsCheckingMaintenance(false);
+                }
             }
         };
 
         checkMaintenanceStatus();
+
+        return () => {
+            isMounted = false;
+        };
     }, []);
 
     // 에러가 변경될 때 처리

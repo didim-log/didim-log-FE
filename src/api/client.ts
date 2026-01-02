@@ -125,8 +125,13 @@ apiClient.interceptors.response.use(
     async (error) => {
         const originalRequest = error.config;
 
+        // Public API는 401 처리에서 제외 (무한 루프 방지)
+        const isPublicApi = originalRequest.url?.includes('/api/v1/system/status') || 
+                           originalRequest.url?.includes('/api/v1/auth/');
+
         // 401 에러이고, refresh 엔드포인트가 아닌 경우에만 처리
-        if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url?.includes('/auth/refresh')) {
+        if (error.response?.status === 401 && !originalRequest._retry && 
+            !originalRequest.url?.includes('/auth/refresh') && !isPublicApi) {
             if (isRefreshing) {
                 // 이미 refresh 중이면 대기열에 추가
                 return new Promise((resolve, reject) => {
