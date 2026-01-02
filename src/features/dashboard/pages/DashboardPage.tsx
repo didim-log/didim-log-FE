@@ -6,8 +6,6 @@ import { useEffect } from 'react';
 import type { FC } from 'react';
 import { OnboardingTour } from '../../auth/components/OnboardingTour';
 import { useDashboard } from '../../../hooks/api/useDashboard';
-import { useNotices } from '../../../hooks/api/useNotice';
-import { NoticeBanner } from '../../notice/components/NoticeBanner';
 import { NoticeWidget } from '../components/NoticeWidget';
 import { TierProgress } from '../components/TierProgress';
 import { RecommendedProblems } from '../components/RecommendedProblems';
@@ -21,7 +19,6 @@ import { Layout } from '../../../components/layout/Layout';
 
 export const DashboardPage: FC = () => {
     const { data: dashboard, isLoading, error } = useDashboard();
-    const { data: noticePage } = useNotices({ page: 1, size: 1 });
     const { isNewUser, hasCompletedOnboarding } = useOnboardingStore();
     const { setUser, user } = useAuthStore();
 
@@ -89,9 +86,6 @@ export const DashboardPage: FC = () => {
                 <div className="max-w-7xl mx-auto space-y-4">
                     {/* 온보딩 투어 (신규 유저 + 미완료 시에만) */}
                     {isNewUser && !hasCompletedOnboarding && <OnboardingTour />}
-
-                    {/* 공지사항 얇은 배너 (UI 방해 최소화) */}
-                    {noticePage?.content?.[0] && <NoticeBanner notice={noticePage.content[0]} />}
 
                     {/* 메인 컨텐츠 그리드 - 2:1 비율 레이아웃 */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
