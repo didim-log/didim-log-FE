@@ -65,6 +65,20 @@ export const useToggleBookmark = () => {
     });
 };
 
+export const useUpdateRetrospective = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ retrospectiveId, data }: { retrospectiveId: string; data: RetrospectiveRequest }) => {
+            return retrospectiveApi.updateRetrospective(retrospectiveId, data);
+        },
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['retrospectives', variables.retrospectiveId] });
+            queryClient.invalidateQueries({ queryKey: ['retrospectives', 'list'] });
+        },
+    });
+};
+
 export const useDeleteRetrospective = () => {
     const queryClient = useQueryClient();
 

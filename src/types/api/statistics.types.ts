@@ -19,6 +19,19 @@ export interface TagStatResponse {
     fullMark: number;
 }
 
+export interface CategoryFailureResponse {
+    category: string;
+    count: number;
+}
+
+export interface WeaknessAnalysisResponse {
+    totalFailures: number;
+    topCategory: string | null;
+    topCategoryCount: number;
+    topReason: string | null; // 'FAIL' | 'TIME_OVER'
+    categoryFailures: CategoryFailureResponse[];
+}
+
 export interface StatisticsResponse {
     monthlyHeatmap: HeatmapDataResponse[];
     categoryDistribution: Record<string, number>;
@@ -29,5 +42,6 @@ export interface StatisticsResponse {
     averageSolveTime: number; // 초 단위
     successRate: number; // 0.0 ~ 100.0
     tagRadarData: TagStatResponse[];
+    weaknessAnalysis: WeaknessAnalysisResponse | null;
 }
 

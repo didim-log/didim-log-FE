@@ -23,19 +23,15 @@ interface SignupWizardProps {
 
 export const SignupWizard: FC<SignupWizardProps> = ({ onComplete, apiError }) => {
     const [currentStep, setCurrentStep] = useState<Step>(1);
-    const [isTermsAgreed, setIsTermsAgreed] = useState(false);
     const [bojId, setBojId] = useState('');
-    const [isBojVerified, setIsBojVerified] = useState(false);
     const [duplicateBojIdError, setDuplicateBojIdError] = useState<string | null>(null);
 
-    const handleStep1Complete = (agreed: boolean) => {
-        setIsTermsAgreed(agreed);
+    const handleStep1Complete = () => {
         setCurrentStep(2);
     };
 
     const handleStep2Complete = (verifiedBojId: string) => {
         setBojId(verifiedBojId);
-        setIsBojVerified(true);
         setDuplicateBojIdError(null); // 2단계로 돌아왔을 때 에러 초기화
         setCurrentStep(3);
     };
@@ -49,7 +45,6 @@ export const SignupWizard: FC<SignupWizardProps> = ({ onComplete, apiError }) =>
         if (apiError?.code === 'DUPLICATE_BOJ_ID' && currentStep === 3) {
             setCurrentStep(2);
             setDuplicateBojIdError('이미 가입된 백준 아이디입니다. 다른 BOJ ID를 사용해주세요.');
-            setIsBojVerified(false);
             setBojId('');
         }
     }, [apiError?.code, currentStep]); // apiError 전체가 아닌 code만 의존성으로
@@ -75,21 +70,23 @@ export const SignupWizard: FC<SignupWizardProps> = ({ onComplete, apiError }) =>
                         { step: 1, label: '약관 동의' },
                         { step: 2, label: 'BOJ 인증' },
                         { step: 3, label: '정보 입력' },
-                    ].map(({ step, label }, index) => (
+                    ].map(({ step, label }) => (
                         <div key={step} className="relative z-10 flex flex-col items-center bg-transparent">
                             {/* 원 뒤에 흰색 배경을 줘서 선이 투과되지 않게 함 */}
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 bg-white transition-colors ${
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-colors ${
                                 currentStep > step 
-                                    ? 'border-indigo-500 bg-indigo-500 text-white' // 완료
+                                    ? 'border-indigo-500 bg-indigo-500' // 완료
                                     : currentStep === step 
-                                    ? 'border-indigo-500 text-indigo-500' // 현재
-                                    : 'border-gray-300 text-gray-400' // 예정
+                                    ? 'border-indigo-500 bg-white' // 현재
+                                    : 'border-gray-300 bg-white text-gray-400' // 예정
                             }`}>
                                 {/* 완료되면 체크 아이콘, 아니면 숫자 */}
                                 {currentStep > step ? (
-                                    <Check className="w-5 h-5" />
+                                    <Check className="w-5 h-5 text-white" />
                                 ) : (
-                                    <span className="text-sm font-bold">{step}</span>
+                                    <span className={`text-sm font-bold ${
+                                        currentStep === step ? 'text-indigo-500' : 'text-gray-400'
+                                    }`}>{step}</span>
                                 )}
                             </div>
                             {/* 라벨 */}

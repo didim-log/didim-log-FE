@@ -2,7 +2,7 @@
  * 마이페이지
  */
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import type { FC } from 'react';
 import { useDashboard } from '../../../hooks/api/useDashboard';
 import { useUpdateProfile, useDeleteAccount } from '../../../hooks/api/useStudent';
@@ -15,7 +15,6 @@ import { MyRetrospectiveCard } from '../components/MyRetrospectiveCard';
 import { ProfileCard } from '../components/ProfileCard';
 import { ProfileEditForm } from '../components/ProfileEditForm';
 import { Link } from 'react-router-dom';
-import { CategorySelect } from '../../../components/ui/CategorySelect';
 import { ArrowRight, ChevronDown, ChevronUp } from 'lucide-react';
 import type { UpdateProfileRequest } from '../../../types/api/student.types';
 
@@ -25,16 +24,36 @@ export const ProfilePage: FC = () => {
     const updateProfileMutation = useUpdateProfile();
     const deleteAccountMutation = useDeleteAccount();
 
-    // 카테고리 필터 상태
+    // 카테고리 필터 상태 (solvedCategory 사용)
     const [selectedCategory, setSelectedCategory] = useState<string | undefined>(undefined);
 
-    // 내 회고 목록 조회 (카테고리 필터 적용)
+    // 내 회고 목록 조회 (solvedCategory 필터 적용)
     const { data: retrospectives, isLoading: isRetrospectivesLoading } = useRetrospectives({
         studentId: user?.id,
-        category: selectedCategory,
+        solvedCategory: selectedCategory,
         page: 1,
         size: 10,
     });
+
+    // 모든 회고의 solvedCategory를 파싱하여 고유 태그 목록 생성
+    const availableCategories = useMemo(() => {
+        if (!retrospectives?.content) return [];
+        
+        const categorySet = new Set<string>();
+        retrospectives.content.forEach((retrospective) => {
+            if (retrospective.solvedCategory) {
+                // 쉼표로 구분된 태그들을 분리하고 공백 제거
+                const tags = retrospective.solvedCategory
+                    .split(',')
+                    .map((tag) => tag.trim())
+                    .filter((tag) => tag.length > 0);
+                tags.forEach((tag) => categorySet.add(tag));
+            }
+        });
+        
+        // 알파벳 순으로 정렬
+        return Array.from(categorySet).sort();
+    }, [retrospectives?.content]);
 
     const [isEditing, setIsEditing] = useState(false);
     const [isDangerZoneOpen, setIsDangerZoneOpen] = useState(false);
@@ -68,8 +87,13 @@ export const ProfilePage: FC = () => {
     };
 
     const handleSubmit = async (updateData: UpdateProfileRequest) => {
-        await updateProfileMutation.mutateAsync(updateData);
-        setIsEditing(false);
+        try {
+            await updateProfileMutation.mutateAsync(updateData);
+            setIsEditing(false);
+        } catch (error) {
+            // 에러는 ProfileEditForm에서 처리하므로 여기서는 재throw하지 않음
+            // ProfileEditForm의 error prop으로 전달됨
+        }
     };
 
     const handleDeleteAccount = async () => {
@@ -124,13 +148,21 @@ export const ProfilePage: FC = () => {
 
                         {/* 카테고리 필터 - 헤더와 같은 줄에 배치 */}
                         <div className="mb-6">
-                            <CategorySelect
-                                value={selectedCategory}
-                                onChange={setSelectedCategory}
-                                placeholder="전체 카테고리"
-                                variant="select"
-                                className="max-w-xs"
-                            />
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                카테고리
+                            </label>
+                            <select
+                                value={selectedCategory || ''}
+                                onChange={(e) => setSelectedCategory(e.target.value || undefined)}
+                                className="max-w-xs w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                                <option value="">전체 카테고리</option>
+                                {availableCategories.map((cat) => (
+                                    <option key={cat} value={cat}>
+                                        {cat}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
 
                         {isRetrospectivesLoading ? (
@@ -158,8 +190,14 @@ export const ProfilePage: FC = () => {
                         ) : (
                             <div className="text-center py-12">
                                 <p className="text-gray-500 dark:text-gray-400 mb-4">작성한 회고가 없습니다.</p>
-                                <Link to="/retrospectives/write">
-                                    <Button variant="primary">첫 회고 작성하기</Button>
+                                <Link to="/problems">
+                                    <Button 
+                                        variant="primary" 
+                                        className="inline-flex items-center gap-2"
+                                    >
+                                        회고 작성을 위한 추천 문제 보기
+                                        <ArrowRight className="w-4 h-4" />
+                                    </Button>
                                 </Link>
                             </div>
                         )}

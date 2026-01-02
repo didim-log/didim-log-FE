@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom';
 import type { RetrospectiveResponse } from '../../../types/api/retrospective.types';
 import { useProblemDetail } from '../../../hooks/api/useProblem';
 import { Trash2 } from 'lucide-react';
+import { stripMarkdown, truncateText } from '../../../utils/markdownUtils';
 
 interface RetrospectiveCardProps {
     retrospective: RetrospectiveResponse;
@@ -110,7 +111,7 @@ export const RetrospectiveCard: FC<RetrospectiveCardProps> = ({
                 </p>
             ) : (
                 <p className="text-gray-700 dark:text-gray-300 text-sm line-clamp-2 mb-3">
-                    {retrospective.content.substring(0, 100)}...
+                    {truncateText(stripMarkdown(retrospective.content), 150)}
                 </p>
             )}
 

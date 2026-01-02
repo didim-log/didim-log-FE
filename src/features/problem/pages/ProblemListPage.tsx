@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import type { FC } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useProblemRecommend } from '../../../hooks/api/useProblem';
 import { Spinner } from '../../../components/ui/Spinner';
 import { Layout } from '../../../components/layout/Layout';
@@ -12,8 +12,10 @@ import { Input } from '../../../components/ui/Input';
 import { CategorySelect } from '../../../components/ui/CategorySelect';
 import { formatTierFromDifficulty, getTierColor } from '../../../utils/tier';
 import type { ProblemResponse } from '../../../types/api/problem.types';
+import { Search } from 'lucide-react';
 
 export const ProblemListPage: FC = () => {
+    const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
     
     // URL 파라미터에서 초기값 가져오기
@@ -22,6 +24,7 @@ export const ProblemListPage: FC = () => {
     
     const [count, setCount] = useState(initialCount);
     const [category, setCategory] = useState(initialCategory);
+    const [searchQuery, setSearchQuery] = useState('');
     
     const { data: problems, isLoading, error } = useProblemRecommend({ 
         count, 
@@ -39,6 +42,24 @@ export const ProblemListPage: FC = () => {
         }
         setSearchParams(params, { replace: true });
     }, [count, category, setSearchParams]);
+
+    // 문제 번호 검색 핸들러
+    const handleSearch = (e: React.FormEvent) => {
+        e.preventDefault();
+        const problemId = searchQuery.trim();
+        if (!problemId) {
+            return;
+        }
+
+        // 숫자만 입력되었는지 확인
+        const problemIdNum = parseInt(problemId, 10);
+        if (isNaN(problemIdNum) || problemIdNum <= 0) {
+            return;
+        }
+
+        // 문제 상세 페이지로 이동
+        navigate(`/problems/${problemIdNum}`);
+    };
 
 
     if (isLoading) {
@@ -72,7 +93,28 @@ export const ProblemListPage: FC = () => {
                 <div className="max-w-6xl mx-auto space-y-6">
                     {/* 헤더 */}
                     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
-                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">추천 문제</h1>
+                        <div className="flex items-center justify-between mb-4">
+                            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">추천 문제</h1>
+                            <button
+                                onClick={() => navigate(-1)}
+                                className="text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors"
+                            >
+                                ← 이전
+                            </button>
+                        </div>
+                        {/* 문제 번호 검색 */}
+                        <form onSubmit={handleSearch} className="mb-4">
+                            <div className="relative">
+                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                <Input
+                                    type="text"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    placeholder="문제 번호로 검색 (예: 1000)"
+                                    className="pl-10 w-full max-w-xs"
+                                />
+                            </div>
+                        </form>
                         <div className="flex items-end gap-4">
                             <div className="w-32">
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">

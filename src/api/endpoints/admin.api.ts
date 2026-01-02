@@ -7,16 +7,29 @@ import type {
     AdminUserListRequest,
     AdminUserPageResponse,
     AdminUserUpdateDto,
+    AdminMemberUpdateRequest,
     QuoteCreateRequest,
     QuotePageResponse,
     FeedbackPageResponse,
-    FeedbackStatusUpdateRequest,
     AdminDashboardStatsResponse,
     CollectMetadataRequest,
     CollectResponse,
+    MaintenanceModeRequest,
+    MaintenanceModeResponse,
+    PerformanceMetricsResponse,
+    AdminLogPageResponse,
+    AdminLogResponse,
+    ChartDataResponse,
+    ChartDataType,
+    ChartPeriod,
+    LogCleanupResponse,
+    AiQualityStatsResponse,
+    AiStatusResponse,
+    AiStatusUpdateRequest,
+    AiLimitsUpdateRequest,
 } from '../../types/api/admin.types';
 import type { QuoteResponse } from '../../types/api/quote.types';
-import type { FeedbackResponse } from '../../types/api/feedback.types';
+import type { FeedbackResponse, FeedbackStatusUpdateRequest } from '../../types/api/feedback.types';
 import type { PageRequest } from '../../types/api/common.types';
 
 export const adminApi = {
@@ -41,6 +54,13 @@ export const adminApi = {
      */
     updateUser: async (studentId: string, data: AdminUserUpdateDto): Promise<void> => {
         await apiClient.patch(`/api/v1/admin/users/${studentId}`, data);
+    },
+
+    /**
+     * 회원 닉네임/비밀번호 수정 (AdminMemberController)
+     */
+    updateMember: async (memberId: string, data: AdminMemberUpdateRequest): Promise<void> => {
+        await apiClient.put(`/api/v1/admin/members/${memberId}`, data);
     },
 
     /**
@@ -99,6 +119,60 @@ export const adminApi = {
     },
 
     /**
+     * 관리자 대시보드 성능 메트릭 조회
+     */
+    getDashboardMetrics: async (minutes?: number): Promise<PerformanceMetricsResponse> => {
+        const response = await apiClient.get<PerformanceMetricsResponse>('/api/v1/admin/dashboard/metrics', {
+            params: { minutes },
+        });
+        return response.data;
+    },
+
+    /**
+     * 관리자 대시보드 차트 데이터 조회
+     */
+    getDashboardChart: async (dataType: ChartDataType, period: ChartPeriod): Promise<ChartDataResponse> => {
+        const response = await apiClient.get<ChartDataResponse>('/api/v1/admin/dashboard/chart', {
+            params: { dataType, period },
+        });
+        return response.data;
+    },
+
+    /**
+     * 유지보수 모드 토글
+     */
+    setMaintenanceMode: async (data: MaintenanceModeRequest): Promise<MaintenanceModeResponse> => {
+        const response = await apiClient.post<MaintenanceModeResponse>('/api/v1/admin/system/maintenance', data);
+        return response.data;
+    },
+
+    /**
+     * AI 리뷰 생성 로그 조회
+     */
+    getLogs: async (params: { bojId?: string; page?: number; size?: number }): Promise<AdminLogPageResponse> => {
+        const response = await apiClient.get<AdminLogPageResponse>('/api/v1/admin/logs', { params });
+        return response.data;
+    },
+
+    /**
+     * 특정 로그 상세 조회
+     */
+    getLog: async (logId: string): Promise<AdminLogResponse> => {
+        const response = await apiClient.get<AdminLogResponse>(`/api/v1/admin/logs/${logId}`);
+        return response.data;
+    },
+
+    /**
+     * 오래된 로그 정리
+     */
+    cleanupLogs: async (olderThanDays: number): Promise<LogCleanupResponse> => {
+        const response = await apiClient.delete<LogCleanupResponse>('/api/v1/admin/logs/cleanup', {
+            params: { olderThanDays },
+        });
+        return response.data;
+    },
+
+    /**
      * 문제 메타데이터 수집
      */
     collectMetadata: async (params: CollectMetadataRequest): Promise<CollectResponse> => {
@@ -111,6 +185,38 @@ export const adminApi = {
      */
     collectDetails: async (): Promise<CollectResponse> => {
         const response = await apiClient.post<CollectResponse>('/api/v1/admin/problems/collect-details');
+        return response.data;
+    },
+
+    /**
+     * AI 품질 통계 조회
+     */
+    getAiQualityStats: async (): Promise<AiQualityStatsResponse> => {
+        const response = await apiClient.get<AiQualityStatsResponse>('/api/v1/admin/dashboard/ai-quality');
+        return response.data;
+    },
+
+    /**
+     * AI 서비스 상태 조회
+     */
+    getAiStatus: async (): Promise<AiStatusResponse> => {
+        const response = await apiClient.get<AiStatusResponse>('/api/v1/admin/system/ai-status');
+        return response.data;
+    },
+
+    /**
+     * AI 서비스 활성화/비활성화
+     */
+    updateAiStatus: async (data: AiStatusUpdateRequest): Promise<AiStatusResponse> => {
+        const response = await apiClient.post<AiStatusResponse>('/api/v1/admin/system/ai-status', data);
+        return response.data;
+    },
+
+    /**
+     * AI 사용량 제한 업데이트
+     */
+    updateAiLimits: async (data: AiLimitsUpdateRequest): Promise<AiStatusResponse> => {
+        const response = await apiClient.post<AiStatusResponse>('/api/v1/admin/system/ai-limits', data);
         return response.data;
     },
 };

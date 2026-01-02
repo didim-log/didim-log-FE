@@ -9,10 +9,9 @@ import { formatDateToKST } from '../../../utils/date';
 
 interface TodaySolvedListProps {
     problems: TodaySolvedProblemResponse[];
-    count: number;
 }
 
-export const TodaySolvedList: FC<TodaySolvedListProps> = ({ problems, count }) => {
+export const TodaySolvedList: FC<TodaySolvedListProps> = ({ problems }) => {
     const getResultColor = (result: string) => {
         const colors: Record<string, string> = {
             SUCCESS: 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30',

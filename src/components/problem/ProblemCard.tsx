@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { Tier, TIER_COLORS, TIER_LABELS } from '../../types/tier'
-import Button from '../common/Button'
+import { Button } from '../ui/Button'
 
 interface ProblemCardProps {
     id: string

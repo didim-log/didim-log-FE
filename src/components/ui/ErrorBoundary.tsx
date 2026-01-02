@@ -2,7 +2,8 @@
  * 에러 바운더리 컴포넌트
  */
 
-import { Component, ReactNode } from 'react';
+import { Component } from 'react';
+import type { ReactNode } from 'react';
 
 interface Props {
     children: ReactNode;

@@ -7,10 +7,14 @@ import { adminApi } from '../../api/endpoints/admin.api';
 import type {
     AdminUserListRequest,
     AdminUserUpdateDto,
+    AdminMemberUpdateRequest,
     QuoteCreateRequest,
-    FeedbackStatusUpdateRequest,
     CollectMetadataRequest,
+    MaintenanceModeRequest,
+    ChartDataType,
+    ChartPeriod,
 } from '../../types/api/admin.types';
+import type { FeedbackStatusUpdateRequest } from '../../types/api/feedback.types';
 import type { PageRequest } from '../../types/api/common.types';
 
 export const useAdminUsers = (params: AdminUserListRequest) => {
@@ -39,6 +43,18 @@ export const useUpdateUser = () => {
     return useMutation({
         mutationFn: ({ studentId, data }: { studentId: string; data: AdminUserUpdateDto }) =>
             adminApi.updateUser(studentId, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+        },
+    });
+};
+
+export const useUpdateMember = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ memberId, data }: { memberId: string; data: AdminMemberUpdateRequest }) =>
+            adminApi.updateMember(memberId, data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
         },
@@ -108,11 +124,74 @@ export const useDeleteFeedback = () => {
     });
 };
 
+export const useAiQualityStats = () => {
+    return useQuery({
+        queryKey: ['admin', 'ai-quality'],
+        queryFn: () => adminApi.getAiQualityStats(),
+        staleTime: 5 * 60 * 1000, // 5분
+    });
+};
+
 export const useAdminDashboardStats = () => {
     return useQuery({
         queryKey: ['admin', 'dashboard', 'stats'],
         queryFn: () => adminApi.getDashboardStats(),
         staleTime: 1 * 60 * 1000, // 1분
+    });
+};
+
+export const useAdminDashboardMetrics = (minutes?: number) => {
+    return useQuery({
+        queryKey: ['admin', 'dashboard', 'metrics', minutes ?? 30],
+        queryFn: () => adminApi.getDashboardMetrics(minutes),
+        staleTime: 30 * 1000,
+        refetchInterval: 30 * 1000,
+    });
+};
+
+export const useAdminDashboardChart = (dataType: ChartDataType, period: ChartPeriod) => {
+    return useQuery({
+        queryKey: ['admin', 'dashboard', 'chart', dataType, period],
+        queryFn: () => adminApi.getDashboardChart(dataType, period),
+        enabled: !!dataType && !!period,
+    });
+};
+
+export const useSetMaintenanceMode = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (data: MaintenanceModeRequest) => adminApi.setMaintenanceMode(data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admin', 'dashboard'] });
+        },
+    });
+};
+
+export const useAdminLogs = (params: { bojId?: string; page?: number; size?: number }) => {
+    return useQuery({
+        queryKey: ['admin', 'logs', params],
+        queryFn: () => adminApi.getLogs(params),
+        staleTime: 15 * 1000,
+    });
+};
+
+export const useAdminLog = (logId: string) => {
+    return useQuery({
+        queryKey: ['admin', 'logs', logId],
+        queryFn: () => adminApi.getLog(logId),
+        enabled: !!logId,
+        staleTime: 15 * 1000,
+    });
+};
+
+export const useCleanupLogs = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (olderThanDays: number) => adminApi.cleanupLogs(olderThanDays),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admin', 'logs'] });
+        },
     });
 };
 
@@ -125,6 +204,35 @@ export const useCollectMetadata = () => {
 export const useCollectDetails = () => {
     return useMutation({
         mutationFn: () => adminApi.collectDetails(),
+    });
+};
+
+export const useAiStatus = () => {
+    return useQuery({
+        queryKey: ['admin', 'ai-status'],
+        queryFn: () => adminApi.getAiStatus(),
+        staleTime: 10 * 1000, // 10초
+        refetchInterval: 30 * 1000, // 30초마다 자동 갱신
+    });
+};
+
+export const useUpdateAiStatus = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (data: AiStatusUpdateRequest) => adminApi.updateAiStatus(data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admin', 'ai-status'] });
+        },
+    });
+};
+
+export const useUpdateAiLimits = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (data: AiLimitsUpdateRequest) => adminApi.updateAiLimits(data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admin', 'ai-status'] });
+        },
     });
 };
 

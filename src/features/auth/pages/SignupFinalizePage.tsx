@@ -17,7 +17,7 @@ import type { SignupFinalizeRequest } from '../../../types/api/auth.types';
 export const SignupFinalizePage: FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { setToken, setUser } = useAuthStore();
+    const { setTokens, setUser } = useAuthStore();
     const { setIsNewUser } = useOnboardingStore();
 
     const [email, setEmail] = useState('');
@@ -47,7 +47,7 @@ export const SignupFinalizePage: FC = () => {
     const finalizeMutation = useMutation({
         mutationFn: (data: SignupFinalizeRequest) => authApi.signupFinalize(data),
         onSuccess: async (data) => {
-            setToken(data.token);
+            setTokens(data.token, data.refreshToken);
             setIsNewUser(true);
 
             const user = {

@@ -3,7 +3,6 @@
  */
 
 import type { FC } from 'react';
-import { Link } from 'react-router-dom';
 import type { LeaderboardResponse } from '../../../types/api/ranking.types';
 
 interface LeaderboardProps {

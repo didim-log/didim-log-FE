@@ -6,7 +6,8 @@ import Button from '../common/Button'
 import { updateProfile } from '../../apis/authApi'
 import { toast } from 'sonner'
 import type { AxiosError } from 'axios'
-import { getErrorMessage, type ApiErrorResponse } from '../../utils/errorHandler'
+import type { ApiErrorResponse } from '../../types/api/error'
+import { getErrorMessage } from '../../utils/errorHandler'
 
 interface EditProfileFormProps {
     currentNickname: string

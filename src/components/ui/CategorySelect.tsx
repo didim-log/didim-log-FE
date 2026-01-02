@@ -5,7 +5,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import type { FC } from 'react';
-import { ALGORITHM_CATEGORIES, getCategoryLabel } from '../../utils/constants';
+import { ALGORITHM_CATEGORIES } from '../../utils/constants';
 
 interface CategorySelectProps {
     value?: string;

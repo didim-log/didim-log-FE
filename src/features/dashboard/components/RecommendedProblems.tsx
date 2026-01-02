@@ -5,7 +5,9 @@
 import { useState, useEffect, useRef } from 'react';
 import type { FC } from 'react';
 import { Link } from 'react-router-dom';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useProblemRecommend } from '../../../hooks/api/useProblem';
+import { formatTierFromDifficulty, getTierColor } from '../../../utils/tier';
 import type { ProblemResponse } from '../../../types/api/problem.types';
 
 const ALGORITHM_CATEGORIES = [
@@ -35,9 +37,44 @@ interface RecommendedProblemsProps {
 
 export const RecommendedProblems: FC<RecommendedProblemsProps> = ({ count = 4, category: initialCategory }) => {
     const [selectedCategory, setSelectedCategory] = useState<string | null>(initialCategory || null);
+    const [showLeftArrow, setShowLeftArrow] = useState(false);
+    const [showRightArrow, setShowRightArrow] = useState(true);
     const { data: problems, isLoading, error } = useProblemRecommend({ count, category: selectedCategory || undefined });
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+    // 스크롤 위치에 따라 화살표 버튼 표시/숨김
+    const updateArrowVisibility = () => {
+        const container = scrollContainerRef.current;
+        if (!container) return;
+
+        const { scrollLeft, scrollWidth, clientWidth } = container;
+        setShowLeftArrow(scrollLeft > 0);
+        setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 1); // 1px 여유를 두어 부동소수점 오차 방지
+    };
+
+    // 스크롤 이벤트 리스너
+    useEffect(() => {
+        const container = scrollContainerRef.current;
+        if (!container) return;
+
+        // 초기 상태 확인
+        updateArrowVisibility();
+
+        // 스크롤 이벤트 리스너 추가
+        container.addEventListener('scroll', updateArrowVisibility);
+        
+        // 리사이즈 이벤트 리스너 추가 (컨테이너 크기 변경 시)
+        const resizeObserver = new ResizeObserver(() => {
+            updateArrowVisibility();
+        });
+        resizeObserver.observe(container);
+
+        return () => {
+            container.removeEventListener('scroll', updateArrowVisibility);
+            resizeObserver.disconnect();
+        };
+    }, []);
 
     // 선택된 카테고리가 변경되면 해당 버튼으로 스크롤
     useEffect(() => {
@@ -54,7 +91,24 @@ export const RecommendedProblems: FC<RecommendedProblemsProps> = ({ count = 4, c
                 selectedButton.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
             }
         }
+        // 스크롤 후 화살표 상태 업데이트
+        setTimeout(updateArrowVisibility, 300); // 스크롤 애니메이션 완료 후 업데이트
     }, [selectedCategory]);
+
+    // 좌우 스크롤 함수
+    const scrollLeft = () => {
+        const container = scrollContainerRef.current;
+        if (container) {
+            container.scrollBy({ left: -200, behavior: 'smooth' });
+        }
+    };
+
+    const scrollRight = () => {
+        const container = scrollContainerRef.current;
+        if (container) {
+            container.scrollBy({ left: 200, behavior: 'smooth' });
+        }
+    };
 
     if (isLoading) {
         return (
@@ -82,19 +136,45 @@ export const RecommendedProblems: FC<RecommendedProblemsProps> = ({ count = 4, c
             </div>
 
             {/* 카테고리 칩 버튼 그룹 - 항상 표시 */}
-            <div className="mb-4">
+            <div className="mb-4 relative">
+                {/* 왼쪽 화살표 버튼 */}
+                {showLeftArrow && (
+                    <button
+                        onClick={scrollLeft}
+                        className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-700 transition-all backdrop-blur-sm"
+                        aria-label="왼쪽으로 스크롤"
+                    >
+                        <ChevronLeft className="w-4 h-4 text-gray-700 dark:text-gray-300" />
+                    </button>
+                )}
+
+                {/* 오른쪽 화살표 버튼 */}
+                {showRightArrow && (
+                    <button
+                        onClick={scrollRight}
+                        className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-700 transition-all backdrop-blur-sm"
+                        aria-label="오른쪽으로 스크롤"
+                    >
+                        <ChevronRight className="w-4 h-4 text-gray-700 dark:text-gray-300" />
+                    </button>
+                )}
+
                 <div 
                     ref={scrollContainerRef}
                     className="flex gap-2 overflow-x-auto scrollbar-hide pb-2 -mx-1 px-1"
+                    style={{
+                        scrollPaddingLeft: showLeftArrow ? '40px' : '0',
+                        scrollPaddingRight: showRightArrow ? '40px' : '0',
+                    }}
                 >
                     {/* 전체 버튼 */}
                     <button
-                        ref={(el) => (buttonRefs.current['all'] = el)}
+                        ref={(el) => { buttonRefs.current['all'] = el; }}
                         onClick={() => setSelectedCategory(null)}
-                        className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                        className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all border ${
                             selectedCategory === null
-                                ? 'bg-blue-600 text-white shadow-md'
-                                : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                                ? 'bg-blue-600 dark:bg-blue-600 text-white shadow-md border-blue-600 dark:border-blue-600'
+                                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600'
                         }`}
                     >
                         전체
@@ -104,12 +184,12 @@ export const RecommendedProblems: FC<RecommendedProblemsProps> = ({ count = 4, c
                     {ALGORITHM_CATEGORIES.map((category) => (
                         <button
                             key={category}
-                            ref={(el) => (buttonRefs.current[category] = el)}
+                            ref={(el) => { buttonRefs.current[category] = el; }}
                             onClick={() => setSelectedCategory(category)}
-                            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all border ${
                                 selectedCategory === category
-                                    ? 'bg-blue-600 text-white shadow-md'
-                                    : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                                    ? 'bg-blue-600 dark:bg-blue-600 text-white shadow-md border-blue-600 dark:border-blue-600'
+                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600'
                             }`}
                         >
                             {category}
@@ -140,53 +220,7 @@ interface ProblemCardProps {
 }
 
 const ProblemCard: FC<ProblemCardProps> = ({ problem }) => {
-    const getTierColor = (tier: string) => {
-        const tierColors: Record<string, string> = {
-            BRONZE: 'bg-amber-600 text-white',
-            SILVER: 'bg-gray-400 text-white',
-            GOLD: 'bg-yellow-500 text-white',
-            PLATINUM: 'bg-cyan-400 text-white',
-            DIAMOND: 'bg-blue-500 text-white',
-            RUBY: 'bg-red-500 text-white',
-            UNRATED: 'bg-gray-300 text-gray-700',
-        };
-        return tierColors[tier] || 'bg-gray-300 text-gray-700';
-    };
-
-    // 티어 범위 정의 (Solved.ac 레벨 시스템 기준)
-    const tierRanges: Record<string, { min: number; max: number }> = {
-        BRONZE: { min: 1, max: 5 },
-        SILVER: { min: 6, max: 10 },
-        GOLD: { min: 11, max: 15 },
-        PLATINUM: { min: 16, max: 20 },
-        DIAMOND: { min: 21, max: 25 },
-        RUBY: { min: 26, max: 30 },
-    };
-
-    // 레벨을 로마 숫자로 변환하는 함수
-    const getRomanNumeral = (tier: string, level: number): string => {
-        const range = tierRanges[tier];
-        if (!range || tier === 'UNRATED') {
-            return '';
-        }
-
-        // 티어 내에서의 위치 계산 (높은 레벨 = 낮은 로마 숫자)
-        // 예: GOLD (11-15)에서 레벨 15 = V, 레벨 11 = I
-        const index = range.max - level;
-        const romanNumerals = ['V', 'IV', 'III', 'II', 'I'];
-        return romanNumerals[index] || '';
-    };
-
-    // "GOLD I" 형식으로 난이도 문자열 생성
-    const getDifficultyDisplay = (tier: string, level: number): string => {
-        if (tier === 'UNRATED') {
-            return 'UNRATED';
-        }
-        const roman = getRomanNumeral(tier, level);
-        return roman ? `${tier} ${roman}` : tier;
-    };
-
-    const difficultyDisplay = getDifficultyDisplay(problem.difficulty, problem.difficultyLevel);
+    const difficultyDisplay = formatTierFromDifficulty(problem.difficulty, problem.difficultyLevel);
 
     return (
         <Link

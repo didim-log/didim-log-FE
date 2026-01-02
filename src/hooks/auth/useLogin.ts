@@ -21,13 +21,13 @@ interface UseLoginReturn {
 
 export const useLogin = (): UseLoginReturn => {
     const navigate = useNavigate();
-    const { setToken, setUser } = useAuthStore();
+    const { setTokens, setUser } = useAuthStore();
 
     const loginMutation = useMutation({
         mutationFn: authApi.login,
         onSuccess: async (data: AuthResponse) => {
-            // 1. 토큰 저장
-            setToken(data.token);
+            // 1. 토큰 저장 (Access Token + Refresh Token)
+            setTokens(data.token, data.refreshToken);
 
             // 2. 사용자 정보 저장 (토큰에서 추출)
             const { decodeJwt } = await import('../../utils/jwt');

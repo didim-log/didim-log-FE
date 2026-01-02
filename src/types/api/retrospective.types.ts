@@ -8,9 +8,10 @@ export type ProblemResult = 'SUCCESS' | 'FAIL' | 'TIME_OVER';
 
 export interface RetrospectiveRequest {
     content: string;
-    summary?: string | null;
+    summary: string; // 한 줄 요약 (필수)
     resultType?: ProblemResult | null;
     solvedCategory?: string | null;
+    solveTime?: string | null; // 풀이 소요 시간 (예: "15m 30s" 또는 초 단위 문자열)
 }
 
 export interface RetrospectiveResponse {
@@ -24,12 +25,14 @@ export interface RetrospectiveResponse {
     mainCategory: string | null;
     solutionResult: string | null;
     solvedCategory: string | null;
-    timeTaken?: number | null; // 풀이 소요 시간 (초) - 백엔드에서 제공하는 경우
+    solveTime: string | null; // 풀이 소요 시간 (예: "15m 30s" 또는 초 단위 문자열)
+    timeTaken?: number | null; // 풀이 소요 시간 (초) - 백엔드에서 제공하는 경우 (deprecated: solveTime 사용 권장)
 }
 
 export interface RetrospectiveListRequest {
     keyword?: string;
     category?: string;
+    solvedCategory?: string; // 풀이 전략 태그 (부분 일치 검색)
     isBookmarked?: boolean;
     studentId?: string;
     page?: number;
@@ -57,5 +60,6 @@ export interface StaticTemplateRequest {
     problemId: string;
     isSuccess: boolean;
     errorMessage?: string | null;
+    solveTime?: string | null; // 풀이 소요 시간 (예: "15m 30s" 또는 초 단위 문자열)
 }
 

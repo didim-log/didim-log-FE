@@ -6,7 +6,7 @@ import type { FC } from 'react';
 import { TierBadge } from '../../dashboard/components/TierBadge';
 import { Button } from '../../../components/ui/Button';
 import { Edit2 } from 'lucide-react';
-import { formatTierFromDifficulty } from '../../../utils/tier';
+import { getTierColor } from '../../../utils/tier';
 import type { DashboardResponse } from '../../../types/api/dashboard.types';
 
 interface ProfileCardProps {
@@ -22,9 +22,13 @@ const LANGUAGE_LABELS: Record<string, string> = {
     JAVASCRIPT: 'JavaScript',
     CPP: 'C++',
     GO: 'Go',
-    RUST: 'Rust',
+    R: 'R',
+    RUBY: 'Ruby',
+    SCALA: 'Scala',
     SWIFT: 'Swift',
     TEXT: 'Text',
+    C: 'C',
+    CSHARP: 'C#',
 };
 
 export const ProfileCard: FC<ProfileCardProps> = ({ dashboard, primaryLanguage, onEdit }) => {
@@ -55,7 +59,7 @@ export const ProfileCard: FC<ProfileCardProps> = ({ dashboard, primaryLanguage, 
 
                             {/* 티어 및 주 언어 */}
                             <div className="flex items-center gap-3 flex-wrap">
-                                <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-lg text-sm font-medium">
+                                <span className={`px-3 py-1 rounded-lg text-sm font-medium ${getTierColor(currentTierTitle?.split(' ')[0] || 'UNRATED')}`}>
                                     {currentTierTitle}
                                 </span>
                                 

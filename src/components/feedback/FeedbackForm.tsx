@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import Button from '../common/Button'
+import { Button } from '../ui/Button'
 import type { FeedbackType } from '../../types/api/feedback.types'
 import { feedbackApi } from '../../api/endpoints/feedback.api'
 import type { AxiosError } from 'axios'
@@ -113,11 +113,5 @@ export default function FeedbackForm({ onSuccess }: FeedbackFormProps) {
         </div>
     )
 }
-
-
-
-
-
-
 
 

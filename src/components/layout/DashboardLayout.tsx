@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { LogOut, Moon, Sun, User } from 'lucide-react'
-import Button from '../common/Button'
+import { Button } from '../ui/Button'
 import { useTheme } from '../../contexts/ThemeContext'
 
 interface DashboardLayoutProps {
@@ -42,7 +42,7 @@ export default function DashboardLayout({
                         <Button
                             variant="ghost"
                             size="sm"
-                            onClick={(e) => {
+                            onClick={(e: React.MouseEvent) => {
                                 e.preventDefault()
                                 e.stopPropagation()
                                 toggleTheme()

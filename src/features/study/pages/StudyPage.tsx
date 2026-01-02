@@ -8,6 +8,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useProblemDetail } from '../../../hooks/api/useProblem';
 import { useSubmitSolution } from '../../../hooks/api/useStudy';
 import { useStaticTemplate } from '../../../hooks/api/useRetrospective';
+import { logApi } from '../../../api/endpoints/log.api';
 import { CodeEditor } from '../components/CodeEditor';
 import { Timer } from '../components/Timer';
 import { ResultDisplay } from '../components/ResultDisplay';
@@ -16,6 +17,9 @@ import { Button } from '../../../components/ui/Button';
 import { Layout } from '../../../components/layout/Layout';
 import { useAuthStore } from '../../../stores/auth.store';
 import type { SolutionSubmitResponse } from '../../../types/api/study.types';
+import { ChevronLeft, ExternalLink, Clock, Pause, Play } from 'lucide-react';
+import { formatTierFromDifficulty, getTierColor } from '../../../utils/tier';
+import { getLanguageBadgeColor, getLanguageLabel } from '../../../utils/badge';
 
 const LANGUAGE_OPTIONS = [
     { value: 'text', label: 'Text' },
@@ -56,6 +60,9 @@ export const StudyPage: FC = () => {
     const [isSuccess, setIsSuccess] = useState(false);
     const [showResult, setShowResult] = useState(false);
     const [submitResult, setSubmitResult] = useState<SolutionSubmitResponse | null>(null);
+    const [isSubmittingSuccess, setIsSubmittingSuccess] = useState(false);
+    const [isSubmittingFail, setIsSubmittingFail] = useState(false);
+    const [isSubmitted, setIsSubmitted] = useState(false); // 제출 완료 여부
 
     // 사용자의 주 언어를 스토어에서 가져와서 언어 선택 초기값으로 적용
     useEffect(() => {
@@ -77,9 +84,41 @@ export const StudyPage: FC = () => {
         setTimeTaken(seconds);
     };
 
+    const handleToggleTimer = () => {
+        setIsTimerRunning((prev) => !prev);
+    };
+
+    const handleGoBack = () => {
+        navigate(-1);
+    };
+
     const handleSubmit = async (success: boolean) => {
         if (!problemId) {
             return;
+        }
+
+        // 이미 제출된 경우 중복 제출 방지
+        if (isSubmitted) {
+            return;
+        }
+
+        // 코드가 비어있으면 제출 불가
+        if (!code || code.trim().length === 0) {
+            alert('코드를 입력해주세요.');
+            return;
+        }
+
+        // 타이머가 0이면 제출 불가
+        if (timeTaken === 0) {
+            alert('타이머가 0초입니다. 페이지를 새로고침하여 타이머를 시작한 후 다시 시도해주세요.');
+            return;
+        }
+
+        // 개별 로딩 상태 설정
+        if (success) {
+            setIsSubmittingSuccess(true);
+        } else {
+            setIsSubmittingFail(true);
         }
 
         setIsTimerRunning(false);
@@ -93,24 +132,80 @@ export const StudyPage: FC = () => {
             });
             setSubmitResult(result);
             setShowResult(true);
+            setIsSubmitted(true); // 제출 완료 표시
         } catch (error) {
             console.error('Submit failed:', error);
-            // 에러 처리
+            // 에러 발생 시에도 제출 완료로 표시하여 중복 제출 방지
+            setIsSubmitted(true);
+        } finally {
+            // 로딩 상태 해제
+            setIsSubmittingSuccess(false);
+            setIsSubmittingFail(false);
         }
     };
 
     const handleWriteRetrospective = async () => {
-        if (!problemId || !user?.id) {
+        if (!problemId || !user?.id || !problem) {
             return;
         }
 
+        // 타이머가 0이면 회고 작성 불가
+        if (timeTaken === 0) {
+            alert('타이머가 0초입니다. 페이지를 새로고침하여 타이머를 시작한 후 다시 시도해주세요.');
+            return;
+        }
+
+        let logId: string | null = null;
+
         try {
+            // 0) 로그 생성 (AI 한 줄 리뷰를 위해 선행)
+            // 실패해도 회고 작성은 가능해야 하므로, 실패 시 logId 없이 진행합니다.
+            try {
+                console.log('[StudyPage] Attempting to create log with:', {
+                    title: `${problemId}. ${problem.title}`,
+                    content: ' ', // 빈 문자열은 @NotBlank 검증에 실패하므로 공백 문자 사용
+                    codeLength: code.length,
+                    isSuccess,
+                });
+                
+                const created = await logApi.createLog({
+                    title: `${problemId}. ${problem.title}`,
+                    content: 'AI 리뷰를 위한 코드 제출', // @NotBlank 검증을 통과하기 위한 의미 있는 값
+                    code,
+                    isSuccess,
+                });
+                
+                logId = created.id;
+                console.log('[StudyPage] Log created successfully, logId:', logId);
+            } catch (error: any) {
+                console.error('[StudyPage] Log create failed. Proceed without logId.');
+                console.error('[StudyPage] Error object:', error);
+                console.error('[StudyPage] Error message:', error?.message);
+                console.error('[StudyPage] Error response:', error?.response?.data);
+                console.error('[StudyPage] Error status:', error?.response?.status);
+                logId = null;
+            }
+
+            // 풀이 시간 포맷팅 (초 -> "Xm Ys" 형식)
+            const formatSolveTime = (seconds: number): string => {
+                if (seconds < 60) {
+                    return `${seconds}초`;
+                }
+                const minutes = Math.floor(seconds / 60);
+                const remainingSeconds = seconds % 60;
+                if (remainingSeconds === 0) {
+                    return `${minutes}분`;
+                }
+                return `${minutes}분 ${remainingSeconds}초`;
+            };
+
             // 정적 템플릿 가져오기
             const templateResult = await staticTemplateMutation.mutateAsync({
                 code,
                 problemId,
                 isSuccess,
                 errorMessage: isSuccess ? null : '제출 실패',
+                solveTime: timeTaken > 0 ? formatSolveTime(timeTaken) : null,
             });
 
             // 회고 작성 페이지로 이동 (템플릿과 함께)
@@ -120,6 +215,9 @@ export const StudyPage: FC = () => {
                     template: templateResult.template,
                     isSuccess,
                     code,
+                    logId,
+                    solveTime: timeTaken > 0 ? formatSolveTime(timeTaken) : null,
+                    language, // 선택한 언어 정보 전달
                 },
             });
         } catch (error) {
@@ -130,6 +228,8 @@ export const StudyPage: FC = () => {
                     problemId,
                     isSuccess,
                     code,
+                    logId,
+                    language, // 선택한 언어 정보 전달
                 },
             });
         }
@@ -163,30 +263,85 @@ export const StudyPage: FC = () => {
     return (
         <Layout>
             <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4">
-                <div className="max-w-6xl mx-auto space-y-6">
-                    {/* 헤더 */}
-                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                                    {problem.id}. {problem.title}
-                                </h1>
-                                <div className="flex items-center gap-2">
-                                    <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded text-sm">
-                                        {problem.category}
-                                    </span>
-                                    <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded text-sm">
-                                        {problem.difficulty}
-                                    </span>
+                <div className="max-w-6xl mx-auto">
+                    {/* 🎨 Global Header - 표준화된 네비게이션 */}
+                    <div className="flex items-center justify-between mb-6">
+                        {/* 왼쪽: 네비게이션 & 제목 */}
+                        <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-3">
+                                {/* 이전 버튼 (아이콘만) */}
+                                <button
+                                    onClick={handleGoBack}
+                                    className="flex-shrink-0 p-1.5 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                                    title="이전 페이지로"
+                                >
+                                    <ChevronLeft className="w-5 h-5" />
+                                </button>
+                                {/* 문제 번호 & 제목 */}
+                                <div className="flex items-center gap-3 flex-wrap">
+                                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                                        {problem.id}. {problem.title}
+                                    </h1>
+                                    {/* 태그 */}
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded text-sm font-medium">
+                                            {problem.category}
+                                        </span>
+                                        <span className={`px-2 py-1 rounded text-sm font-medium whitespace-nowrap ${getTierColor(problem.difficulty)}`}>
+                                            {formatTierFromDifficulty(problem.difficulty, problem.difficultyLevel)}
+                                        </span>
+                                        {/* 언어 배지 */}
+                                        {language && language !== 'text' && (
+                                            <span className={`px-2 py-1 rounded text-sm font-medium ${getLanguageBadgeColor(language)}`}>
+                                                {getLanguageLabel(language)}
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
-                            <Timer isRunning={isTimerRunning} onTimeUpdate={handleTimeUpdate} />
+                        </div>
+
+                        {/* 오른쪽: 도구들 */}
+                        <div className="flex items-center gap-3 ml-4">
+                            {/* 문제 보기 버튼 (Ghost 스타일) */}
+                            {problem.url && (
+                                <a
+                                    href={problem.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-sm font-medium transition-colors border border-gray-300 dark:border-gray-600"
+                                    title="백준 온라인 저지에서 문제 보기"
+                                >
+                                    <ExternalLink className="w-4 h-4" />
+                                    문제 보기
+                                </a>
+                            )}
+                            {/* 타이머 (Badge 스타일) */}
+                            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                                <Clock className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                                <Timer 
+                                    isRunning={isTimerRunning} 
+                                    onTimeUpdate={handleTimeUpdate}
+                                />
+                                <button 
+                                    onClick={handleToggleTimer} 
+                                    className="ml-1 p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                                    title={isTimerRunning ? '일시정지' : '재개'}
+                                >
+                                    {isTimerRunning ? (
+                                        <Pause className="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" />
+                                    ) : (
+                                        <Play className="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" />
+                                    )}
+                                </button>
+                            </div>
                         </div>
                     </div>
 
-                    {/* 코드 에디터 */}
-                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
-                        <div className="mb-4">
+                    {/* 📦 통합 에디터 카드 */}
+                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+                        {/* Header Section - 언어 선택 */}
+                        <div className="p-4 border-b border-gray-100 dark:border-gray-700">
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 프로그래밍 언어
                             </label>
@@ -202,27 +357,36 @@ export const StudyPage: FC = () => {
                                 ))}
                             </select>
                         </div>
-                        <CodeEditor value={code} onChange={setCode} language={language} />
-                    </div>
 
-                    {/* 제출 버튼 */}
-                    <div className="flex justify-end gap-3">
-                        <Button
-                            onClick={() => handleSubmit(false)}
-                            variant="outline"
-                            size="lg"
-                            isLoading={submitSolutionMutation.isPending}
-                        >
-                            실패로 제출
-                        </Button>
-                        <Button
-                            onClick={() => handleSubmit(true)}
-                            variant="primary"
-                            size="lg"
-                            isLoading={submitSolutionMutation.isPending}
-                        >
-                            성공으로 제출
-                        </Button>
+                        {/* Body Section - 코드 에디터 */}
+                        <div className="p-4">
+                            <CodeEditor value={code} onChange={setCode} language={language} />
+                        </div>
+
+                        {/* Footer Section - 액션 버튼 */}
+                        <div className="p-4 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3">
+                            {/* 실패 제출 (Outline/Ghost) */}
+                            <Button
+                                onClick={() => handleSubmit(false)}
+                                variant="outline"
+                                size="lg"
+                                isLoading={isSubmittingFail}
+                                disabled={isSubmitted || isSubmittingSuccess || isSubmittingFail}
+                                className="text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
+                            >
+                                {isSubmitted ? '제출 완료' : '실패로 제출'}
+                            </Button>
+                            {/* 성공 제출 (Primary Solid) */}
+                            <Button
+                                onClick={() => handleSubmit(true)}
+                                variant="primary"
+                                size="lg"
+                                isLoading={isSubmittingSuccess}
+                                disabled={isSubmitted || isSubmittingSuccess || isSubmittingFail}
+                            >
+                                {isSubmitted ? '제출 완료' : '성공으로 제출'}
+                            </Button>
+                        </div>
                     </div>
                 </div>
 

@@ -14,19 +14,24 @@ export const useUpdateProfile = () => {
     return useMutation({
         mutationFn: (data: UpdateProfileRequest) => studentApi.updateProfile(data),
         onSuccess: async (_, variables) => {
-            // 대시보드 데이터 무효화 및 강제 재조회
+            // 대시보드 데이터 무효화 및 강제 재조회 (primaryLanguage 포함)
             await queryClient.invalidateQueries({ queryKey: ['dashboard'] });
             await queryClient.refetchQueries({ queryKey: ['dashboard'] });
             
-            // 전역 상태 업데이트: 닉네임이 변경된 경우
-            if (user && variables.nickname) {
+            // 대시보드에서 최신 primaryLanguage 가져와서 user 업데이트
+            // refetchQueries 후 queryClient.getQueryData를 사용하여 안전하게 가져옴
+            const dashboardData = queryClient.getQueryData<import('../../types/api/dashboard.types').DashboardResponse>(['dashboard']);
+            const updatedPrimaryLanguage = dashboardData?.studentProfile?.primaryLanguage ?? null;
+            
+            // 전역 상태 업데이트: 닉네임 및 primaryLanguage
+            if (user) {
                 const updatedUser = {
                     ...user,
-                    nickname: variables.nickname,
+                    ...(variables.nickname ? { nickname: variables.nickname } : {}),
+                    primaryLanguage: updatedPrimaryLanguage, // 항상 업데이트 (null 포함)
                 };
                 setUser(updatedUser);
             }
-            // primaryLanguage는 User 타입에 없으므로 대시보드 재조회로 처리됨
         },
     });
 };

@@ -9,6 +9,7 @@ import type { RetrospectiveResponse } from '../../../types/api/retrospective.typ
 import { formatDateToKST } from '../../../utils/date';
 import { getCategoryLabel } from '../../../utils/constants';
 import { useProblemDetail } from '../../../hooks/api/useProblem';
+import { stripMarkdown, truncateText } from '../../../utils/markdownUtils';
 
 interface MyRetrospectiveCardProps {
     retrospective: RetrospectiveResponse;
@@ -63,29 +64,38 @@ export const MyRetrospectiveCard: FC<MyRetrospectiveCardProps> = ({ retrospectiv
             to={`/retrospectives/${retrospective.id}`}
             className="block bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all"
         >
-            {/* 제목 */}
+            {/* 제목 및 풀이 시간 */}
             <div className="mb-3">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    {getTitle()}
-                </h3>
+                <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                        {getTitle()}
+                    </h3>
+                    {(retrospective.solveTime || retrospective.timeTaken) && (
+                        <span className="px-2 py-0.5 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded text-xs font-medium flex items-center gap-1">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            {retrospective.solveTime || formatTimeTaken(retrospective.timeTaken)}
+                        </span>
+                    )}
+                </div>
             </div>
 
-            {/* 한 줄 요약 (있을 때만 표시) */}
-            {retrospective.summary && (
+            {/* 한 줄 요약 (summary가 있으면 요약만, 없으면 본문 일부) */}
+            {retrospective.summary ? (
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">
                     {retrospective.summary}
                 </p>
+            ) : (
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">
+                    {truncateText(stripMarkdown(retrospective.content), 150)}
+                </p>
             )}
 
-            {/* 메타 정보: 성공/실패, 소요 시간, 카테고리 */}
+            {/* 메타 정보: 성공/실패, 카테고리 */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 flex-wrap">
                     {getResultBadge(retrospective.solutionResult)}
-                    {retrospective.timeTaken && (
-                        <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded text-xs font-medium">
-                            ⏱️ {formatTimeTaken(retrospective.timeTaken)}
-                        </span>
-                    )}
                     {retrospective.solvedCategory && (
                         <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded text-xs font-medium">
                             {getCategoryLabel(retrospective.solvedCategory)}

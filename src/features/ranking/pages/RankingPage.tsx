@@ -12,7 +12,7 @@ import { Layout } from '../../../components/layout/Layout';
 import { useAuthStore } from '../../../stores/auth.store';
 import { TierBadge } from '../../dashboard/components/TierBadge';
 import { formatTierFromDifficulty } from '../../../utils/tier';
-import type { RankingPeriod, LeaderboardResponse } from '../../../types/api/ranking.types';
+import type { RankingPeriod } from '../../../types/api/ranking.types';
 
 export const RankingPage: FC = () => {
     const [period, setPeriod] = useState<RankingPeriod>('TOTAL');

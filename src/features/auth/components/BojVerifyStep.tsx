@@ -4,6 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import type { FC } from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { useBojVerify } from '../../../hooks/auth/useBojVerify';
@@ -97,15 +98,30 @@ export const BojVerifyStep: FC<BojVerifyStepProps> = ({ onNext, onBack, duplicat
             </div>
 
             <div className="space-y-4">
-                <Input
-                    label="BOJ ID"
-                    type="text"
-                    value={bojId}
-                    onChange={handleBojIdChange}
-                    error={error || undefined}
-                    placeholder="백준 온라인 저지 ID"
-                    disabled={isLoading}
-                />
+                <div>
+                    <Input
+                        label="BOJ ID"
+                        type="text"
+                        value={bojId}
+                        onChange={handleBojIdChange}
+                        error={error && !error.includes('이미 가입된') ? error : undefined}
+                        placeholder="백준 온라인 저지 ID"
+                        disabled={isLoading}
+                    />
+                    {error && error.includes('이미 가입된') && (
+                        <div className="mt-1.5">
+                            <p className="text-sm text-red-600 dark:text-red-400 mb-2">
+                                {error}
+                            </p>
+                            <Link
+                                to="/login"
+                                className="inline-flex items-center text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline font-medium"
+                            >
+                                로그인 페이지로 이동 →
+                            </Link>
+                        </div>
+                    )}
+                </div>
 
                 {code && (
                     <div className="p-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
@@ -177,8 +193,6 @@ export const BojVerifyStep: FC<BojVerifyStepProps> = ({ onNext, onBack, duplicat
                         </a>
                     </div>
                 )}
-
-                {error && <div className="text-red-600 text-sm">{error}</div>}
             </div>
 
             <div className="flex justify-between">

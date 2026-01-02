@@ -10,10 +10,16 @@ import { UserManagement } from '../components/UserManagement';
 import { QuoteManagement } from '../components/QuoteManagement';
 import { FeedbackManagement } from '../components/FeedbackManagement';
 import { ProblemCollector } from '../components/ProblemCollector';
+import { NoticeManagement } from '../components/NoticeManagement';
+import { PerformanceMetrics } from '../components/PerformanceMetrics';
+import { SystemSettings } from '../components/SystemSettings';
+import { AdminLogManagement } from '../components/AdminLogManagement';
+import { AiQualityWidget } from '../components/AiQualityWidget';
+import { AiServiceControl } from '../components/AiServiceControl';
 import { Spinner } from '../../../components/ui/Spinner';
 import { Layout } from '../../../components/layout/Layout';
 
-type TabType = 'dashboard' | 'users' | 'quotes' | 'feedbacks' | 'problems';
+type TabType = 'dashboard' | 'users' | 'quotes' | 'feedbacks' | 'problems' | 'notices' | 'metrics' | 'system' | 'logs';
 
 export const AdminDashboardPage: FC = () => {
     const [activeTab, setActiveTab] = useState<TabType>('dashboard');
@@ -25,6 +31,10 @@ export const AdminDashboardPage: FC = () => {
         { id: 'quotes' as TabType, label: '명언 관리' },
         { id: 'feedbacks' as TabType, label: '피드백 관리' },
         { id: 'problems' as TabType, label: '문제 크롤링' },
+        { id: 'notices' as TabType, label: '공지 관리' },
+        { id: 'metrics' as TabType, label: '성능 메트릭' },
+        { id: 'system' as TabType, label: '시스템' },
+        { id: 'logs' as TabType, label: 'AI 로그' },
     ];
 
     if (isLoading) {
@@ -84,6 +94,12 @@ export const AdminDashboardPage: FC = () => {
                             <div className="space-y-8">
                                 {/* 통계 카드 */}
                                 <AdminStatsChart stats={stats} />
+
+                                {/* AI 서비스 제어 위젯 */}
+                                <AiServiceControl />
+
+                                {/* AI 품질 모니터링 위젯 */}
+                                <AiQualityWidget />
 
                                 {/* 통계 그래프 */}
                                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 border border-gray-200 dark:border-gray-700">
@@ -160,6 +176,10 @@ export const AdminDashboardPage: FC = () => {
                         {activeTab === 'quotes' && <QuoteManagement />}
                         {activeTab === 'feedbacks' && <FeedbackManagement />}
                         {activeTab === 'problems' && <ProblemCollector />}
+                        {activeTab === 'notices' && <NoticeManagement />}
+                        {activeTab === 'metrics' && <PerformanceMetrics />}
+                        {activeTab === 'system' && <SystemSettings />}
+                        {activeTab === 'logs' && <AdminLogManagement />}
                     </div>
                 </div>
             </div>

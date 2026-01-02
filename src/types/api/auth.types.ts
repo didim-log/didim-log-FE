@@ -22,10 +22,15 @@ export interface SuperAdminRequest {
 
 export interface AuthResponse {
     token: string;
+    refreshToken: string;
     message: string;
     rating: number;
     tier: string;
     tierLevel: number;
+}
+
+export interface RefreshTokenRequest {
+    refreshToken: string;
 }
 
 export interface SignupFinalizeRequest {
@@ -78,6 +83,11 @@ export interface BojVerifyRequest {
 
 export interface BojVerifyResponse {
     verified: boolean;
+}
+
+export interface BojIdDuplicateCheckResponse {
+    isDuplicate: boolean;
+    message: string;
 }
 
 

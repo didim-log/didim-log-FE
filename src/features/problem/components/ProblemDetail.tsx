@@ -4,7 +4,8 @@
 
 import { useState } from 'react';
 import type { FC } from 'react';
-import { Copy, ExternalLink } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Copy, ExternalLink, ChevronLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatTierFromDifficulty, getTierColor } from '../../../utils/tier';
 import type { ProblemDetailResponse } from '../../../types/api/problem.types';
@@ -15,6 +16,7 @@ interface ProblemDetailProps {
 }
 
 export const ProblemDetail: FC<ProblemDetailProps> = ({ problem, isBlurred }) => {
+    const navigate = useNavigate();
     const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
     const handleCopySampleInput = async (input: string, index: number) => {
@@ -34,45 +36,64 @@ export const ProblemDetail: FC<ProblemDetailProps> = ({ problem, isBlurred }) =>
 
     return (
         <div className={`space-y-6 ${isBlurred ? 'blur-sm select-none pointer-events-none' : ''}`}>
-            {/* 문제 헤더 */}
+            {/* 🏗️ Header Area - 통합 툴바 */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
-                <div className="flex items-start justify-between mb-4">
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                            {problem.id}. {problem.title}
-                        </h1>
-                        <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center justify-between">
+                    {/* 왼쪽: 네비게이션 & 제목 */}
+                    <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-3 mb-2">
+                            {/* 이전 버튼 (아이콘) */}
+                            <button
+                                onClick={() => navigate(-1)}
+                                className="flex-shrink-0 p-1.5 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                                title="이전 페이지로"
+                            >
+                                <ChevronLeft className="w-5 h-5" />
+                            </button>
+                            {/* 문제 번호 & 제목 */}
+                            <h1 className="text-2xl font-bold text-gray-900 dark:text-white truncate">
+                                {problem.id}. {problem.title}
+                            </h1>
+                        </div>
+                        {/* 태그 */}
+                        <div className="flex items-center gap-2 flex-wrap ml-11">
                             <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded text-sm font-medium">
                                 {problem.category}
                             </span>
                             <span className={`px-2 py-1 rounded text-sm font-medium whitespace-nowrap ${getTierColor(problem.difficulty)}`}>
                                 {formatTierFromDifficulty(problem.difficulty, problem.difficultyLevel)}
                             </span>
+                            {/* 알고리즘 태그 */}
+                            {problem.tags.length > 0 && (
+                                <>
+                                    {problem.tags.map((tag, index) => (
+                                        <span
+                                            key={index}
+                                            className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded text-xs"
+                                        >
+                                            {tag}
+                                        </span>
+                                    ))}
+                                </>
+                            )}
                         </div>
                     </div>
-                    <a
-                        href={problem.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
-                    >
-                        백준에서 보기
-                    </a>
-                </div>
 
-                {/* 태그 */}
-                {problem.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                        {problem.tags.map((tag, index) => (
-                            <span
-                                key={index}
-                                className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded text-xs"
-                            >
-                                {tag}
-                            </span>
-                        ))}
+                    {/* 오른쪽: 도구들 */}
+                    <div className="flex items-center gap-3 ml-4">
+                        {/* 백준에서 보기 버튼 (Ghost 스타일) */}
+                        <a
+                            href={problem.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-sm font-medium transition-colors border border-gray-300 dark:border-gray-600"
+                            title="백준 온라인 저지에서 문제 보기"
+                        >
+                            <ExternalLink className="w-4 h-4" />
+                            백준에서 보기
+                        </a>
                     </div>
-                )}
+                </div>
             </div>
 
             {/* 문제 본문 */}
@@ -80,7 +101,7 @@ export const ProblemDetail: FC<ProblemDetailProps> = ({ problem, isBlurred }) =>
                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
                     <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">문제</h2>
                     <div
-                        className="prose dark:prose-invert max-w-none"
+                        className="prose dark:prose-invert max-w-none text-gray-900 dark:text-gray-100"
                         dangerouslySetInnerHTML={{ __html: problem.descriptionHtml! }}
                     />
                 </div>
@@ -106,7 +127,7 @@ export const ProblemDetail: FC<ProblemDetailProps> = ({ problem, isBlurred }) =>
                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
                     <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">입력</h2>
                     <div
-                        className="prose dark:prose-invert max-w-none"
+                        className="prose dark:prose-invert max-w-none text-gray-900 dark:text-gray-100"
                         dangerouslySetInnerHTML={{ __html: problem.inputDescriptionHtml }}
                     />
                 </div>
@@ -117,7 +138,7 @@ export const ProblemDetail: FC<ProblemDetailProps> = ({ problem, isBlurred }) =>
                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
                     <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">출력</h2>
                     <div
-                        className="prose dark:prose-invert max-w-none"
+                        className="prose dark:prose-invert max-w-none text-gray-900 dark:text-gray-100"
                         dangerouslySetInnerHTML={{ __html: problem.outputDescriptionHtml }}
                     />
                 </div>

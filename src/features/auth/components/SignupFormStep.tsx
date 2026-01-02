@@ -32,7 +32,6 @@ export const SignupFormStep: FC<SignupFormStepProps> = ({ bojId, onComplete, onB
         bojId?: string;
     }>({});
     const [passwordPolicy, setPasswordPolicy] = useState(validation.getPasswordPolicyDetails(''));
-    const emailInputRef = useRef<HTMLInputElement>(null);
     const bojIdInputRef = useRef<HTMLInputElement>(null);
 
     // API 에러 처리

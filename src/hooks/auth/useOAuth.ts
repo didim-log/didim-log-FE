@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/auth.store';
 import { setAuthHeader } from '../../api/client';
 import { useOnboardingStore } from '../../stores/onboarding.store';
+import { decodeJwt } from '../../utils/jwt';
 
 interface UseOAuthReturn {
     handleOAuthCallback: (searchParams: URLSearchParams) => Promise<void>;
@@ -19,6 +20,13 @@ export const useOAuth = (): UseOAuthReturn => {
 
     const handleOAuthCallback = useCallback(
         async (searchParams: URLSearchParams) => {
+            // 토큰/개인정보가 URL에 남지 않도록 즉시 정리(히스토리 replace)
+            try {
+                window.history.replaceState({}, '', window.location.pathname);
+            } catch {
+                // ignore
+            }
+
             const error = searchParams.get('error');
             if (error) {
                 navigate('/login', { state: { error }, replace: true });
@@ -53,16 +61,17 @@ export const useOAuth = (): UseOAuthReturn => {
                 // 동기적 처리 (useLogin과 동일)
                 setToken(token);
                 setAuthHeader(token);
-                // TODO: 토큰에서 사용자 정보 추출
+                const payload = decodeJwt(token);
+                const role = (payload?.role as 'USER' | 'ADMIN' | 'GUEST') || 'USER';
                 const user = {
-                    id: '',
+                    id: payload?.sub || '',
                     nickname: '',
                     bojId: null,
                     email: null,
-                    role: 'USER' as const,
+                    role,
                     rating: 0,
-                    tier: 'BRONZE',
-                    tierLevel: 3,
+                    tier: 'UNRATED',
+                    tierLevel: 0,
                     provider: 'GOOGLE' as const,
                 };
                 setUser(user);

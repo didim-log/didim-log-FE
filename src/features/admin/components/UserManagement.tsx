@@ -4,11 +4,12 @@
 
 import { useState } from 'react';
 import type { FC } from 'react';
-import { useAdminUsers, useDeleteUser, useUpdateUser } from '../../../hooks/api/useAdmin';
+import { useAdminUsers, useDeleteUser, useUpdateMember } from '../../../hooks/api/useAdmin';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { Spinner } from '../../../components/ui/Spinner';
-import type { AdminUserListRequest, AdminUserUpdateDto } from '../../../types/api/admin.types';
+import type { AdminUserListRequest, AdminMemberUpdateRequest } from '../../../types/api/admin.types';
+import { toast } from 'sonner';
 
 export const UserManagement: FC = () => {
     const [searchParams, setSearchParams] = useState<AdminUserListRequest>({
@@ -21,7 +22,10 @@ export const UserManagement: FC = () => {
 
     const { data, isLoading, error } = useAdminUsers(searchParams);
     const deleteMutation = useDeleteUser();
-    const updateMutation = useUpdateUser();
+    const updateMemberMutation = useUpdateMember();
+    const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
+    const [editNickname, setEditNickname] = useState('');
+    const [editPassword, setEditPassword] = useState('');
 
     const handleSearch = () => {
         setSearchParams({
@@ -37,9 +41,47 @@ export const UserManagement: FC = () => {
         if (confirm('정말 이 회원을 탈퇴시키시겠습니까?')) {
             try {
                 await deleteMutation.mutateAsync(studentId);
+                toast.success('회원이 성공적으로 탈퇴되었습니다.');
             } catch (error) {
                 console.error('Delete failed:', error);
+                toast.error('회원 탈퇴에 실패했습니다.');
             }
+        }
+    };
+
+    const handleStartEdit = (memberId: string, currentNickname: string) => {
+        setEditingMemberId(memberId);
+        setEditNickname(currentNickname);
+        setEditPassword('');
+    };
+
+    const handleCancelEdit = () => {
+        setEditingMemberId(null);
+        setEditNickname('');
+        setEditPassword('');
+    };
+
+    const handleSubmitEdit = async (memberId: string) => {
+        const updateData: AdminMemberUpdateRequest = {};
+        if (editNickname.trim() && editNickname.trim() !== data?.content.find((u) => u.id === memberId)?.nickname) {
+            updateData.nickname = editNickname.trim();
+        }
+        if (editPassword.trim()) {
+            updateData.password = editPassword.trim();
+        }
+
+        if (Object.keys(updateData).length === 0) {
+            handleCancelEdit();
+            return;
+        }
+
+        try {
+            await updateMemberMutation.mutateAsync({ memberId, data: updateData });
+            toast.success('회원 정보가 성공적으로 수정되었습니다.');
+            handleCancelEdit();
+        } catch (error: any) {
+            console.error('Update member failed:', error);
+            toast.error(error.response?.data?.message || '회원 정보 수정에 실패했습니다.');
         }
     };
 
@@ -123,31 +165,94 @@ export const UserManagement: FC = () => {
                         <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                             {data.content.map((user) => (
                                 <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                                        {user.nickname}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                                        {user.bojId || '-'}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                                        {user.email || '-'}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                                        {user.currentTier}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                                        {user.role}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                        <Button
-                                            onClick={() => handleDelete(user.id)}
-                                            variant="danger"
-                                            size="sm"
-                                            isLoading={deleteMutation.isPending}
-                                        >
-                                            삭제
-                                        </Button>
-                                    </td>
+                                    {editingMemberId === user.id ? (
+                                        <>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                                <Input
+                                                    type="text"
+                                                    value={editNickname}
+                                                    onChange={(e) => setEditNickname(e.target.value)}
+                                                    placeholder="닉네임"
+                                                    className="w-32 text-sm"
+                                                />
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                                                {user.bojId || '-'}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                                                {user.email || '-'}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                                                {user.currentTier}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                                                {user.role}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
+                                                <div className="flex flex-col gap-2">
+                                                    <Input
+                                                        type="password"
+                                                        value={editPassword}
+                                                        onChange={(e) => setEditPassword(e.target.value)}
+                                                        placeholder="비밀번호 (선택)"
+                                                        className="w-32 text-sm"
+                                                    />
+                                                    <div className="flex gap-1">
+                                                        <Button
+                                                            onClick={() => handleSubmitEdit(user.id)}
+                                                            variant="primary"
+                                                            size="sm"
+                                                            isLoading={updateMemberMutation.isPending}
+                                                        >
+                                                            저장
+                                                        </Button>
+                                                        <Button
+                                                            onClick={handleCancelEdit}
+                                                            variant="outline"
+                                                            size="sm"
+                                                        >
+                                                            취소
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                                                {user.nickname}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                                                {user.bojId || '-'}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                                                {user.email || '-'}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                                                {user.currentTier}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                                                {user.role}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
+                                                <Button
+                                                    onClick={() => handleStartEdit(user.id, user.nickname)}
+                                                    variant="outline"
+                                                    size="sm"
+                                                >
+                                                    수정
+                                                </Button>
+                                                <Button
+                                                    onClick={() => handleDelete(user.id)}
+                                                    variant="danger"
+                                                    size="sm"
+                                                    isLoading={deleteMutation.isPending}
+                                                >
+                                                    삭제
+                                                </Button>
+                                            </td>
+                                        </>
+                                    )}
                                 </tr>
                             ))}
                         </tbody>

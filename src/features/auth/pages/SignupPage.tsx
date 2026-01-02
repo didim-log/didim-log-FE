@@ -21,10 +21,8 @@ export const SignupPage: FC = () => {
         status?: number;
         fieldErrors?: Record<string, string[]>;
     } | null>(null);
-    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleComplete = async (data: { bojId: string; email: string; password: string }) => {
-        setIsSubmitting(true);
         setApiError(null); // 새 시도 시 에러 초기화
 
         try {
@@ -90,8 +88,6 @@ export const SignupPage: FC = () => {
                 });
                 toast.error('일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
             }
-        } finally {
-            setIsSubmitting(false);
         }
     };
 

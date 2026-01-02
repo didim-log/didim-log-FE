@@ -8,13 +8,12 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useRetrospective, useDeleteRetrospective } from '../../../hooks/api/useRetrospective';
 import { useProblemDetail } from '../../../hooks/api/useProblem';
-import { useDashboard } from '../../../hooks/api/useDashboard';
 import { Spinner } from '../../../components/ui/Spinner';
 import { Layout } from '../../../components/layout/Layout';
 import { Button } from '../../../components/ui/Button';
 import { useAuthStore } from '../../../stores/auth.store';
 import { toast } from 'sonner';
-import { Copy, Trash2 } from 'lucide-react';
+import { Copy, Trash2, Edit } from 'lucide-react';
 
 export const RetrospectiveDetailPage: FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -22,7 +21,6 @@ export const RetrospectiveDetailPage: FC = () => {
     const { user, token } = useAuthStore();
     const { data: retrospective, isLoading, error } = useRetrospective(id || '');
     const { data: problem, isLoading: isProblemLoading } = useProblemDetail(retrospective?.problemId || '');
-    const { data: dashboard } = useDashboard();
     const deleteMutation = useDeleteRetrospective();
 
     const handleDelete = async () => {
@@ -166,7 +164,7 @@ export const RetrospectiveDetailPage: FC = () => {
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                        <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 flex-wrap">
                             <span>{formatDate(retrospective.createdAt)}</span>
                             {retrospective.solutionResult && (
                                 <>
@@ -179,6 +177,21 @@ export const RetrospectiveDetailPage: FC = () => {
                                         }`}
                                     >
                                         {retrospective.solutionResult}
+                                    </span>
+                                </>
+                            )}
+                            {(retrospective.solveTime || retrospective.timeTaken) && (
+                                <>
+                                    <span>•</span>
+                                    <span className="px-2 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded flex items-center gap-1">
+                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        {retrospective.solveTime || (retrospective.timeTaken ? 
+                                            (retrospective.timeTaken < 60 
+                                                ? `${retrospective.timeTaken}초` 
+                                                : `${Math.floor(retrospective.timeTaken / 60)}분 ${retrospective.timeTaken % 60}초`) 
+                                            : '')}
                                     </span>
                                 </>
                             )}
@@ -207,16 +220,38 @@ export const RetrospectiveDetailPage: FC = () => {
                                 Markdown 복사
                             </Button>
                             {isAuthenticated && (
-                                <Button
-                                    onClick={handleDelete}
-                                    variant="danger"
-                                    isLoading={deleteMutation.isPending}
-                                    className="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold bg-red-600 hover:bg-red-700 text-white"
-                                    title="회고 삭제 (본인이 작성한 회고만 삭제 가능)"
-                                >
-                                    <Trash2 className="w-4 h-4" />
-                                    삭제
-                                </Button>
+                                <>
+                                    <Button
+                                        onClick={() => navigate(`/retrospectives/write`, {
+                                            state: {
+                                                retrospectiveId: retrospective.id,
+                                                problemId: retrospective.problemId,
+                                                template: retrospective.content,
+                                                isSuccess: retrospective.solutionResult === 'SUCCESS',
+                                                code: '',
+                                                solveTime: retrospective.solveTime,
+                                                initialSummary: retrospective.summary || '', // 한 줄 요약 전달
+                                                initialSolvedCategory: retrospective.solvedCategory || '', // 풀이 전략 태그 전달
+                                            }
+                                        })}
+                                        variant="outline"
+                                        className="flex items-center gap-2"
+                                        title="회고 수정 (본인이 작성한 회고만 수정 가능)"
+                                    >
+                                        <Edit className="w-4 h-4" />
+                                        수정
+                                    </Button>
+                                    <Button
+                                        onClick={handleDelete}
+                                        variant="danger"
+                                        isLoading={deleteMutation.isPending}
+                                        className="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold bg-red-600 hover:bg-red-700 text-white"
+                                        title="회고 삭제 (본인이 작성한 회고만 삭제 가능)"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                        삭제
+                                    </Button>
+                                </>
                             )}
                         </div>
 

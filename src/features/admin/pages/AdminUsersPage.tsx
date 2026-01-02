@@ -8,9 +8,13 @@ import { UserManagement } from '../components/UserManagement';
 import { QuoteManagement } from '../components/QuoteManagement';
 import { FeedbackManagement } from '../components/FeedbackManagement';
 import { ProblemCollector } from '../components/ProblemCollector';
+import { NoticeManagement } from '../components/NoticeManagement';
+import { PerformanceMetrics } from '../components/PerformanceMetrics';
+import { SystemSettings } from '../components/SystemSettings';
+import { AdminLogManagement } from '../components/AdminLogManagement';
 import { Layout } from '../../../components/layout/Layout';
 
-type TabType = 'users' | 'quotes' | 'feedbacks' | 'problems';
+type TabType = 'users' | 'quotes' | 'feedbacks' | 'problems' | 'notices' | 'metrics' | 'system' | 'logs';
 
 export const AdminUsersPage: FC = () => {
     const [activeTab, setActiveTab] = useState<TabType>('users');
@@ -20,6 +24,10 @@ export const AdminUsersPage: FC = () => {
         { id: 'quotes' as TabType, label: '명언 관리' },
         { id: 'feedbacks' as TabType, label: '피드백 관리' },
         { id: 'problems' as TabType, label: '문제 크롤링' },
+        { id: 'notices' as TabType, label: '공지 관리' },
+        { id: 'metrics' as TabType, label: '성능 메트릭' },
+        { id: 'system' as TabType, label: '시스템' },
+        { id: 'logs' as TabType, label: 'AI 로그' },
     ];
 
     return (
@@ -54,6 +62,10 @@ export const AdminUsersPage: FC = () => {
                         {activeTab === 'quotes' && <QuoteManagement />}
                         {activeTab === 'feedbacks' && <FeedbackManagement />}
                         {activeTab === 'problems' && <ProblemCollector />}
+                        {activeTab === 'notices' && <NoticeManagement />}
+                        {activeTab === 'metrics' && <PerformanceMetrics />}
+                        {activeTab === 'system' && <SystemSettings />}
+                        {activeTab === 'logs' && <AdminLogManagement />}
                     </div>
                 </div>
             </div>

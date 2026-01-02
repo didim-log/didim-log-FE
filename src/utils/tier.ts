@@ -50,18 +50,20 @@ export const formatTierFromDifficulty = (difficulty: string, difficultyLevel: nu
 
 /**
  * 티어 색상을 반환합니다.
+ * 백준 온라인 저지(BOJ)의 공식 티어 색상을 사용하되, 약간 연한 톤으로 조정합니다.
+ * 배경색은 약간 연한 색상, 텍스트는 흰색을 사용합니다.
  */
 export const getTierColor = (tier: string): string => {
     const tierColors: Record<string, string> = {
-        BRONZE: 'bg-amber-600 text-white',
-        SILVER: 'bg-gray-400 text-white',
-        GOLD: 'bg-yellow-500 text-white',
-        PLATINUM: 'bg-cyan-400 text-white',
-        DIAMOND: 'bg-blue-500 text-white',
-        RUBY: 'bg-red-500 text-white',
-        UNRATED: 'bg-gray-300 text-gray-700',
+        BRONZE: 'bg-[#AD5600]/80 text-white dark:bg-[#AD5600]/70 dark:text-white',
+        SILVER: 'bg-[#435F7A]/80 text-white dark:bg-[#435F7A]/70 dark:text-white',
+        GOLD: 'bg-[#EC9A00]/80 text-white dark:bg-[#EC9A00]/70 dark:text-white',
+        PLATINUM: 'bg-[#27E2A4]/80 text-white dark:bg-[#27E2A4]/70 dark:text-white',
+        DIAMOND: 'bg-[#00B4FC]/80 text-white dark:bg-[#00B4FC]/70 dark:text-white',
+        RUBY: 'bg-[#FF0062]/80 text-white dark:bg-[#FF0062]/70 dark:text-white',
+        UNRATED: 'bg-gray-400/80 text-white dark:bg-gray-500/70 dark:text-white',
     };
-    return tierColors[tier] || 'bg-gray-300 text-gray-700';
+    return tierColors[tier.toUpperCase()] || tierColors.UNRATED;
 };
 
 

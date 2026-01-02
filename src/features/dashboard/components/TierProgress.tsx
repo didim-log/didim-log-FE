@@ -21,7 +21,7 @@ export const TierProgress: FC<TierProgressProps> = ({ dashboard }) => {
     }
 
     const { currentTierTitle, nextTierTitle, currentRating, requiredRatingForNextTier, progressPercentage } = dashboard;
-    const { nickname, currentTier, currentTierLevel, consecutiveSolveDays } = dashboard.studentProfile;
+    const { nickname, currentTierLevel, consecutiveSolveDays } = dashboard.studentProfile;
 
     return (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-5 border border-gray-200 dark:border-gray-700">

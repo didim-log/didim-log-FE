@@ -13,7 +13,7 @@ import {
 } from '../../apis/authApi'
 import { toast } from 'sonner'
 import type { AxiosError } from 'axios'
-import type { ApiErrorResponse } from '../../utils/errorHandler'
+import type { ApiErrorResponse } from '../../types/api/error'
 
 const BOJ_ID_PATTERN = /^[a-zA-Z0-9_]*$/
 

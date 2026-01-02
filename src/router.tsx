@@ -31,6 +31,10 @@ import { RetrospectiveWritePage } from './features/retrospective/pages/Retrospec
 import { StatisticsPage } from './features/statistics/pages/StatisticsPage';
 import { RankingPage } from './features/ranking/pages/RankingPage';
 
+// 공지사항
+import { NoticeListPage } from './features/notice/pages/NoticeListPage';
+import { NoticeDetailPage } from './features/notice/pages/NoticeDetailPage';
+
 // 관리자 페이지
 import { AdminDashboardPage } from './features/admin/pages/AdminDashboardPage';
 import { AdminUsersPage } from './features/admin/pages/AdminUsersPage';
@@ -290,6 +294,24 @@ export const router = createBrowserRouter([
         element: (
             <PrivateRoute>
                 <RankingPage />
+            </PrivateRoute>
+        ),
+        errorElement: <ErrorPage />,
+    },
+    {
+        path: '/notices',
+        element: (
+            <PrivateRoute>
+                <NoticeListPage />
+            </PrivateRoute>
+        ),
+        errorElement: <ErrorPage />,
+    },
+    {
+        path: '/notices/:id',
+        element: (
+            <PrivateRoute>
+                <NoticeDetailPage />
             </PrivateRoute>
         ),
         errorElement: <ErrorPage />,

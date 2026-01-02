@@ -6,6 +6,9 @@ import { useEffect } from 'react';
 import type { FC } from 'react';
 import { OnboardingTour } from '../../auth/components/OnboardingTour';
 import { useDashboard } from '../../../hooks/api/useDashboard';
+import { useNotices } from '../../../hooks/api/useNotice';
+import { NoticeBanner } from '../../notice/components/NoticeBanner';
+import { NoticeWidget } from '../components/NoticeWidget';
 import { TierProgress } from '../components/TierProgress';
 import { RecommendedProblems } from '../components/RecommendedProblems';
 import { TodaySolvedList } from '../components/TodaySolvedList';
@@ -18,6 +21,7 @@ import { Layout } from '../../../components/layout/Layout';
 
 export const DashboardPage: FC = () => {
     const { data: dashboard, isLoading, error } = useDashboard();
+    const { data: noticePage } = useNotices({ page: 1, size: 1 });
     const { isNewUser, hasCompletedOnboarding } = useOnboardingStore();
     const { setUser, user } = useAuthStore();
 
@@ -86,6 +90,9 @@ export const DashboardPage: FC = () => {
                     {/* 온보딩 투어 (신규 유저 + 미완료 시에만) */}
                     {isNewUser && !hasCompletedOnboarding && <OnboardingTour />}
 
+                    {/* 공지사항 얇은 배너 (UI 방해 최소화) */}
+                    {noticePage?.content?.[0] && <NoticeBanner notice={noticePage.content[0]} />}
+
                     {/* 메인 컨텐츠 그리드 - 2:1 비율 레이아웃 */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                         {/* 좌측 컬럼 (메인 콘텐츠) - lg:col-span-2 */}
@@ -103,6 +110,11 @@ export const DashboardPage: FC = () => {
 
                         {/* 우측 컬럼 (사이드바) - lg:col-span-1 */}
                         <div className="space-y-4">
+                            {/* 공지사항 위젯 */}
+                            <div id="notice-section">
+                                <NoticeWidget />
+                            </div>
+
                             {/* 통계 미리보기 */}
                             <div id="statistics-preview-section">
                                 <StatisticsPreview />
@@ -112,7 +124,6 @@ export const DashboardPage: FC = () => {
                             <div id="today-solved-section">
                                 <TodaySolvedList
                                     problems={dashboard.todaySolvedProblems ?? []}
-                                    count={dashboard.todaySolvedCount ?? 0}
                                 />
                             </div>
 

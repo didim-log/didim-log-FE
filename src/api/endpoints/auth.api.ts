@@ -18,6 +18,8 @@ import type {
     BojCodeIssueResponse,
     BojVerifyRequest,
     BojVerifyResponse,
+    BojIdDuplicateCheckResponse,
+    RefreshTokenRequest,
 } from '../../types/api/auth.types';
 
 export const authApi = {
@@ -107,21 +109,24 @@ export const authApi = {
      * @returns 중복 여부 (true: 중복됨, false: 사용 가능)
      */
     checkIdDuplicate: async (bojId: string): Promise<boolean> => {
-        // TODO: 백엔드 API 구현 후 실제 엔드포인트로 연결
-        // 임시로 false 반환 (중복 아님)
         try {
-            // 추후 구현: GET /api/v1/auth/check-boj-id/{bojId} 또는 POST /api/v1/auth/check-boj-id
-            // const response = await apiClient.get(`/api/v1/auth/check-boj-id/${bojId}`);
-            // return response.data.exists;
-            return false;
+            const response = await apiClient.get<BojIdDuplicateCheckResponse>('/api/v1/auth/check-duplicate', {
+                params: { bojId },
+            });
+            return response.data.isDuplicate;
         } catch (error: any) {
-            // 409 에러가 발생하면 중복된 것으로 간주
-            if (error.response?.status === 409) {
-                return true;
-            }
-            // 기타 에러는 중복이 아닌 것으로 간주
+            // 네트워크/서버 오류는 중복 여부를 알 수 없으므로 false로 처리하고, 상위에서 에러 UX를 선택할 수 있게 합니다.
+            // (여기서 throw로 바꾸면 회원가입 단계 UX가 거칠어질 수 있어 보수적으로 처리)
             return false;
         }
+    },
+
+    /**
+     * 토큰 갱신
+     */
+    refresh: async (data: RefreshTokenRequest): Promise<AuthResponse> => {
+        const response = await apiClient.post<AuthResponse>('/api/v1/auth/refresh', data);
+        return response.data;
     },
 };
 

@@ -2,7 +2,7 @@
  * 회고 에디터 컴포넌트
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { FC } from 'react';
 import type { RetrospectiveRequest } from '../../../types/api/retrospective.types';
 import { TagInput } from '../../../components/ui/TagInput';
@@ -15,6 +15,7 @@ interface RetrospectiveEditorProps {
     onSubmit: (data: RetrospectiveRequest) => void;
     isLoading?: boolean;
     onContentChange?: (content: string) => void;
+    recommendedTags?: string[]; // 문제의 카테고리/태그를 추천 태그로 사용
 }
 
 export const RetrospectiveEditor: FC<RetrospectiveEditorProps> = ({
@@ -25,6 +26,7 @@ export const RetrospectiveEditor: FC<RetrospectiveEditorProps> = ({
     onSubmit,
     isLoading = false,
     onContentChange,
+    recommendedTags = [],
 }) => {
     const [content, setContent] = useState(initialContent);
     const [summary, setSummary] = useState(initialSummary);
@@ -33,13 +35,41 @@ export const RetrospectiveEditor: FC<RetrospectiveEditorProps> = ({
         initialSolvedCategory ? initialSolvedCategory.split(',').filter(Boolean) : []
     );
     const [errors, setErrors] = useState<{ content?: string; summary?: string }>({});
+    const [hasUserTypedSummary, setHasUserTypedSummary] = useState(false);
+    const prevInitialContentRef = useRef<string>(initialContent);
+    const isMountedRef = useRef<boolean>(false);
 
+    // 초기 마운트 시에만 모든 초기값 설정
     useEffect(() => {
-        setContent(initialContent);
-        setSummary(initialSummary);
-        setResultType(initialResultType);
-        setSolvedCategories(initialSolvedCategory ? initialSolvedCategory.split(',').filter(Boolean) : []);
+        if (!isMountedRef.current) {
+            setContent(initialContent);
+            if (initialSummary) {
+                setSummary(initialSummary);
+            }
+            setResultType(initialResultType);
+            setSolvedCategories(initialSolvedCategory ? initialSolvedCategory.split(',').filter(Boolean) : []);
+            prevInitialContentRef.current = initialContent;
+            isMountedRef.current = true;
+        }
     }, [initialContent, initialSummary, initialResultType, initialSolvedCategory]);
+
+    // initialContent가 변경될 때만 content 업데이트 (템플릿 로드 시)
+    // summary는 절대 덮어쓰지 않음 - 사용자 입력 보존
+    useEffect(() => {
+        // 마운트 후이고, initialContent가 실제로 변경된 경우에만 업데이트
+        if (isMountedRef.current && initialContent && initialContent !== prevInitialContentRef.current) {
+            setContent(initialContent);
+            prevInitialContentRef.current = initialContent;
+        }
+    }, [initialContent]);
+
+    // summary 입력 핸들러: 사용자가 입력했음을 표시
+    const handleSummaryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSummary(e.target.value);
+        if (!hasUserTypedSummary && e.target.value.trim()) {
+            setHasUserTypedSummary(true);
+        }
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -50,7 +80,17 @@ export const RetrospectiveEditor: FC<RetrospectiveEditorProps> = ({
             return;
         }
 
-        if (summary && summary.length > 200) {
+        if (content.trim().length > 2000) {
+            setErrors({ content: '회고 내용은 2000자 이하여야 합니다.' });
+            return;
+        }
+
+        if (!summary.trim()) {
+            setErrors({ summary: '한 줄 요약을 입력해주세요.' });
+            return;
+        }
+
+        if (summary.length > 200) {
             setErrors({ summary: '한 줄 요약은 200자 이하여야 합니다.' });
             return;
         }
@@ -60,7 +100,7 @@ export const RetrospectiveEditor: FC<RetrospectiveEditorProps> = ({
 
         onSubmit({
             content: content.trim(),
-            summary: summary.trim() || null,
+            summary: summary.trim(),
             resultType: (resultType || null) as any,
             solvedCategory: solvedCategoryString,
         });
@@ -70,15 +110,16 @@ export const RetrospectiveEditor: FC<RetrospectiveEditorProps> = ({
         <form onSubmit={handleSubmit} className="space-y-6">
             <div>
                 <label htmlFor="summary" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    한 줄 요약 (선택)
+                    한 줄 요약 <span className="text-red-500">*</span>
                 </label>
                 <input
                     id="summary"
                     type="text"
                     value={summary}
-                    onChange={(e) => setSummary(e.target.value)}
-                    placeholder="회고를 한 줄로 요약해주세요"
+                    onChange={handleSummaryChange}
+                    placeholder="회고를 한 줄로 요약해주세요 (필수)"
                     maxLength={200}
+                    required
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{summary.length}/200</p>
@@ -103,14 +144,13 @@ export const RetrospectiveEditor: FC<RetrospectiveEditorProps> = ({
             </div>
 
             <div>
-                <label htmlFor="solvedCategory" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    풀이 전략/알고리즘 (선택, 여러 개 선택 가능)
-                </label>
                 <TagInput
                     value={solvedCategories}
                     onChange={setSolvedCategories}
                     placeholder="알고리즘을 입력하고 Enter를 누르세요"
                     showRecommendedTags={true}
+                    recommendedTags={recommendedTags}
+                    label="풀이 전략/알고리즘 (선택, 여러 개 선택 가능)"
                 />
                 <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
                     직접 입력하거나 아래 추천 태그를 클릭하여 추가할 수 있습니다.
@@ -128,13 +168,14 @@ export const RetrospectiveEditor: FC<RetrospectiveEditorProps> = ({
                         setContent(e.target.value);
                         onContentChange?.(e.target.value);
                     }}
-                    placeholder="회고 내용을 작성해주세요 (10자 이상)"
+                    placeholder="회고 내용을 작성해주세요 (10자 이상, 최대 2000자)"
                     rows={20}
                     minLength={10}
+                    maxLength={2000}
                     className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm resize-y min-h-[500px]"
                 />
-                <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                    {content.length}자 {content.length < 10 && '(최소 10자 필요)'}
+                <p className={`mt-2 text-xs ${content.length > 2000 ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                    {content.length}/2000자 {content.length < 10 && '(최소 10자 필요)'} {content.length > 2000 && '(최대 2000자 초과)'}
                 </p>
                 {errors.content && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.content}</p>}
             </div>
@@ -142,7 +183,7 @@ export const RetrospectiveEditor: FC<RetrospectiveEditorProps> = ({
             <div className="flex justify-end">
                 <button
                     type="submit"
-                    disabled={isLoading || content.trim().length < 10}
+                    disabled={isLoading || content.trim().length < 10 || content.trim().length > 2000 || !summary.trim()}
                     className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors"
                 >
                     {isLoading ? '저장 중...' : '저장'}

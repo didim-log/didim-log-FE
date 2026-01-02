@@ -75,12 +75,17 @@ export const TopRankPodium: FC<TopRankPodiumProps> = ({ ranks }) => {
                             <div className="flex items-center gap-2 mb-2">
                                 <Crown className="w-6 h-6 text-yellow-500" />
                                 <span className="text-xs font-semibold text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/30 px-2 py-1 rounded">
-                                    Top Solver
+                                    🥇 1위
                                 </span>
                             </div>
                         ) : (
-                            <div className="text-2xl font-bold text-gray-400 dark:text-gray-500 mb-2">
-                                {rank === 2 ? '🥈' : '🥉'}
+                            <div className="mb-2">
+                                <div className="text-2xl mb-1">
+                                    {rank === 2 ? '🥈' : '🥉'}
+                                </div>
+                                <div className="text-xs font-semibold text-gray-600 dark:text-gray-400">
+                                    {rank}위
+                                </div>
                             </div>
                         )}
                     </div>
@@ -121,9 +126,14 @@ export const TopRankPodium: FC<TopRankPodiumProps> = ({ ranks }) => {
 
     return (
         <div className="bg-gradient-to-b from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-xl shadow-md p-8 border border-gray-200 dark:border-gray-700 mb-8">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6 text-center">
-                🏆 Top 3 Solvers
-            </h2>
+            <div className="mb-6 text-center">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                    🏆 열정 회고 랭킹 Top 3
+                </h2>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                    랭킹은 작성된 회고 수를 기준으로 산정됩니다.
+                </p>
+            </div>
             <div className="flex items-end justify-center gap-4 max-w-4xl mx-auto">
                 {/* 2등 (왼쪽) - 항상 렌더링 */}
                 <RankCard rank={2} user={second} position="left" />

@@ -57,6 +57,20 @@ export const retrospectiveApi = {
     },
 
     /**
+     * 회고 수정
+     */
+    updateRetrospective: async (
+        retrospectiveId: string,
+        data: RetrospectiveRequest
+    ): Promise<RetrospectiveResponse> => {
+        const response = await apiClient.patch<RetrospectiveResponse>(
+            `/api/v1/retrospectives/${retrospectiveId}`,
+            data
+        );
+        return response.data;
+    },
+
+    /**
      * 회고 삭제
      */
     deleteRetrospective: async (retrospectiveId: string): Promise<void> => {

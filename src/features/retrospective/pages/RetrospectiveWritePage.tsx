@@ -5,28 +5,36 @@
 import { useState, useEffect } from 'react';
 import type { FC } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useCreateRetrospective, useStaticTemplate } from '../../../hooks/api/useRetrospective';
+import { useCreateRetrospective, useUpdateRetrospective, useStaticTemplate } from '../../../hooks/api/useRetrospective';
 import { useProblemDetail } from '../../../hooks/api/useProblem';
 import { RetrospectiveEditor } from '../components/RetrospectiveEditor';
 import { Spinner } from '../../../components/ui/Spinner';
 import { Layout } from '../../../components/layout/Layout';
 import { Button } from '../../../components/ui/Button';
-import { TierBadge } from '../../dashboard/components/TierBadge';
 import { formatTierFromDifficulty, getTierColor } from '../../../utils/tier';
+import { getLanguageBadgeColor, getLanguageLabel } from '../../../utils/badge';
 import { toast } from 'sonner';
-import { Copy } from 'lucide-react';
+import { Copy, ChevronLeft } from 'lucide-react';
 import type { RetrospectiveRequest } from '../../../types/api/retrospective.types';
+import { AiReviewCard } from '../../../components/retrospective/AiReviewCard';
 
 export const RetrospectiveWritePage: FC = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const createMutation = useCreateRetrospective();
+    const updateMutation = useUpdateRetrospective();
     const staticTemplateMutation = useStaticTemplate();
 
+    const [retrospectiveId, setRetrospectiveId] = useState<string | null>(null);
     const [problemId, setProblemId] = useState<string>('');
     const [template, setTemplate] = useState<string>('');
     const [isSuccess, setIsSuccess] = useState<boolean>(false);
     const [content, setContent] = useState<string>('');
+    const [summary, setSummary] = useState<string>(''); // 한 줄 요약 상태 추가
+    const [code, setCode] = useState<string>('');
+    const [logId, setLogId] = useState<string | null>(null);
+    const [solveTime, setSolveTime] = useState<string | null>(null);
+    const [language, setLanguage] = useState<string>('text'); // 선택한 언어 정보
     const [isLoadingTemplate, setIsLoadingTemplate] = useState(false);
     const [hasLoadedTemplate, setHasLoadedTemplate] = useState(false);
 
@@ -63,14 +71,25 @@ export const RetrospectiveWritePage: FC = () => {
     useEffect(() => {
         // location.state에서 전달된 데이터 확인
         const state = location.state as {
+            retrospectiveId?: string;
             problemId?: string;
             template?: string;
             isSuccess?: boolean;
             code?: string;
+            logId?: string | null;
+            solveTime?: string | null;
+            language?: string;
+            initialSummary?: string; // 한 줄 요약 추가
+            initialSolvedCategory?: string; // 풀이 전략 태그 추가
         } | null;
 
         if (state) {
-            const { problemId: pid, template: temp, isSuccess: success, code: codeValue } = state;
+            const { retrospectiveId: retroId, problemId: pid, template: temp, isSuccess: success, code: codeValue, logId: createdLogId, solveTime: stateSolveTime, language: stateLanguage, initialSummary: stateSummary } = state;
+            
+            // 수정 모드인 경우 retrospectiveId 설정
+            if (retroId) {
+                setRetrospectiveId(retroId);
+            }
             
             // problemId 설정 (최우선)
             if (pid) {
@@ -78,7 +97,12 @@ export const RetrospectiveWritePage: FC = () => {
             }
             
             setIsSuccess(success ?? false);
-
+            setLogId(createdLogId ?? null);
+            setCode(codeValue ?? '');
+            setSolveTime(stateSolveTime ?? null);
+            setLanguage(stateLanguage ?? 'text');
+            setSummary(stateSummary ?? ''); // 한 줄 요약 설정
+            
             // 템플릿 로드 우선순위:
             // 1. 템플릿이 이미 있으면 즉시 사용
             if (temp) {
@@ -101,6 +125,12 @@ export const RetrospectiveWritePage: FC = () => {
             }
         }
     }, [location.state]);
+
+    // 디버깅: logId 상태 확인
+    useEffect(() => {
+        console.log('[RetrospectiveWritePage] Current logId state:', logId);
+        console.log('[RetrospectiveWritePage] location.state:', location.state);
+    }, [logId, location.state]);
 
     const handleCopyMarkdown = async () => {
         if (!content.trim() || !problemId) {
@@ -141,13 +171,27 @@ export const RetrospectiveWritePage: FC = () => {
         }
 
         try {
-            await createMutation.mutateAsync({ problemId, data });
-            toast.success('회고가 저장되었습니다.');
-            navigate('/retrospectives');
+            // 수정 모드인 경우
+            if (retrospectiveId) {
+                await updateMutation.mutateAsync({ retrospectiveId, data });
+                toast.success('회고가 수정되었습니다.');
+                navigate(`/retrospectives/${retrospectiveId}`);
+            } else {
+                // 새로 작성하는 경우
+                await createMutation.mutateAsync({ problemId, data });
+                toast.success('회고가 저장되었습니다.');
+                navigate('/retrospectives');
+            }
         } catch (error: any) {
-            console.error('Create failed:', error);
-            const errorMessage = error?.response?.data?.message || error?.message || '회고 저장에 실패했습니다.';
-            toast.error(errorMessage);
+            console.error('Save failed:', error);
+            const errorMessage = error?.response?.data?.message || error?.message || (retrospectiveId ? '회고 수정에 실패했습니다.' : '회고 저장에 실패했습니다.');
+            
+            // 백엔드에서 소유자 검증 실패 시
+            if (error?.response?.status === 403 || error?.response?.status === 400) {
+                toast.error('본인이 작성한 회고만 수정할 수 있습니다.');
+            } else {
+                toast.error(errorMessage);
+            }
         }
     };
 
@@ -159,40 +203,48 @@ export const RetrospectiveWritePage: FC = () => {
         <Layout>
             <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4">
                 <div className="max-w-4xl mx-auto space-y-8">
-                    {/* 문제 정보 헤더 카드 */}
+                    {/* 🎨 Global Header - 표준화된 네비게이션 */}
                     {problemId && (
-                        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 border border-gray-200 dark:border-gray-700">
-                            {isProblemLoading ? (
-                                <div className="flex items-center justify-center py-8">
-                                    <Spinner />
-                                    <span className="ml-3 text-gray-600 dark:text-gray-400">문제 정보를 불러오는 중...</span>
-                                </div>
-                            ) : problem ? (
-                                <div className="flex items-start gap-6">
-                                    {/* 티어 이미지 */}
-                                    <div className="flex-shrink-0">
-                                        <TierBadge tierLevel={problem.difficultyLevel} size="lg" />
+                        <div className="flex items-center justify-between mb-6">
+                            {/* 왼쪽: 네비게이션 & 제목 */}
+                            <div className="flex-1 min-w-0">
+                                {isProblemLoading ? (
+                                    <div className="flex items-center gap-3">
+                                        <Spinner />
+                                        <span className="text-gray-600 dark:text-gray-400">문제 정보를 불러오는 중...</span>
                                     </div>
-                                    
-                                    {/* 문제 정보 */}
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-start justify-between mb-4">
-                                            <div className="flex-1">
-                                                <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">
-                                                    {problem.id}. {problem.title}
-                                                </h1>
-                                                <div className="flex items-center gap-3 flex-wrap mb-3">
-                                                    <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-lg text-sm font-medium">
-                                                        {problem.category}
+                                ) : problem ? (
+                                    <div className="flex items-center gap-3">
+                                        {/* 이전 버튼 (아이콘만) */}
+                                        <button
+                                            onClick={() => navigate(-1)}
+                                            className="flex-shrink-0 p-1.5 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                                            title="이전 페이지로"
+                                        >
+                                            <ChevronLeft className="w-5 h-5" />
+                                        </button>
+                                        {/* 문제 번호 & 제목 */}
+                                        <div className="flex items-center gap-3 flex-wrap">
+                                            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                                                {problem.id}. {problem.title}
+                                            </h1>
+                                            {/* 태그 */}
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded text-sm font-medium">
+                                                    {problem.category}
+                                                </span>
+                                                <span className={`px-2 py-1 rounded text-sm font-medium whitespace-nowrap ${getTierColor(problem.difficulty)}`}>
+                                                    {formatTierFromDifficulty(problem.difficulty, problem.difficultyLevel)}
+                                                </span>
+                                                {/* 언어 배지 */}
+                                                {language && language !== 'text' && (
+                                                    <span className={`px-2 py-1 rounded text-sm font-medium ${getLanguageBadgeColor(language)}`}>
+                                                        {getLanguageLabel(language)}
                                                     </span>
-                                                    <span className={`px-3 py-1 rounded-lg text-sm font-medium ${getTierColor(problem.difficulty)}`}>
-                                                        {formatTierFromDifficulty(problem.difficulty, problem.difficultyLevel)}
-                                                    </span>
-                                                </div>
-                                                {/* 알고리즘 태그 표시 */}
+                                                )}
+                                                {/* 알고리즘 태그 */}
                                                 {problem.tags && problem.tags.length > 0 && (
-                                                    <div className="flex items-center gap-2 flex-wrap">
-                                                        <span className="text-xs text-gray-500 dark:text-gray-400">태그:</span>
+                                                    <>
                                                         {problem.tags.map((tag, index) => (
                                                             <span
                                                                 key={index}
@@ -201,24 +253,33 @@ export const RetrospectiveWritePage: FC = () => {
                                                                 {tag}
                                                             </span>
                                                         ))}
-                                                    </div>
+                                                    </>
                                                 )}
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            ) : (
-                                <div className="text-center py-4">
-                                    <p className="text-gray-600 dark:text-gray-400">문제 #{problemId} 정보를 불러올 수 없습니다.</p>
-                                </div>
-                            )}
+                                ) : (
+                                    <div className="flex items-center gap-3">
+                                        <button
+                                            onClick={() => navigate(-1)}
+                                            className="flex-shrink-0 p-1.5 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                                            title="이전 페이지로"
+                                        >
+                                            <ChevronLeft className="w-5 h-5" />
+                                        </button>
+                                        <p className="text-gray-600 dark:text-gray-400">문제 #{problemId} 정보를 불러올 수 없습니다.</p>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     )}
 
                     {/* 헤더 (액션 버튼) */}
                     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 border border-gray-200 dark:border-gray-700">
                         <div className="flex items-center justify-between">
-                            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">회고 작성</h2>
+                            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                                {retrospectiveId ? '회고 수정' : '회고 작성'}
+                            </h2>
                             <div className="flex items-center gap-3">
                                 <Button 
                                     onClick={handleCopyMarkdown} 
@@ -230,6 +291,17 @@ export const RetrospectiveWritePage: FC = () => {
                                 </Button>
                             </div>
                         </div>
+                    </div>
+
+                    {/* AI 한 줄 인사이트 (회고 작성 헤더 아래, 한 줄 요약 위) */}
+                    <div className="mb-6">
+                        <AiReviewCard 
+                            logId={logId} 
+                            code={code}
+                            isSuccess={isSuccess}
+                            problemId={problemId}
+                            problemTitle={problem?.title}
+                        />
                     </div>
 
                     {isLoadingTemplate && (
@@ -246,10 +318,27 @@ export const RetrospectiveWritePage: FC = () => {
                         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 border border-gray-200 dark:border-gray-700">
                             <RetrospectiveEditor
                                 initialContent={content || template}
+                                initialSummary={summary}
                                 initialResultType={isSuccess ? 'SUCCESS' : 'FAIL'}
-                                onSubmit={handleSubmit}
-                                isLoading={createMutation.isPending}
+                                initialSolvedCategory={location.state?.initialSolvedCategory}
+                                onSubmit={(data) => {
+                                    handleSubmit({
+                                        ...data,
+                                        solveTime: solveTime || data.solveTime,
+                                    });
+                                }}
+                                isLoading={createMutation.isPending || updateMutation.isPending}
                                 onContentChange={handleContentChange}
+                                recommendedTags={problem ? (() => {
+                                    const tags = problem.tags || [];
+                                    const category = problem.category;
+                                    // category가 tags에 없으면 추가, 있으면 제외하여 중복 방지
+                                    const allTags = category && !tags.includes(category)
+                                        ? [...tags, category]
+                                        : tags;
+                                    // 중복 제거 및 빈 값 필터링
+                                    return Array.from(new Set(allTags.filter(Boolean)));
+                                })() : []}
                             />
                         </div>
                     )}
