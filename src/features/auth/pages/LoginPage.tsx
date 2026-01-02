@@ -198,8 +198,10 @@ export const LoginPage: FC = () => {
         window.location.href = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'}/oauth2/authorization/${provider}`;
     };
 
+    const isUnderMaintenance = !isCheckingMaintenance && maintenanceStatus?.underMaintenance;
+
     return (
-        <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
+        <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900 text-gray-900 dark:text-white relative">
             <div className="max-w-md w-full space-y-8 p-8">
                 {/* 헤더 */}
                 <div className="text-center">
@@ -208,24 +210,41 @@ export const LoginPage: FC = () => {
                     <p className="text-gray-600 dark:text-gray-400 text-sm">체계적인 알고리즘 학습을 시작하세요</p>
                 </div>
 
-                {/* 유지보수 알림 */}
-                {!isCheckingMaintenance && maintenanceStatus?.underMaintenance && (
-                    <div className="p-4 bg-yellow-50 dark:bg-yellow-900/30 border-l-4 border-yellow-500 dark:border-yellow-500 rounded-lg">
-                        <div className="flex items-start gap-2">
-                            <svg className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                                <path
-                                    fillRule="evenodd"
-                                    d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                                    clipRule="evenodd"
-                                />
-                            </svg>
-                            <div className="flex-1">
-                                <p className="text-sm text-yellow-800 dark:text-yellow-200 font-medium mb-1">
+                {/* 유지보수 오버레이 */}
+                {isUnderMaintenance && (
+                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6 space-y-4">
+                            <div className="flex items-center justify-center mb-4">
+                                <svg className="w-16 h-16 text-yellow-500 dark:text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path
+                                        fillRule="evenodd"
+                                        d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                        clipRule="evenodd"
+                                    />
+                                </svg>
+                            </div>
+                            <div className="text-center">
+                                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
                                     서버 점검 중
+                                </h3>
+                                <p className="text-gray-600 dark:text-gray-400">
+                                    {maintenanceStatus?.maintenanceMessage || '서버 점검 중입니다. 잠시 후 다시 시도해주세요.'}
                                 </p>
-                                <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                                    {maintenanceStatus.maintenanceMessage || '서버 점검 중입니다. 잠시 후 다시 시도해주세요.'}
-                                </p>
+                            </div>
+                            <div className="text-right mt-6">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        // 관리자 로그인을 위한 임시 우회 (로컬 개발용)
+                                        const shouldBypass = window.confirm('관리자 로그인을 진행하시겠습니까?');
+                                        if (shouldBypass) {
+                                            setMaintenanceStatus({ underMaintenance: false, maintenanceMessage: null });
+                                        }
+                                    }}
+                                    className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 underline"
+                                >
+                                    Admin Login
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -245,12 +264,12 @@ export const LoginPage: FC = () => {
                                 onChange={handleBojIdChange}
                                 onBlur={() => handleBlur('bojId')}
                                 placeholder="백준 온라인 저지 ID"
-                                disabled={isSubmitting}
+                                disabled={isSubmitting || isUnderMaintenance}
                                 className={`w-full px-4 py-3 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 transition-all ${
                                     errors.bojId
                                         ? 'border-red-500 dark:border-red-500 focus:ring-red-500 dark:focus:ring-red-500'
                                         : 'border-gray-300 dark:border-gray-600 focus:ring-blue-500 dark:focus:ring-blue-400'
-                                } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                } ${isSubmitting || isUnderMaintenance ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 autoComplete="username"
                             />
                             {errors.bojId && (
@@ -302,12 +321,12 @@ export const LoginPage: FC = () => {
                                 onChange={handlePasswordChange}
                                 onBlur={() => handleBlur('password')}
                                 placeholder="비밀번호를 입력하세요"
-                                disabled={isSubmitting}
+                                disabled={isSubmitting || isUnderMaintenance}
                                 className={`w-full px-4 py-3 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 transition-all ${
                                     errors.password
                                         ? 'border-red-500 dark:border-red-500 focus:ring-red-500 dark:focus:ring-red-500'
                                         : 'border-gray-300 dark:border-gray-600 focus:ring-blue-500 dark:focus:ring-blue-400'
-                                } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                } ${isSubmitting || isUnderMaintenance ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 autoComplete="current-password"
                             />
                             {errors.password && (
@@ -353,9 +372,9 @@ export const LoginPage: FC = () => {
                         variant="primary"
                         size="lg"
                         isLoading={isSubmitting}
-                        disabled={!isFormValid() || isSubmitting}
+                        disabled={!isFormValid() || isSubmitting || isUnderMaintenance}
                         className={`w-full font-semibold transition-all duration-200 ${
-                            isFormValid() && !isSubmitting
+                            isFormValid() && !isSubmitting && !isUnderMaintenance
                                 ? 'bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white shadow-md hover:shadow-lg transform hover:-translate-y-0.5'
                                 : 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
                         }`}
@@ -390,7 +409,12 @@ export const LoginPage: FC = () => {
                     <button
                         type="button"
                         onClick={() => handleOAuthLogin('google')}
-                        className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                        disabled={isUnderMaintenance}
+                        className={`w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 transition-colors ${
+                            isUnderMaintenance
+                                ? 'opacity-50 cursor-not-allowed'
+                                : 'hover:bg-gray-50 dark:hover:bg-gray-700'
+                        }`}
                     >
                         <svg className="w-5 h-5" viewBox="0 0 24 24">
                             <path
@@ -416,7 +440,12 @@ export const LoginPage: FC = () => {
                     <button
                         type="button"
                         onClick={() => handleOAuthLogin('github')}
-                        className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-900 dark:bg-gray-800 hover:bg-gray-800 dark:hover:bg-gray-700 text-white transition-colors"
+                        disabled={isUnderMaintenance}
+                        className={`w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-900 dark:bg-gray-800 text-white transition-colors ${
+                            isUnderMaintenance
+                                ? 'opacity-50 cursor-not-allowed'
+                                : 'hover:bg-gray-800 dark:hover:bg-gray-700'
+                        }`}
                     >
                         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                             <path
@@ -431,7 +460,12 @@ export const LoginPage: FC = () => {
                     <button
                         type="button"
                         onClick={() => handleOAuthLogin('naver')}
-                        className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-green-500 dark:bg-green-600 hover:bg-green-600 dark:hover:bg-green-700 text-white transition-colors"
+                        disabled={isUnderMaintenance}
+                        className={`w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-green-500 dark:bg-green-600 text-white transition-colors ${
+                            isUnderMaintenance
+                                ? 'opacity-50 cursor-not-allowed'
+                                : 'hover:bg-green-600 dark:hover:bg-green-700'
+                        }`}
                     >
                         <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M16.273 12.845L7.376 0H0v24h7.726V11.156L16.624 24H24V0h-7.727v12.845z" />
