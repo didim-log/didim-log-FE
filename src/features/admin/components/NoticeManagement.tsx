@@ -59,13 +59,14 @@ export const NoticeManagement: FC = () => {
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!title.trim() || !content.trim()) {
+            alert('제목과 내용을 모두 입력해주세요.');
             return;
         }
         try {
             await createMutation.mutateAsync({
                 title: title.trim(),
                 content: content.trim(),
-                isPinned,
+                isPinned: Boolean(isPinned), // 명시적으로 boolean으로 변환
             });
             // 성공 시 폼 초기화 및 리스트 새로고침
             setTitle('');
@@ -73,8 +74,14 @@ export const NoticeManagement: FC = () => {
             setIsPinned(false);
             // 명시적으로 refetch 호출하여 즉시 업데이트
             await refetch();
-        } catch (error) {
+        } catch (error: any) {
             console.error('공지사항 작성 실패:', error);
+            // 서버에서 반환한 검증 메시지를 사용자에게 표시
+            const errorMessage =
+                error?.response?.data?.message ||
+                error?.message ||
+                '공지사항 작성에 실패했습니다. 입력 내용을 확인해주세요.';
+            alert(errorMessage);
         }
     };
 
