@@ -27,6 +27,8 @@ import type {
     AiStatusResponse,
     AiStatusUpdateRequest,
     AiLimitsUpdateRequest,
+    StorageStatsResponse,
+    StorageCleanupResponse,
 } from '../../types/api/admin.types';
 import type { QuoteResponse } from '../../types/api/quote.types';
 import type { FeedbackResponse, FeedbackStatusUpdateRequest } from '../../types/api/feedback.types';
@@ -217,6 +219,24 @@ export const adminApi = {
      */
     updateAiLimits: async (data: AiLimitsUpdateRequest): Promise<AiStatusResponse> => {
         const response = await apiClient.post<AiStatusResponse>('/api/v1/admin/system/ai-limits', data);
+        return response.data;
+    },
+
+    /**
+     * 저장 공간 통계 조회
+     */
+    getStorageStats: async (): Promise<StorageStatsResponse> => {
+        const response = await apiClient.get<StorageStatsResponse>('/api/v1/admin/system/storage');
+        return response.data;
+    },
+
+    /**
+     * 오래된 회고 데이터 정리
+     */
+    cleanupStorage: async (olderThanDays: number): Promise<StorageCleanupResponse> => {
+        const response = await apiClient.delete<StorageCleanupResponse>('/api/v1/admin/system/storage/cleanup', {
+            params: { olderThanDays },
+        });
         return response.data;
     },
 };

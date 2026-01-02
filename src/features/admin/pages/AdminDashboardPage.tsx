@@ -16,6 +16,7 @@ import { SystemSettings } from '../components/SystemSettings';
 import { AdminLogManagement } from '../components/AdminLogManagement';
 import { AiQualityWidget } from '../components/AiQualityWidget';
 import { AiServiceControl } from '../components/AiServiceControl';
+import { StorageHealthWidget } from '../components/StorageHealthWidget';
 import { Spinner } from '../../../components/ui/Spinner';
 import { Layout } from '../../../components/layout/Layout';
 
@@ -100,6 +101,9 @@ export const AdminDashboardPage: FC = () => {
 
                                 {/* AI 품질 모니터링 위젯 */}
                                 <AiQualityWidget />
+
+                                {/* 저장 공간 관리 위젯 */}
+                                <StorageHealthWidget />
 
                                 {/* 통계 그래프 */}
                                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 border border-gray-200 dark:border-gray-700">

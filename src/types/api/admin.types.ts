@@ -141,6 +141,17 @@ export interface AiLimitsUpdateRequest {
     userLimit: number;
 }
 
+export interface StorageStatsResponse {
+    totalCount: number;
+    estimatedSizeKb: number;
+    oldestRecordDate: string; // ISO 8601 형식 (YYYY-MM-DD)
+}
+
+export interface StorageCleanupResponse {
+    message: string;
+    deletedCount: number;
+}
+
 export interface AiQualityStatsResponse {
     totalFeedbackCount: number;
     positiveRate: number;

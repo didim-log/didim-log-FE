@@ -236,4 +236,22 @@ export const useUpdateAiLimits = () => {
     });
 };
 
+export const useStorageStats = () => {
+    return useQuery({
+        queryKey: ['admin', 'storage-stats'],
+        queryFn: () => adminApi.getStorageStats(),
+        staleTime: 60 * 1000, // 1분
+    });
+};
+
+export const useCleanupStorage = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (olderThanDays: number) => adminApi.cleanupStorage(olderThanDays),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admin', 'storage-stats'] });
+        },
+    });
+};
+
 

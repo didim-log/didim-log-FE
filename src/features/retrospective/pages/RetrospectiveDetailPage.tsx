@@ -133,11 +133,19 @@ export const RetrospectiveDetailPage: FC = () => {
 
         try {
             await navigator.clipboard.writeText(markdownContent);
-            toast.success('복사되었습니다');
+            toast.success('마크다운이 클립보드에 복사되었습니다. 블로그에 붙여넣으세요!');
         } catch (error) {
             console.error('클립보드 복사 실패:', error);
             toast.error('클립보드 복사에 실패했습니다. 브라우저 권한을 확인해주세요.');
         }
+    };
+
+    // 60일 이상 된 회고인지 확인
+    const isOldRetrospective = () => {
+        const createdAt = new Date(retrospective.createdAt);
+        const now = new Date();
+        const daysDiff = Math.floor((now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
+        return daysDiff >= 60;
     };
 
     return (
@@ -207,17 +215,40 @@ export const RetrospectiveDetailPage: FC = () => {
 
                     </div>
 
+                    {/* 오래된 회고 경고 배너 */}
+                    {isOldRetrospective() && (
+                        <div className="bg-yellow-50 dark:bg-yellow-900/30 border-l-4 border-yellow-500 dark:border-yellow-500 rounded-lg p-4 mb-4">
+                            <div className="flex items-start gap-3">
+                                <svg className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path
+                                        fillRule="evenodd"
+                                        d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                        clipRule="evenodd"
+                                    />
+                                </svg>
+                                <div className="flex-1">
+                                    <p className="text-sm text-yellow-800 dark:text-yellow-200 font-medium mb-1">
+                                        오래된 회고 안내
+                                    </p>
+                                    <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                                        이 회고는 작성된 지 2달이 지났습니다. 안전한 보관을 위해 기술 블로그로 옮기는 것을 추천드려요!
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {/* 회고 내용 */}
                     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
                         {/* 액션 버튼 (본문 상단) */}
                         <div className="flex items-center justify-end gap-3 mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
                             <Button
                                 onClick={handleCopyMarkdown}
-                                variant="outline"
-                                className="flex items-center gap-2"
+                                variant={isOldRetrospective() ? 'primary' : 'outline'}
+                                className={`flex items-center gap-2 ${isOldRetrospective() ? 'bg-blue-600 hover:bg-blue-700 text-white font-semibold' : ''}`}
                             >
                                 <Copy className="w-4 h-4" />
-                                Markdown 복사
+                                {isOldRetrospective() ? '📝 블로그용 Markdown 복사' : 'Markdown 복사'}
                             </Button>
                             {isAuthenticated && (
                                 <>
