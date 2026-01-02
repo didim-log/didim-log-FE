@@ -29,6 +29,8 @@ import type {
     AiLimitsUpdateRequest,
     StorageStatsResponse,
     StorageCleanupResponse,
+    AdminAuditLogRequest,
+    AdminAuditLogPageResponse,
 } from '../../types/api/admin.types';
 import type { QuoteResponse } from '../../types/api/quote.types';
 import type { FeedbackResponse, FeedbackStatusUpdateRequest } from '../../types/api/feedback.types';
@@ -237,6 +239,14 @@ export const adminApi = {
         const response = await apiClient.delete<StorageCleanupResponse>('/api/v1/admin/system/storage/cleanup', {
             params: { olderThanDays },
         });
+        return response.data;
+    },
+
+    /**
+     * 관리자 작업 감사 로그 조회
+     */
+    getAuditLogs: async (params: AdminAuditLogRequest): Promise<AdminAuditLogPageResponse> => {
+        const response = await apiClient.get<AdminAuditLogPageResponse>('/api/v1/admin/audit-logs', { params });
         return response.data;
     },
 };

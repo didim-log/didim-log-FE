@@ -13,6 +13,7 @@ import type {
     MaintenanceModeRequest,
     ChartDataType,
     ChartPeriod,
+    AdminAuditLogRequest,
 } from '../../types/api/admin.types';
 import type { FeedbackStatusUpdateRequest } from '../../types/api/feedback.types';
 import type { PageRequest } from '../../types/api/common.types';
@@ -251,6 +252,14 @@ export const useCleanupStorage = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin', 'storage-stats'] });
         },
+    });
+};
+
+export const useAdminAuditLogs = (params: AdminAuditLogRequest) => {
+    return useQuery({
+        queryKey: ['admin', 'audit-logs', params],
+        queryFn: () => adminApi.getAuditLogs(params),
+        staleTime: 1 * 60 * 1000, // 1분
     });
 };
 

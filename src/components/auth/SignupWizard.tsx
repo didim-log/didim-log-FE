@@ -5,15 +5,11 @@ import Card from '../common/Card'
 import Input from '../common/Input'
 import Modal from '../common/Modal'
 import { TERMS_DATA } from '../../constants/termsData'
-import {
-    issueBojVerificationCode,
-    verifyBojOwnership,
-    finalizeSignup,
-    type BojCodeIssueResponse,
-} from '../../apis/authApi'
+import { authApi } from '../../api/endpoints/auth.api'
+import type { BojCodeIssueResponse } from '../../types/api/auth.types'
 import { toast } from 'sonner'
 import type { AxiosError } from 'axios'
-import type { ApiErrorResponse } from '../../types/api/error'
+import type { ApiErrorResponse } from '../../utils/errorHandler'
 
 const BOJ_ID_PATTERN = /^[a-zA-Z0-9_]*$/
 
@@ -60,7 +56,7 @@ export default function SignupWizard({
 
         setIsCodeIssuing(true)
         try {
-            const codeData = await issueBojVerificationCode()
+            const codeData = await authApi.issueBojCode()
             setVerificationCode(codeData)
             toast.success('인증 코드가 발급되었습니다. 백준 프로필 상태 메시지에 입력해주세요.')
         } catch (err) {
@@ -79,7 +75,7 @@ export default function SignupWizard({
 
         setIsVerifying(true)
         try {
-            const result = await verifyBojOwnership({
+            const result = await authApi.verifyBoj({
                 sessionId: verificationCode.sessionId,
                 bojId: bojId.trim(),
             })
@@ -112,7 +108,7 @@ export default function SignupWizard({
 
         setIsSubmitting(true)
         try {
-            const response = await finalizeSignup({
+            const response = await authApi.signupFinalize({
                 email: email.trim(),
                 provider,
                 providerId,

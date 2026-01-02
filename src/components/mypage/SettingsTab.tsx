@@ -3,10 +3,9 @@ import { Bell, Trash2 } from 'lucide-react'
 import Card from '../common/Card'
 import Input from '../common/Input'
 import Button from '../common/Button'
-import { updateProfile } from '../../apis/authApi'
+import { studentApi } from '../../api/endpoints/student.api'
 import { toast } from 'sonner'
 import type { AxiosError } from 'axios'
-import type { ApiErrorResponse } from '../../types/api/error'
 import { getErrorMessage, type ApiErrorResponse } from '../../utils/errorHandler'
 
 interface SettingsTabProps {
@@ -200,7 +199,7 @@ export default function SettingsTab({ currentNickname, onSuccess }: SettingsTabP
                 request.newPassword = newPassword
             }
 
-            await updateProfile(request)
+            await studentApi.updateProfile(request)
             toast.success('프로필이 성공적으로 수정되었습니다.')
             if (onSuccess) {
                 onSuccess()

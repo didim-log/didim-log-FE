@@ -165,4 +165,39 @@ export interface RecentNegativeLogResponse {
     codeSnippet: string;
 }
 
+export type AdminActionType =
+    | 'STORAGE_CLEANUP'
+    | 'NOTICE_CREATE'
+    | 'NOTICE_UPDATE'
+    | 'NOTICE_DELETE'
+    | 'AI_SERVICE_TOGGLE'
+    | 'AI_LIMITS_UPDATE'
+    | 'USER_DELETE'
+    | 'USER_UPDATE'
+    | 'QUOTE_CREATE'
+    | 'QUOTE_DELETE'
+    | 'FEEDBACK_STATUS_UPDATE'
+    | 'FEEDBACK_DELETE'
+    | 'MAINTENANCE_MODE_TOGGLE';
+
+export interface AdminAuditLogResponse {
+    id: string;
+    adminId: string;
+    action: AdminActionType;
+    details: string;
+    ipAddress: string;
+    createdAt: string;
+}
+
+export interface AdminAuditLogPageResponse extends Page<AdminAuditLogResponse> {}
+
+export interface AdminAuditLogRequest {
+    page?: number;
+    size?: number;
+    adminId?: string;
+    action?: AdminActionType;
+    startDate?: string; // ISO 8601 형식
+    endDate?: string; // ISO 8601 형식
+}
+
 

@@ -12,34 +12,7 @@
 
 ## 🔴 완전 누락 기능 (High Priority)
 
-### 1. AiAnalysisController - AI 분석 기능
-
-**API 엔드포인트:**
-- `POST /api/v1/ai/analyze` - AI 회고록 생성
-
-**현재 상태:**
-- ❌ API 클라이언트 파일 없음 (`src/api/endpoints/ai.api.ts`)
-- ❌ 타입 정의 없음 (`src/types/api/ai.types.ts`)
-- ❌ 컴포넌트 없음
-
-**필요 작업:**
-1. API 클라이언트 생성
-   - 파일: `src/api/endpoints/ai.api.ts`
-   - 함수: `analyzeCode(data: AiAnalyzeRequest): Promise<AiAnalyzeResponse>`
-2. 타입 정의 추가
-   - 파일: `src/types/api/ai.types.ts`
-   - 타입: `AiAnalyzeRequest`, `AiAnalyzeResponse`
-3. 컴포넌트 구현
-   - 파일: `src/features/study/components/AiAnalysisModal.tsx` 또는 유사한 컴포넌트
-   - 기능: 코드 입력, 풀이 성공 여부 선택, AI 분석 결과 표시
-
-**연관 기능:**
-- StudyPage에서 문제 풀이 완료 후 AI 분석 옵션 제공
-- 회고 작성 시 AI 생성 템플릿 대신 AI 분석 결과 활용
-
----
-
-### 2. LogController - 코딩 로그 기능
+### 1. LogController - 코딩 로그 기능
 
 **API 엔드포인트:**
 - `GET /api/v1/logs/{logId}/template` - 로그 템플릿 생성
@@ -348,22 +321,21 @@
 7. ✅ AdminMemberController - 회원 정보 강제 수정
 
 ### Phase 3: 고급 기능 (중기)
-8. ✅ AiAnalysisController - AI 분석 기능
-9. ✅ LogController - 코딩 로그 기능
-10. ✅ AuthController - BOJ ID 중복 확인 개선
+8. ✅ LogController - 코딩 로그 기능
+9. ✅ AuthController - BOJ ID 중복 확인 개선
+10. ✅ AdminAuditController - 관리자 작업 감사 로그
 
 ---
 
 ## 📝 구현 체크리스트
 
 ### API 클라이언트 파일 생성
-- [ ] `src/api/endpoints/ai.api.ts`
-- [ ] `src/api/endpoints/log.api.ts`
-- [ ] `src/api/endpoints/member.api.ts`
-- [ ] `src/api/endpoints/notice.api.ts`
+- [x] `src/api/endpoints/log.api.ts`
+- [x] `src/api/endpoints/member.api.ts`
+- [x] `src/api/endpoints/notice.api.ts`
+- [x] `src/api/endpoints/admin.api.ts` (AdminAuditLog 추가)
 
 ### 타입 정의 파일 생성
-- [ ] `src/types/api/ai.types.ts`
 - [ ] `src/types/api/log.types.ts`
 - [ ] `src/types/api/member.types.ts`
 - [ ] `src/types/api/notice.types.ts`
