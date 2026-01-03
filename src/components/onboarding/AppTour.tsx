@@ -204,6 +204,72 @@ export const AppTour: FC = () => {
         }
     }, [dashboard, location.pathname, run, startTour, forceHide, user?.isOnboardingFinished, dashboard?.studentProfile?.isOnboardingFinished]);
 
+    // Enter 키로 다음 단계로 이동하는 핸들러 (모든 hooks는 early return 이전에 호출되어야 함)
+    // handleCallback을 사용하지 않고 직접 로직 구현 (순서 문제 해결)
+    useEffect(() => {
+        if (!run || forceHide) {
+            return;
+        }
+
+        const handleKeyDown = async (event: KeyboardEvent) => {
+            // Enter 키가 눌렸을 때
+            if (event.key === 'Enter' && !event.shiftKey && !event.ctrlKey && !event.metaKey) {
+                // 입력 필드에 포커스가 있으면 무시 (사용자가 입력 중일 수 있음)
+                const activeElement = document.activeElement;
+                if (
+                    activeElement &&
+                    (activeElement.tagName === 'INPUT' ||
+                        activeElement.tagName === 'TEXTAREA' ||
+                        (activeElement instanceof HTMLElement && activeElement.isContentEditable))
+                ) {
+                    return;
+                }
+
+                event.preventDefault();
+                event.stopPropagation();
+
+                // 현재 스텝이 마지막이면 완료 처리
+                if (stepIndex === steps.length - 1) {
+                    // 완료 처리 로직 직접 구현
+                    setForceHide(true);
+                    stopTour();
+                    setStepIndex(0);
+
+                    try {
+                        await memberApi.completeOnboarding();
+                        completeOnboardingInStore();
+                        if (user) {
+                            setUser({
+                                ...user,
+                                isOnboardingFinished: true,
+                            });
+                        }
+                        window.location.reload();
+                    } catch (error: unknown) {
+                        if (import.meta.env.DEV) {
+                            console.error('Onboarding sync failed', error);
+                        }
+                        const errorMessage = getErrorMessage(error);
+                        toast.error(`온보딩 완료 처리에 실패했습니다: ${errorMessage}`);
+                    }
+                } else {
+                    // 다음 스텝으로 이동
+                    const nextStepIndex = stepIndex + 1;
+                    const nextRoute = steps[nextStepIndex]?.data?.route;
+                    if (nextRoute && !location.pathname.includes(nextRoute.split('?')[0])) {
+                        navigate(nextRoute);
+                    }
+                    setStepIndex(nextStepIndex);
+                }
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [run, forceHide, stepIndex, steps, location.pathname, navigate, setStepIndex, stopTour, completeOnboardingInStore, user, setUser]);
+
     // Smart Navigation Logic
     const handleCallback = useCallback(
         async (data: CallBackProps) => {
@@ -314,56 +380,6 @@ export const AppTour: FC = () => {
     if (!run) {
         return null;
     }
-
-    // Enter 키로 다음 단계로 이동하는 핸들러
-    useEffect(() => {
-        if (!run || forceHide) {
-            return;
-        }
-
-        const handleKeyDown = (event: KeyboardEvent) => {
-            // Enter 키가 눌렸을 때
-            if (event.key === 'Enter' && !event.shiftKey && !event.ctrlKey && !event.metaKey) {
-                // 입력 필드에 포커스가 있으면 무시 (사용자가 입력 중일 수 있음)
-                const activeElement = document.activeElement;
-                if (
-                    activeElement &&
-                    (activeElement.tagName === 'INPUT' ||
-                        activeElement.tagName === 'TEXTAREA' ||
-                        (activeElement instanceof HTMLElement && activeElement.isContentEditable))
-                ) {
-                    return;
-                }
-
-                event.preventDefault();
-                event.stopPropagation();
-
-                // 현재 스텝이 마지막이면 완료 처리
-                if (stepIndex === steps.length - 1) {
-                    handleCallback({
-                        status: STATUS.FINISHED,
-                        type: EVENTS.TOUR_END,
-                        index: stepIndex,
-                        action: ACTIONS.CLOSE,
-                        size: steps.length,
-                    } as CallBackProps);
-                } else {
-                    // 다음 스텝으로 이동
-                    const nextStepIndex = stepIndex + 1;
-                    const nextRoute = steps[nextStepIndex]?.data?.route;
-                    if (nextRoute && !location.pathname.includes(nextRoute.split('?')[0])) {
-                        navigate(nextRoute);
-                    }
-                    setStepIndex(nextStepIndex);
-                }
-            }
-        };
-
-        window.addEventListener('keydown', handleKeyDown);
-        return () => {
-            window.removeEventListener('keydown', handleKeyDown);
-        };
-    }, [run, forceHide, stepIndex, steps, location.pathname, navigate, setStepIndex, handleCallback]);
 
     return (
         <Joyride
