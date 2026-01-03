@@ -17,6 +17,7 @@ interface AuthState {
     setRefreshToken: (refreshToken: string) => void;
     setTokens: (token: string, refreshToken: string) => void;
     setUser: (user: User) => void;
+    completeOnboarding: () => void;
     logout: () => void;
     setHasHydrated: (state: boolean) => void;
 }
@@ -43,6 +44,17 @@ export const useAuthStore = create<AuthState>()(
             setUser: (user: User) => {
                 const currentToken = get().token;
                 set({ user, isAuthenticated: !!currentToken });
+            },
+            completeOnboarding: () => {
+                const currentUser = get().user;
+                if (currentUser) {
+                    set({
+                        user: {
+                            ...currentUser,
+                            isOnboardingFinished: true,
+                        },
+                    });
+                }
             },
             logout: () => {
                 set({ token: null, refreshToken: null, user: null, isAuthenticated: false });
