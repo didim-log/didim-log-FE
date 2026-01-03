@@ -29,6 +29,13 @@ export const memberApi = {
     completeOnboarding: async (): Promise<void> => {
         await apiClient.patch('/api/v1/members/onboarding/complete');
     },
+
+    /**
+     * 온보딩 투어 리셋 (Help 버튼으로 재시작 시 사용)
+     */
+    resetOnboarding: async (): Promise<void> => {
+        await apiClient.patch('/api/v1/members/onboarding/reset');
+    },
 };
 
 

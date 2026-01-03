@@ -8,10 +8,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/auth.store';
 import { useUIStore } from '../../stores/ui.store';
 import { useTourStore } from '../../stores/tour.store';
+import { memberApi } from '../../api/endpoints/member.api';
 import { HelpCircle, Menu, X } from 'lucide-react';
 
 export const Header: FC = () => {
-    const { logout, user } = useAuthStore();
+    const { logout, user, setUser } = useAuthStore();
     const { theme, toggleTheme } = useUIStore();
     const navigate = useNavigate();
     const { startTour, stopTour, setStepIndex } = useTourStore();
@@ -23,10 +24,24 @@ export const Header: FC = () => {
         setIsMobileMenuOpen(false);
     };
 
-    const handleHelpClick = () => {
+    const handleHelpClick = async () => {
         setIsMobileMenuOpen(false);
         // Help 버튼으로 재시작 시 완전히 초기화
         localStorage.removeItem('didim_onboarding_completed');
+        // 백엔드에서 온보딩 완료 상태 리셋
+        try {
+            await memberApi.resetOnboarding();
+            // 백엔드 상태 업데이트 후 프론트엔드 상태도 업데이트
+            if (user) {
+                setUser({
+                    ...user,
+                    isOnboardingFinished: false,
+                });
+            }
+        } catch (error) {
+            console.error('온보딩 리셋 실패:', error);
+            // 에러가 발생해도 프론트엔드에서는 계속 진행
+        }
         // 투어 상태 완전히 리셋
         stopTour();
         setStepIndex(0);
