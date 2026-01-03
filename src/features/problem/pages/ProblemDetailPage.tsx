@@ -52,26 +52,8 @@ export const ProblemDetailPage: FC = () => {
                         <ProblemDetail problem={problem} isBlurred={false} />
                     </div>
 
-                    <div className="mt-6 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
-                        {/* 백준에서 보기 버튼 강조 (모바일에서도 보이도록) */}
-                        <a
-                            href={problem.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 border-2 border-blue-300 dark:border-blue-700 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
-                        >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                                />
-                            </svg>
-                            백준에서 보기
-                        </a>
-
-                        <Button onClick={handleGoToStudy} variant="primary" size="lg" className="tour-problem-timer tour-timer-btn tour-problem-start-btn w-full sm:w-auto">
+                    <div className="mt-6 flex justify-end">
+                        <Button onClick={handleGoToStudy} variant="primary" size="lg" className="tour-problem-timer tour-timer-btn tour-problem-start-btn">
                             문제 풀기 시작 →
                         </Button>
                     </div>
