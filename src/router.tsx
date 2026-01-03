@@ -35,6 +35,9 @@ import { RankingPage } from './features/ranking/pages/RankingPage';
 import { NoticeListPage } from './features/notice/pages/NoticeListPage';
 import { NoticeDetailPage } from './features/notice/pages/NoticeDetailPage';
 
+// Maintenance 페이지
+import { MaintenancePage } from './pages/MaintenancePage';
+
 // 관리자 페이지
 import { AdminDashboardPage } from './features/admin/pages/AdminDashboardPage';
 import { AdminUsersPage } from './features/admin/pages/AdminUsersPage';
@@ -341,6 +344,11 @@ export const router = createBrowserRouter([
                 <AdminUsersPage />
             </AdminRoute>
         ),
+        errorElement: <ErrorPage />,
+    },
+    {
+        path: '/maintenance',
+        element: <MaintenancePage />,
         errorElement: <ErrorPage />,
     },
     {

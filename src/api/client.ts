@@ -150,6 +150,21 @@ apiClient.interceptors.response.use(
             return Promise.reject(error);
         }
 
+        // 503 Maintenance Mode 에러 처리
+        if (error.response?.status === 503) {
+            const errorCode = error.response?.data?.code;
+            // Maintenance Mode 에러인 경우 Maintenance 페이지로 리다이렉트
+            if (errorCode === 'MAINTENANCE_MODE') {
+                // Public API(Notices, System Status)는 리다이렉트하지 않음
+                const isPublicApi = originalRequest.url?.includes('/api/v1/notices') || 
+                                   originalRequest.url?.includes('/api/v1/system/status');
+                if (!isPublicApi) {
+                    window.location.href = '/maintenance';
+                    return Promise.reject(error);
+                }
+            }
+        }
+
         // 401 에러이고, refresh 엔드포인트가 아닌 경우에만 처리
         if (error.response?.status === 401 && !originalRequest._retry && 
             !originalRequest.url?.includes('/auth/refresh') && !isPublicApi) {
