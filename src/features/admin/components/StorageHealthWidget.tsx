@@ -9,7 +9,9 @@ import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { Spinner } from '../../../components/ui/Spinner';
 import { toast } from 'sonner';
+import { getErrorMessage } from '../../../types/api/common.types';
 import { Database, Trash2, AlertTriangle } from 'lucide-react';
+import { formatKST } from '../../../utils/dateUtils';
 
 export const StorageHealthWidget: FC = () => {
     const { data: stats, isLoading, error, refetch } = useStorageStats();
@@ -38,9 +40,8 @@ export const StorageHealthWidget: FC = () => {
             setShowConfirmModal(false);
             setConfirmText('');
             await refetch();
-        } catch (error: any) {
-            console.error('Storage cleanup failed:', error);
-            const errorMessage = error?.response?.data?.message || error?.message || '데이터 정리에 실패했습니다.';
+        } catch (error: unknown) {
+            const errorMessage = getErrorMessage(error);
             toast.error(errorMessage);
         }
     };
@@ -92,7 +93,7 @@ export const StorageHealthWidget: FC = () => {
                     <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
                         <p className="text-sm text-gray-600 dark:text-gray-400 font-medium mb-1">가장 오래된 레코드</p>
                         <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                            {new Date(stats.oldestRecordDate).toLocaleDateString('ko-KR')}
+                            {formatKST(stats.oldestRecordDate, 'dateOnly')}
                         </p>
                     </div>
                 </div>

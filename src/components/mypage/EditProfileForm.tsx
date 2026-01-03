@@ -2,11 +2,12 @@ import { useState } from 'react'
 import { Settings } from 'lucide-react'
 import Modal from '../common/Modal'
 import Input from '../common/Input'
-import Button from '../common/Button'
-import { studentApi } from '../../api/endpoints/student.api'
+import { Button } from '../ui/Button'
+import { updateProfile } from '../../apis/authApi'
 import { toast } from 'sonner'
 import type { AxiosError } from 'axios'
-import { getErrorMessage, type ApiErrorResponse } from '../../utils/errorHandler'
+import type { ApiErrorResponse } from '../../types/api/error'
+import { getErrorMessage } from '../../utils/errorHandler'
 
 interface EditProfileFormProps {
     currentNickname: string
@@ -227,7 +228,7 @@ export default function EditProfileForm({
                 request.newPassword = newPassword
             }
 
-            await studentApi.updateProfile(request)
+            await updateProfile(request)
             toast.success('프로필이 성공적으로 수정되었습니다.')
             handleClose()
             if (onSuccess) {

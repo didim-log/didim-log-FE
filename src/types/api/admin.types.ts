@@ -67,6 +67,12 @@ export interface CollectResponse {
     range?: string;
 }
 
+export interface ProblemStatsResponse {
+    totalCount: number;
+    minProblemId: number | null;
+    maxProblemId: number | null;
+}
+
 export interface PerformanceMetricsResponse {
     rpm: number;
     averageResponseTime: number;
@@ -94,6 +100,9 @@ export type ChartPeriod = 'DAILY' | 'WEEKLY' | 'MONTHLY';
 
 export interface MaintenanceModeRequest {
     enabled: boolean;
+    startTime?: string | null; // ISO 8601 형식 (yyyy-MM-ddTHH:mm:ss)
+    endTime?: string | null;   // ISO 8601 형식 (yyyy-MM-ddTHH:mm:ss)
+    noticeId?: string | null;  // 관련 공지사항 ID
 }
 
 export interface MaintenanceModeResponse {

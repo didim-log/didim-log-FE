@@ -6,7 +6,7 @@
 import type { FC } from 'react';
 import { Link } from 'react-router-dom';
 import type { RetrospectiveResponse } from '../../../types/api/retrospective.types';
-import { formatDateToKST } from '../../../utils/date';
+import { formatKST } from '../../../utils/dateUtils';
 import { getCategoryLabel } from '../../../utils/constants';
 import { useProblemDetail } from '../../../hooks/api/useProblem';
 import { stripMarkdown, truncateText } from '../../../utils/markdownUtils';
@@ -108,7 +108,7 @@ export const MyRetrospectiveCard: FC<MyRetrospectiveCardProps> = ({ retrospectiv
                     )}
                 </div>
                 <span className="text-xs text-gray-500 dark:text-gray-400">
-                    {formatDateToKST(retrospective.createdAt, { includeDate: true })}
+                    {formatKST(retrospective.createdAt, 'full')}
                 </span>
             </div>
 

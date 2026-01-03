@@ -14,6 +14,7 @@ import { Input } from '../../../components/ui/Input';
 import { useAuthStore } from '../../../stores/auth.store';
 import type { RetrospectiveListRequest } from '../../../types/api/retrospective.types';
 import { toast } from 'sonner';
+import { getErrorMessage, isApiError } from '../../../types/api/common.types';
 
 export const RetrospectiveListPage: FC = () => {
     const navigate = useNavigate();
@@ -26,7 +27,7 @@ export const RetrospectiveListPage: FC = () => {
     const [isBookmarked, setIsBookmarked] = useState<boolean | undefined>(undefined);
 
     const { user } = useAuthStore();
-    const { data, isLoading, error } = useRetrospectives(searchParams);
+    const { data, isLoading, error, refetch } = useRetrospectives(searchParams);
     const toggleBookmarkMutation = useToggleBookmark();
     const deleteMutation = useDeleteRetrospective();
 
@@ -55,16 +56,21 @@ export const RetrospectiveListPage: FC = () => {
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm('정말로 삭제하시겠습니까?')) {
-            return;
-        }
-
         try {
             await deleteMutation.mutateAsync(id);
             toast.success('회고가 삭제되었습니다.');
-        } catch (error) {
-            console.error('Delete failed:', error);
-            toast.error('회고 삭제에 실패했습니다.');
+            // queryClient.invalidateQueries가 자동으로 목록을 새로고침하므로 refetch는 선택적
+            // 하지만 확실하게 하기 위해 refetch도 호출
+            await refetch();
+        } catch (error: unknown) {
+            const errorMessage = getErrorMessage(error);
+            
+            // 백엔드에서 소유자 검증 실패 시
+            if (isApiError(error) && (error.response?.status === 403 || error.response?.status === 400)) {
+                toast.error('본인이 작성한 회고만 삭제할 수 있습니다.');
+            } else {
+                toast.error(errorMessage);
+            }
         }
     };
 
@@ -188,8 +194,8 @@ export const RetrospectiveListPage: FC = () => {
                     {data && data.content.length > 0 ? (
                         <div className="space-y-4">
                             {data.content.map((retrospective) => {
-                                const isOwner = !!(user?.id && retrospective.studentId && 
-                                                String(user.id) === String(retrospective.studentId));
+                                // 로그인한 사용자라면 삭제 버튼 표시 (실제 소유자 검증은 백엔드에서 수행)
+                                const isOwner = !!user;
                                 return (
                                     <RetrospectiveCard
                                         key={retrospective.id}

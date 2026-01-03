@@ -10,6 +10,7 @@ import { Input } from '../../../components/ui/Input';
 import { useBojVerify } from '../../../hooks/auth/useBojVerify';
 import { authApi } from '../../../api/endpoints/auth.api';
 import { validation } from '../../../utils/validation';
+import { isApiError } from '../../../types/api/common.types';
 import { Copy, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -63,8 +64,17 @@ export const BojVerifyStep: FC<BojVerifyStepProps> = ({ onNext, onBack, duplicat
 
             // 중복이 아니면 인증 코드 발급 진행
             await issueCode();
-        } catch (err) {
-            setError(err instanceof Error ? err.message : '인증 코드 발급에 실패했습니다.');
+        } catch (err: unknown) {
+            // Axios 에러 처리: 백엔드에서 반환한 메시지 우선 사용
+            if (isApiError(err) && err.response?.status === 404) {
+                setError('입력하신 백준 아이디를 찾을 수 없습니다. 아이디를 확인해주세요.');
+            } else if (isApiError(err) && err.response?.data?.message) {
+                setError(err.response.data.message);
+            } else if (err instanceof Error) {
+                setError(err.message);
+            } else {
+                setError('인증 코드 발급에 실패했습니다. 잠시 후 다시 시도해주세요.');
+            }
         }
     };
 
@@ -85,8 +95,17 @@ export const BojVerifyStep: FC<BojVerifyStepProps> = ({ onNext, onBack, duplicat
 
             // 인증 성공 시 다음 단계로 (중복 체크는 이미 코드 발급 전에 완료됨)
             onNext(bojId.trim());
-        } catch (err) {
-            setError(err instanceof Error ? err.message : '인증에 실패했습니다.');
+        } catch (err: unknown) {
+            // Axios 에러 처리: 백엔드에서 반환한 메시지 우선 사용
+            if (isApiError(err) && err.response?.status === 404) {
+                setError('입력하신 백준 아이디를 찾을 수 없습니다. 아이디를 확인해주세요.');
+            } else if (isApiError(err) && err.response?.data?.message) {
+                setError(err.response.data.message);
+            } else if (err instanceof Error) {
+                setError(err.message);
+            } else {
+                setError('인증에 실패했습니다. 잠시 후 다시 시도해주세요.');
+            }
         }
     };
 

@@ -8,6 +8,7 @@ import type { RetrospectiveResponse } from '../../../types/api/retrospective.typ
 import { useProblemDetail } from '../../../hooks/api/useProblem';
 import { Trash2 } from 'lucide-react';
 import { stripMarkdown, truncateText } from '../../../utils/markdownUtils';
+import { formatKST } from '../../../utils/dateUtils';
 
 interface RetrospectiveCardProps {
     retrospective: RetrospectiveResponse;
@@ -25,12 +26,7 @@ export const RetrospectiveCard: FC<RetrospectiveCardProps> = ({
     const { data: problem } = useProblemDetail(retrospective.problemId);
 
     const formatDate = (dateString: string) => {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('ko-KR', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-        });
+        return formatKST(dateString, 'dateOnly');
     };
 
     // 제목 생성: "1060번 좋은 수 실패 회고" (괄호 제거)
@@ -90,11 +86,11 @@ export const RetrospectiveCard: FC<RetrospectiveCardProps> = ({
                             onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                if (confirm('정말로 삭제하시겠습니까?')) {
+                                if (confirm('정말로 이 회고를 삭제하시겠습니까? 삭제된 데이터는 복구할 수 없습니다.')) {
                                     onDelete(retrospective.id);
                                 }
                             }}
-                            className="p-2 text-red-600 dark:text-red-400 hover:text-white hover:bg-red-600 dark:hover:bg-red-600 rounded-lg transition-all border border-red-300 dark:border-red-700"
+                            className="p-1.5 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors rounded-lg"
                             aria-label="회고 삭제"
                             title="회고 삭제"
                         >

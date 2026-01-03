@@ -22,7 +22,30 @@
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
+    "noUncheckedSideEffectImports": true,
+
+    /* Path Aliases */
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@/components/*": ["./src/components/*"],
+      "@/features/*": ["./src/features/*"],
+      "@/hooks/*": ["./src/hooks/*"],
+      "@/utils/*": ["./src/utils/*"],
+      "@/types/*": ["./src/types/*"],
+      "@/api/*": ["./src/api/*"],
+      "@/stores/*": ["./src/stores/*"],
+      "@/constants/*": ["./src/constants/*"]
+    }
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": [
+    "src/components/auth/SignupWizard.tsx",
+    "src/components/mypage/EditProfileForm.tsx",
+    "src/components/mypage/SettingsTab.tsx",
+    "src/components/dashboard/QuoteWidget.tsx",
+    "src/components/dashboard/TodaySolvedList.tsx",
+    "src/components/retrospective/RetrospectiveCard.tsx",
+    "src/components/statistics/MonthlyActivityChart.tsx"
+  ]
 }

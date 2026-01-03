@@ -5,7 +5,7 @@
 import type { FC } from 'react';
 import { Link } from 'react-router-dom';
 import type { TodaySolvedProblemResponse } from '../../../types/api/dashboard.types';
-import { formatDateToKST } from '../../../utils/date';
+import { formatKST } from '../../../utils/dateUtils';
 
 interface TodaySolvedListProps {
     problems: TodaySolvedProblemResponse[];
@@ -50,7 +50,7 @@ export const TodaySolvedList: FC<TodaySolvedListProps> = ({ problems }) => {
                                     {getResultText(problem.result)}
                                 </span>
                             </div>
-                            <span className="text-xs text-gray-500 dark:text-gray-400">{formatDateToKST(problem.solvedAt)}</span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">{formatKST(problem.solvedAt, 'timeOnly')}</span>
                         </Link>
                     ))}
                 </div>

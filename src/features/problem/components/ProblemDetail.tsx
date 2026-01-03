@@ -25,8 +25,7 @@ export const ProblemDetail: FC<ProblemDetailProps> = ({ problem, isBlurred }) =>
             setCopiedIndex(index);
             toast.success('예제 입력이 복사되었습니다');
             setTimeout(() => setCopiedIndex(null), 2000);
-        } catch (error) {
-            console.error('클립보드 복사 실패:', error);
+        } catch {
             toast.error('복사에 실패했습니다');
         }
     };

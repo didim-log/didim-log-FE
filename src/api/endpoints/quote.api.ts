@@ -4,6 +4,7 @@
 
 import { apiClient } from '../client';
 import type { QuoteResponse } from '../../types/api/quote.types';
+import { isApiError } from '../../types/api/common.types';
 
 export const quoteApi = {
     /**
@@ -13,14 +14,16 @@ export const quoteApi = {
         try {
             const response = await apiClient.get<QuoteResponse>('/api/v1/quotes/random');
             return response.data;
-        } catch (error: any) {
+        } catch (error: unknown) {
             // 204 No Content인 경우 null 반환
-            if (error.response?.status === 204) {
+            if (isApiError(error) && error.response?.status === 204) {
                 return null;
             }
             throw error;
         }
     },
 };
+
+
 
 

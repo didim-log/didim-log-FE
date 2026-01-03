@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { RefreshCw, Quote as QuoteIcon } from 'lucide-react'
 import Card from '../common/Card'
-import Button from '../common/Button'
+import { Button } from '../ui/Button'
 import type { QuoteResponse } from '../../types/api/dtos'
 
 interface QuoteWidgetProps {

@@ -7,6 +7,7 @@ import type { FC } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { useAdminDashboardMetrics } from '../../../hooks/api/useAdmin';
 import { Spinner } from '../../../components/ui/Spinner';
+import { formatKST } from '../../../utils/dateUtils';
 
 const RPM_THRESHOLD = 100; // RPM 위험 임계값
 const LATENCY_THRESHOLD = 500; // 응답 시간 위험 임계값 (ms)
@@ -21,7 +22,7 @@ export const PerformanceMetrics: FC = () => {
             return [];
         }
         return data.rpmTimeSeries.map((point) => ({
-            time: new Date(point.timestamp * 1000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
+            time: formatKST(new Date(point.timestamp * 1000).toISOString(), 'timeOnly'),
             rpm: point.value,
             isOverThreshold: point.value > RPM_THRESHOLD,
         }));
@@ -32,7 +33,7 @@ export const PerformanceMetrics: FC = () => {
             return [];
         }
         return data.latencyTimeSeries.map((point) => ({
-            time: new Date(point.timestamp * 1000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
+            time: formatKST(new Date(point.timestamp * 1000).toISOString(), 'timeOnly'),
             latency: point.value,
             isOverThreshold: point.value > LATENCY_THRESHOLD,
         }));

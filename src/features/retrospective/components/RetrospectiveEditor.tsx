@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import type { FC } from 'react';
-import type { RetrospectiveRequest } from '../../../types/api/retrospective.types';
+import type { RetrospectiveRequest, ProblemResult } from '../../../types/api/retrospective.types';
 import { TagInput } from '../../../components/ui/TagInput';
 
 interface RetrospectiveEditorProps {
@@ -43,15 +43,27 @@ export const RetrospectiveEditor: FC<RetrospectiveEditorProps> = ({
     useEffect(() => {
         if (!isMountedRef.current) {
             setContent(initialContent);
-            if (initialSummary) {
-                setSummary(initialSummary);
-            }
-            setResultType(initialResultType);
+            setSummary(initialSummary || ''); // 빈 문자열도 허용하여 항상 업데이트
+            setResultType(initialResultType || '');
             setSolvedCategories(initialSolvedCategory ? initialSolvedCategory.split(',').filter(Boolean) : []);
             prevInitialContentRef.current = initialContent;
             isMountedRef.current = true;
         }
     }, [initialContent, initialSummary, initialResultType, initialSolvedCategory]);
+
+    // initialResultType이 변경될 때마다 resultType 업데이트 (수정 모드 진입 시)
+    useEffect(() => {
+        if (isMountedRef.current && initialResultType !== undefined) {
+            setResultType(initialResultType || '');
+        }
+    }, [initialResultType]);
+
+    // initialSummary가 변경될 때마다 summary 업데이트 (수정 모드 진입 시)
+    useEffect(() => {
+        if (isMountedRef.current && initialSummary !== undefined) {
+            setSummary(initialSummary);
+        }
+    }, [initialSummary]);
 
     // initialContent가 변경될 때만 content 업데이트 (템플릿 로드 시)
     // summary는 절대 덮어쓰지 않음 - 사용자 입력 보존
@@ -101,7 +113,7 @@ export const RetrospectiveEditor: FC<RetrospectiveEditorProps> = ({
         onSubmit({
             content: content.trim(),
             summary: summary.trim(),
-            resultType: (resultType || null) as any,
+            resultType: (resultType || null) as ProblemResult | null,
             solvedCategory: solvedCategoryString,
         });
     };
@@ -120,7 +132,7 @@ export const RetrospectiveEditor: FC<RetrospectiveEditorProps> = ({
                     placeholder="회고를 한 줄로 요약해주세요 (필수)"
                     maxLength={200}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{summary.length}/200</p>
                 {errors.summary && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.summary}</p>}
@@ -172,7 +184,7 @@ export const RetrospectiveEditor: FC<RetrospectiveEditorProps> = ({
                     rows={20}
                     minLength={10}
                     maxLength={2000}
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm resize-y min-h-[500px]"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm resize-y min-h-[500px]"
                 />
                 <p className={`mt-2 text-xs ${content.length > 2000 ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}`}>
                     {content.length}/2000자 {content.length < 10 && '(최소 10자 필요)'} {content.length > 2000 && '(최대 2000자 초과)'}
@@ -184,7 +196,7 @@ export const RetrospectiveEditor: FC<RetrospectiveEditorProps> = ({
                 <button
                     type="submit"
                     disabled={isLoading || content.trim().length < 10 || content.trim().length > 2000 || !summary.trim()}
-                    className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors"
+                    className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors tour-save-button"
                 >
                     {isLoading ? '저장 중...' : '저장'}
                 </button>

@@ -3,7 +3,7 @@
  */
 
 import { apiClient } from '../client';
-import type { StatisticsResponse } from '../../types/api/statistics.types';
+import type { StatisticsResponse, HeatmapDataResponse } from '../../types/api/statistics.types';
 
 export const statisticsApi = {
     /**
@@ -13,6 +13,19 @@ export const statisticsApi = {
         const response = await apiClient.get<StatisticsResponse>('/api/v1/statistics');
         return response.data;
     },
+
+    /**
+     * 연도별 히트맵 조회
+     * @param year 조회할 연도 (기본값: 현재 연도)
+     */
+    getHeatmapByYear: async (year?: number): Promise<HeatmapDataResponse[]> => {
+        const yearParam = year || new Date().getFullYear();
+        const response = await apiClient.get<HeatmapDataResponse[]>(
+            `/api/v1/statistics/heatmap?year=${yearParam}`
+        );
+        return response.data;
+    },
 };
+
 
 

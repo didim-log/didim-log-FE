@@ -18,8 +18,10 @@ export const ProblemListPage: FC = () => {
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
     
-    // URL 파라미터에서 초기값 가져오기
-    const initialCount = parseInt(searchParams.get('count') || '10', 10);
+    // URL 파라미터에서 초기값 가져오기 (10, 20, 30만 허용)
+    const initialCountParam = parseInt(searchParams.get('count') || '10', 10);
+    const validCounts = [10, 20, 30];
+    const initialCount = validCounts.includes(initialCountParam) ? initialCountParam : 10;
     const initialCategory = searchParams.get('category') || '';
     
     const [count, setCount] = useState(initialCount);
@@ -120,14 +122,18 @@ export const ProblemListPage: FC = () => {
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                     개수
                                 </label>
-                                <Input
-                                    type="number"
+                                <select
                                     value={count}
-                                    onChange={(e) => setCount(Number(e.target.value))}
-                                    min={1}
-                                    max={50}
-                                    className="w-full"
-                                />
+                                    onChange={(e) => {
+                                        const newCount = Number(e.target.value);
+                                        setCount(newCount);
+                                    }}
+                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                                >
+                                    <option value={10}>10개씩 보기</option>
+                                    <option value={20}>20개씩 보기</option>
+                                    <option value={30}>30개씩 보기</option>
+                                </select>
                             </div>
                             <div className="flex-1">
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">

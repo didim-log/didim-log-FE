@@ -1,15 +1,19 @@
 import { useState } from 'react'
 import { Check, Copy, ExternalLink } from 'lucide-react'
-import Button from '../common/Button'
+import { Button } from '../ui/Button'
 import Card from '../common/Card'
 import Input from '../common/Input'
 import Modal from '../common/Modal'
 import { TERMS_DATA } from '../../constants/termsData'
-import { authApi } from '../../api/endpoints/auth.api'
-import type { BojCodeIssueResponse } from '../../types/api/auth.types'
+import {
+    issueBojVerificationCode,
+    verifyBojOwnership,
+    finalizeSignup,
+    type BojCodeIssueResponse,
+} from '../../apis/authApi'
 import { toast } from 'sonner'
 import type { AxiosError } from 'axios'
-import type { ApiErrorResponse } from '../../utils/errorHandler'
+import type { ApiErrorResponse } from '../../types/api/error'
 
 const BOJ_ID_PATTERN = /^[a-zA-Z0-9_]*$/
 
@@ -56,7 +60,7 @@ export default function SignupWizard({
 
         setIsCodeIssuing(true)
         try {
-            const codeData = await authApi.issueBojCode()
+            const codeData = await issueBojVerificationCode()
             setVerificationCode(codeData)
             toast.success('인증 코드가 발급되었습니다. 백준 프로필 상태 메시지에 입력해주세요.')
         } catch (err) {
@@ -75,7 +79,7 @@ export default function SignupWizard({
 
         setIsVerifying(true)
         try {
-            const result = await authApi.verifyBoj({
+            const result = await verifyBojOwnership({
                 sessionId: verificationCode.sessionId,
                 bojId: bojId.trim(),
             })
@@ -108,7 +112,7 @@ export default function SignupWizard({
 
         setIsSubmitting(true)
         try {
-            const response = await authApi.signupFinalize({
+            const response = await finalizeSignup({
                 email: email.trim(),
                 provider,
                 providerId,

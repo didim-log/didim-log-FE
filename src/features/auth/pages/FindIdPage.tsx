@@ -9,6 +9,7 @@ import { authApi } from '../../../api/endpoints/auth.api';
 import { Button } from '../../../components/ui/Button';
 import { validation } from '../../../utils/validation';
 import { toast } from 'sonner';
+import { getErrorMessage } from '../../../types/api/common.types';
 
 export const FindIdPage: FC = () => {
     const navigate = useNavigate();
@@ -37,8 +38,8 @@ export const FindIdPage: FC = () => {
             await authApi.findId({ email: email.trim() });
             setIsSuccess(true);
             toast.success('이메일로 아이디가 전송되었습니다.');
-        } catch (err: any) {
-            const errorMessage = err.response?.data?.message || err.message || '아이디 찾기에 실패했습니다.';
+        } catch (err: unknown) {
+            const errorMessage = getErrorMessage(err);
             setError(errorMessage);
         } finally {
             setIsSubmitting(false);

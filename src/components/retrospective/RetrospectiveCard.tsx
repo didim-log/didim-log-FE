@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Calendar, ExternalLink, Trash2, Star } from 'lucide-react'
 import Card from '../common/Card'
-import Button from '../common/Button'
+import { Button } from '../ui/Button'
 import { toggleBookmark } from '../../apis/retrospectiveApi'
 import { toast } from 'sonner'
 import type { AxiosError } from 'axios'

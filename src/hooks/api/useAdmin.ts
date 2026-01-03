@@ -14,6 +14,8 @@ import type {
     ChartDataType,
     ChartPeriod,
     AdminAuditLogRequest,
+    AiStatusUpdateRequest,
+    AiLimitsUpdateRequest,
 } from '../../types/api/admin.types';
 import type { FeedbackStatusUpdateRequest } from '../../types/api/feedback.types';
 import type { PageRequest } from '../../types/api/common.types';
@@ -214,6 +216,7 @@ export const useAiStatus = () => {
         queryFn: () => adminApi.getAiStatus(),
         staleTime: 10 * 1000, // 10초
         refetchInterval: 30 * 1000, // 30초마다 자동 갱신
+        refetchOnWindowFocus: true, // 창 포커스 시 자동 갱신
     });
 };
 
@@ -260,6 +263,14 @@ export const useAdminAuditLogs = (params: AdminAuditLogRequest) => {
         queryKey: ['admin', 'audit-logs', params],
         queryFn: () => adminApi.getAuditLogs(params),
         staleTime: 1 * 60 * 1000, // 1분
+    });
+};
+
+export const useProblemStats = () => {
+    return useQuery({
+        queryKey: ['admin', 'problem-stats'],
+        queryFn: () => adminApi.getProblemStats(),
+        staleTime: 30 * 1000, // 30초
     });
 };
 

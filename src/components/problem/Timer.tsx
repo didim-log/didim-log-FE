@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Play, Pause, RotateCcw } from 'lucide-react'
-import Button from '../common/Button'
+import { Button } from '../ui/Button'
 
 interface TimerProps {
     onTimeUpdate?: (seconds: number) => void

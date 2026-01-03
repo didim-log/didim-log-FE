@@ -4,42 +4,41 @@
  * 높이 350px
  */
 
+import { useMemo } from 'react';
 import type { FC } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import type { TopUsedAlgorithmResponse } from '../../../types/api/statistics.types';
+import type { CategoryStatResponse } from '../../../types/api/statistics.types';
 
 interface AlgorithmChartProps {
-    topAlgorithms: TopUsedAlgorithmResponse[];
-    distribution: Record<string, number>;
+    categoryStats: CategoryStatResponse[];
 }
 
 const COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#ef4444', '#06b6d4'];
 
-export const AlgorithmChart: FC<AlgorithmChartProps> = ({ topAlgorithms, distribution }) => {
-    // 백엔드에서 이미 쉼표로 구분된 태그를 분리하여 집계했으므로, 그대로 사용
-    // distribution은 이미 개별 알고리즘별로 카운트되어 있음 (예: "BFS" -> 2, "DP" -> 1, "Hash" -> 1)
-    const processAlgorithmDistribution = (): Array<{ name: string; count: number }> => {
-        const algorithmCounts = new Map<string, number>();
+export const AlgorithmChart: FC<AlgorithmChartProps> = ({ categoryStats }) => {
+    // 백엔드에서 이미 집계된 categoryStats를 사용하여 Bar Chart 데이터 생성
+    // Top 6으로 제한하고 부족한 경우 더미 데이터로 패딩
+    const processedData = useMemo(() => {
+        // categoryStats가 없거나 빈 배열인 경우 처리
+        if (!categoryStats || categoryStats.length === 0) {
+            // 빈 데이터로 6개 패딩
+            return Array(6).fill(null).map(() => ({ name: '', count: 0 }));
+        }
 
-        // distribution 맵을 그대로 사용 (이미 백엔드에서 개별 알고리즘별로 집계됨)
-        Object.entries(distribution).forEach(([algorithm, count]) => {
-            algorithmCounts.set(algorithm, count);
-        });
+        // Top 6으로 제한 (백엔드에서 이미 정렬되어 있음)
+        const top6 = categoryStats.slice(0, 6).map((item) => ({
+            name: item.category,
+            count: item.count,
+        }));
 
-        // topAlgorithms도 추가 (중복 제거)
-        topAlgorithms.forEach((algo) => {
-            if (!algorithmCounts.has(algo.name)) {
-                algorithmCounts.set(algo.name, algo.count);
-            }
-        });
+        // 부족한 경우 더미 데이터로 패딩 (최대 6개)
+        const paddedData = [...top6];
+        while (paddedData.length < 6) {
+            paddedData.push({ name: '', count: 0 });
+        }
 
-        return Array.from(algorithmCounts.entries())
-            .map(([name, count]) => ({ name, count }))
-            .sort((a, b) => b.count - a.count)
-            .slice(0, 10);
-    };
-
-    const processedData = processAlgorithmDistribution();
+        return paddedData;
+    }, [categoryStats]);
 
     return (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 border border-gray-200 dark:border-gray-700 h-[420px] flex flex-col">
@@ -76,6 +75,7 @@ export const AlgorithmChart: FC<AlgorithmChartProps> = ({ topAlgorithms, distrib
                                 width={100}
                                 tick={{ fontSize: 11 }}
                                 className="dark:[&_text]:fill-gray-400"
+                                tickFormatter={(value) => (value || '').trim() || ''} // 빈 문자열 필터링
                             />
                             <Tooltip
                                 contentStyle={{
@@ -87,11 +87,11 @@ export const AlgorithmChart: FC<AlgorithmChartProps> = ({ topAlgorithms, distrib
                                 labelStyle={{ color: '#374151', fontWeight: 600 }}
                                 formatter={(value: number) => [`${value}회`, '사용 횟수']}
                             />
-                            <Bar dataKey="count" radius={[0, 4, 4, 0]}>
-                                {processedData.map((_, index) => (
+                            <Bar dataKey="count" radius={[0, 4, 4, 0]} barSize={30}>
+                                {processedData.map((item, index) => (
                                     <Cell
                                         key={`cell-${index}`}
-                                        fill={COLORS[index % COLORS.length]}
+                                        fill={item.count > 0 ? COLORS[index % COLORS.length] : 'transparent'}
                                     />
                                 ))}
                             </Bar>

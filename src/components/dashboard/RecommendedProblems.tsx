@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { ExternalLink, ChevronRight } from 'lucide-react'
 import { Tier, TIER_COLORS, TIER_LABELS, getLevelRangeForLevel } from '../../types/tier'
-import Button from '../common/Button'
+import { Button } from '../ui/Button'
 import Card from '../common/Card'
 
 interface Problem {

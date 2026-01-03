@@ -6,6 +6,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { authApi } from '../../api/endpoints/auth.api';
 import { useAuthStore } from '../../stores/auth.store';
+import { isApiErrorWithResponse } from '../../types/api/common.types';
 import type { AuthResponse, SignupRequest } from '../../types/api/auth.types';
 
 interface SignupError extends Error {
@@ -54,8 +55,7 @@ export const useSignup = (): UseSignupReturn => {
             // 4. 리다이렉트 (동기적 상태 업데이트 완료 후)
             navigate('/dashboard', { replace: true });
         },
-        onError: (error: any) => {
-            console.error('Signup failed:', error);
+        onError: () => {
             // 에러는 mutation.error로 자동 전달됨
         },
     });
@@ -66,8 +66,8 @@ export const useSignup = (): UseSignupReturn => {
         if (!error) return null;
 
         // axios 에러인 경우
-        if ((error as any).response) {
-            const response = (error as any).response;
+        if (isApiErrorWithResponse(error)) {
+            const response = error.response;
             const errorData = response.data;
             const status = response.status;
             const code = errorData?.code || 'UNKNOWN_ERROR';
@@ -77,10 +77,8 @@ export const useSignup = (): UseSignupReturn => {
             signupError.code = code;
             signupError.status = status;
             
-            // 필드별 에러 메시지가 있는 경우 (validation errors)
-            if (errorData?.errors) {
-                signupError.fieldErrors = errorData.errors;
-            }
+            // 필드별 에러 메시지는 백엔드에서 제공하지 않으므로 제거
+            // 필요시 백엔드 API 응답 구조에 맞춰 추가 가능
 
             return signupError;
         }

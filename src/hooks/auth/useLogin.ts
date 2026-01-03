@@ -6,6 +6,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { authApi } from '../../api/endpoints/auth.api';
 import { useAuthStore } from '../../stores/auth.store';
+import { isApiErrorWithResponse } from '../../types/api/common.types';
 import type { AuthResponse } from '../../types/api/auth.types';
 
 interface LoginError extends Error {
@@ -60,7 +61,6 @@ export const useLogin = (): UseLoginReturn => {
                         setTimeout(checkState, 10);
                     } else {
                         // 최대 재시도 횟수 초과 시에도 진행 (상태는 이미 설정됨)
-                        console.warn('Auth state update timeout, but proceeding with navigation');
                         resolve();
                     }
                 };
@@ -70,8 +70,7 @@ export const useLogin = (): UseLoginReturn => {
             // 4. 리다이렉트
             navigate('/dashboard', { replace: true });
         },
-        onError: (error: any) => {
-            console.error('Login failed:', error);
+        onError: () => {
             // 에러는 mutation.error로 자동 전달됨
             // React Query는 자동으로 isPending을 false로 설정하므로 추가 처리 불필요
         },
@@ -83,8 +82,8 @@ export const useLogin = (): UseLoginReturn => {
         if (!error) return null;
 
         // axios 에러인 경우
-        if ((error as any).response) {
-            const response = (error as any).response;
+        if (isApiErrorWithResponse(error)) {
+            const response = error.response;
             const errorData = response.data;
             const status = response.status;
             const code = errorData?.code || 'UNKNOWN_ERROR';

@@ -11,6 +11,7 @@ export interface StudentProfileResponse {
     currentTierLevel: number;
     consecutiveSolveDays: number;
     primaryLanguage: string | null; // 주로 사용하는 프로그래밍 언어 (JAVA, PYTHON, KOTLIN, etc.)
+    isOnboardingFinished: boolean; // 온보딩 투어 완료 여부
 }
 
 export interface TodaySolvedProblemResponse {

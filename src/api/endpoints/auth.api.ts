@@ -104,21 +104,16 @@ export const authApi = {
     },
 
     /**
-     * BOJ ID 중복 확인 (임시 구현 - 백엔드 API 구현 후 연결 필요)
+     * BOJ ID 중복 확인
      * @param bojId 확인할 BOJ ID
      * @returns 중복 여부 (true: 중복됨, false: 사용 가능)
+     * @throws AxiosError 404: BOJ ID를 찾을 수 없음, 기타 서버 에러
      */
     checkIdDuplicate: async (bojId: string): Promise<boolean> => {
-        try {
-            const response = await apiClient.get<BojIdDuplicateCheckResponse>('/api/v1/auth/check-duplicate', {
-                params: { bojId },
-            });
-            return response.data.isDuplicate;
-        } catch (error: any) {
-            // 네트워크/서버 오류는 중복 여부를 알 수 없으므로 false로 처리하고, 상위에서 에러 UX를 선택할 수 있게 합니다.
-            // (여기서 throw로 바꾸면 회원가입 단계 UX가 거칠어질 수 있어 보수적으로 처리)
-            return false;
-        }
+        const response = await apiClient.get<BojIdDuplicateCheckResponse>('/api/v1/auth/check-duplicate', {
+            params: { bojId },
+        });
+        return response.data.isDuplicate;
     },
 
     /**

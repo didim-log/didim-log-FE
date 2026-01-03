@@ -31,6 +31,7 @@ import type {
     StorageCleanupResponse,
     AdminAuditLogRequest,
     AdminAuditLogPageResponse,
+    ProblemStatsResponse,
 } from '../../types/api/admin.types';
 import type { QuoteResponse } from '../../types/api/quote.types';
 import type { FeedbackResponse, FeedbackStatusUpdateRequest } from '../../types/api/feedback.types';
@@ -247,6 +248,14 @@ export const adminApi = {
      */
     getAuditLogs: async (params: AdminAuditLogRequest): Promise<AdminAuditLogPageResponse> => {
         const response = await apiClient.get<AdminAuditLogPageResponse>('/api/v1/admin/audit-logs', { params });
+        return response.data;
+    },
+
+    /**
+     * 문제 통계 조회
+     */
+    getProblemStats: async (): Promise<ProblemStatsResponse> => {
+        const response = await apiClient.get<ProblemStatsResponse>('/api/v1/admin/problems/stats');
         return response.data;
     },
 };

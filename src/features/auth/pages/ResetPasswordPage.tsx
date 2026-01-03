@@ -9,6 +9,7 @@ import { authApi } from '../../../api/endpoints/auth.api';
 import { Button } from '../../../components/ui/Button';
 import { validation } from '../../../utils/validation';
 import { toast } from 'sonner';
+import { getErrorMessage } from '../../../types/api/common.types';
 
 export const ResetPasswordPage: FC = () => {
     const navigate = useNavigate();
@@ -53,8 +54,8 @@ export const ResetPasswordPage: FC = () => {
             });
             setIsSuccess(true);
             toast.success('비밀번호가 성공적으로 변경되었습니다.');
-        } catch (err: any) {
-            const errorMessage = err.response?.data?.message || err.message || '비밀번호 재설정에 실패했습니다.';
+        } catch (err: unknown) {
+            const errorMessage = getErrorMessage(err);
             setError(errorMessage);
         } finally {
             setIsSubmitting(false);

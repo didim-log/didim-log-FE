@@ -11,23 +11,18 @@ import type {
     StaticTemplateRequest,
 } from '../../types/api/retrospective.types';
 import { useAuthStore } from '../../stores/auth.store';
-import { decodeJwt } from '../../utils/jwt';
 
 export const useCreateRetrospective = () => {
     const queryClient = useQueryClient();
-    const { user, token } = useAuthStore();
+    const { token } = useAuthStore();
 
     return useMutation({
         mutationFn: ({ problemId, data }: { problemId: string; data: RetrospectiveRequest }) => {
-            if (!user?.id && !token) {
-                throw new Error('사용자 정보가 없습니다.');
+            // 백엔드에서 JWT 토큰에서 자동으로 사용자 정보를 추출하므로 studentId는 전달하지 않습니다.
+            if (!token) {
+                throw new Error('로그인이 필요합니다.');
             }
-            // JWT의 sub를 studentId로 사용 (백엔드에서 JWT에서 자동 추출하지만, 쿼리 파라미터로도 전달)
-            const studentId = user?.id || (token ? decodeJwt(token)?.sub : '') || '';
-            if (!studentId) {
-                throw new Error('사용자 ID를 찾을 수 없습니다.');
-            }
-            return retrospectiveApi.createRetrospective(studentId, problemId, data);
+            return retrospectiveApi.createRetrospective(problemId, data);
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['retrospectives'] });
@@ -84,8 +79,11 @@ export const useDeleteRetrospective = () => {
 
     return useMutation({
         mutationFn: (retrospectiveId: string) => retrospectiveApi.deleteRetrospective(retrospectiveId),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['retrospectives'] });
+        onSuccess: (_, retrospectiveId) => {
+            // 목록 쿼리 무효화 (모든 파라미터 조합에 대해)
+            queryClient.invalidateQueries({ queryKey: ['retrospectives', 'list'] });
+            // 개별 회고 쿼리도 무효화
+            queryClient.invalidateQueries({ queryKey: ['retrospectives', retrospectiveId] });
         },
     });
 };

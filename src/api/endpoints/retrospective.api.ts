@@ -17,14 +17,14 @@ import type {
 export const retrospectiveApi = {
     /**
      * 회고 작성/수정
+     * 백엔드에서 JWT 토큰에서 자동으로 사용자 정보를 추출하므로 studentId는 전달하지 않습니다.
      */
     createRetrospective: async (
-        studentId: string,
         problemId: string,
         data: RetrospectiveRequest
     ): Promise<RetrospectiveResponse> => {
         const response = await apiClient.post<RetrospectiveResponse>(
-            `/api/v1/retrospectives?studentId=${studentId}&problemId=${problemId}`,
+            `/api/v1/retrospectives?problemId=${problemId}`,
             data
         );
         return response.data;

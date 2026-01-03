@@ -29,8 +29,8 @@ export const QuoteManagement: FC = () => {
             await createMutation.mutateAsync({ content: content.trim(), author: author.trim() });
             setContent('');
             setAuthor('');
-        } catch (error) {
-            console.error('Create failed:', error);
+        } catch {
+            // Error is handled by React Query mutation
         }
     };
 
@@ -38,8 +38,8 @@ export const QuoteManagement: FC = () => {
         if (confirm('정말 이 명언을 삭제하시겠습니까?')) {
             try {
                 await deleteMutation.mutateAsync(quoteId);
-            } catch (error) {
-                console.error('Delete failed:', error);
+            } catch {
+                // Error is handled by React Query mutation
             }
         }
     };

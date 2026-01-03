@@ -10,6 +10,8 @@ import { Input } from '../../../components/ui/Input';
 import { Spinner } from '../../../components/ui/Spinner';
 import { useCreateNotice, useDeleteNotice, useNotices, useUpdateNotice } from '../../../hooks/api/useNotice';
 import type { NoticeResponse } from '../../../types/api/notice.types';
+import { formatKST } from '../../../utils/dateUtils';
+import { getErrorMessage } from '../../../types/api/common.types';
 
 export const NoticeManagement: FC = () => {
     const [page, setPage] = useState(1);
@@ -74,13 +76,9 @@ export const NoticeManagement: FC = () => {
             setIsPinned(false);
             // 명시적으로 refetch 호출하여 즉시 업데이트
             await refetch();
-        } catch (error: any) {
-            console.error('공지사항 작성 실패:', error);
+        } catch (error: unknown) {
             // 서버에서 반환한 검증 메시지를 사용자에게 표시
-            const errorMessage =
-                error?.response?.data?.message ||
-                error?.message ||
-                '공지사항 작성에 실패했습니다. 입력 내용을 확인해주세요.';
+            const errorMessage = getErrorMessage(error);
             alert(errorMessage);
         }
     };
@@ -105,8 +103,8 @@ export const NoticeManagement: FC = () => {
             await deleteMutation.mutateAsync(notice.id);
             // 삭제 성공 시 리스트 새로고침
             await refetch();
-        } catch (error) {
-            console.error('공지사항 삭제 실패:', error);
+        } catch {
+            // Error is handled by React Query mutation
         }
     };
 
@@ -201,7 +199,7 @@ export const NoticeManagement: FC = () => {
                                                 {notice.content}
                                             </p>
                                             <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
-                                                {new Date(notice.createdAt).toLocaleString('ko-KR')}
+                                                {formatKST(notice.createdAt, 'full')}
                                             </p>
                                         </div>
                                         <div className="shrink-0 flex gap-2">

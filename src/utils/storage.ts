@@ -17,16 +17,16 @@ export const storage = {
     set: <T>(key: string, value: T): void => {
         try {
             localStorage.setItem(`${STORAGE_PREFIX}${key}`, JSON.stringify(value));
-        } catch (error) {
-            console.error('Storage set error:', error);
+        } catch {
+            // Storage operation failed (e.g., quota exceeded)
         }
     },
 
     remove: (key: string): void => {
         try {
             localStorage.removeItem(`${STORAGE_PREFIX}${key}`);
-        } catch (error) {
-            console.error('Storage remove error:', error);
+        } catch {
+            // Storage operation failed
         }
     },
 
@@ -35,8 +35,8 @@ export const storage = {
             Object.keys(localStorage)
                 .filter((key) => key.startsWith(STORAGE_PREFIX))
                 .forEach((key) => localStorage.removeItem(key));
-        } catch (error) {
-            console.error('Storage clear error:', error);
+        } catch {
+            // Storage operation failed
         }
     },
 };

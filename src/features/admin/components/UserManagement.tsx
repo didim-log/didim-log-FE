@@ -10,6 +10,7 @@ import { Input } from '../../../components/ui/Input';
 import { Spinner } from '../../../components/ui/Spinner';
 import type { AdminUserListRequest, AdminMemberUpdateRequest } from '../../../types/api/admin.types';
 import { toast } from 'sonner';
+import { getErrorMessage } from '../../../types/api/common.types';
 
 export const UserManagement: FC = () => {
     const [searchParams, setSearchParams] = useState<AdminUserListRequest>({
@@ -42,8 +43,7 @@ export const UserManagement: FC = () => {
             try {
                 await deleteMutation.mutateAsync(studentId);
                 toast.success('회원이 성공적으로 탈퇴되었습니다.');
-            } catch (error) {
-                console.error('Delete failed:', error);
+            } catch {
                 toast.error('회원 탈퇴에 실패했습니다.');
             }
         }
@@ -79,9 +79,9 @@ export const UserManagement: FC = () => {
             await updateMemberMutation.mutateAsync({ memberId, data: updateData });
             toast.success('회원 정보가 성공적으로 수정되었습니다.');
             handleCancelEdit();
-        } catch (error: any) {
-            console.error('Update member failed:', error);
-            toast.error(error.response?.data?.message || '회원 정보 수정에 실패했습니다.');
+        } catch (error: unknown) {
+            const errorMessage = getErrorMessage(error);
+            toast.error(errorMessage);
         }
     };
 

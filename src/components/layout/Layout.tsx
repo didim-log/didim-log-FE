@@ -2,8 +2,8 @@
  * 레이아웃 컴포넌트
  */
 
-import { ScrollToTop } from '../common/ScrollToTop';
-
+import { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import type { FC, ReactNode } from 'react';
 import { Header } from './Header';
 import { Footer } from './Footer';
@@ -13,15 +13,19 @@ interface LayoutProps {
 }
 
 export const Layout: FC<LayoutProps> = ({ children }) => {
+    const location = useLocation();
+
+    // 페이지 변경 시 스크롤을 맨 위로 이동
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, [location.pathname]);
+
     return (
-        <>
-            <ScrollToTop />
-            <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
-                <Header />
-                <main className="flex-1 w-full">{children}</main>
-                <Footer />
-            </div>
-        </>
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
+            <Header />
+            <main className="flex-1 w-full">{children}</main>
+            <Footer />
+        </div>
     );
 };
 

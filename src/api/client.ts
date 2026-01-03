@@ -3,6 +3,7 @@
  */
 
 import axios from 'axios';
+import { toast } from 'sonner';
 import { useAuthStore } from '../stores/auth.store';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
@@ -85,9 +86,18 @@ export const removeAuthHeader = (): void => {
 
 /**
  * 요청 인터셉터: 토큰 자동 주입
+ * Refresh Token API 호출 시에는 토큰을 추가하지 않음 (무한 루프 방지)
  */
 apiClient.interceptors.request.use(
     (config) => {
+        // Refresh Token API 호출 시에는 토큰을 추가하지 않음
+        const isRefreshEndpoint = config.url?.includes('/auth/refresh');
+        if (isRefreshEndpoint) {
+            // Refresh API는 Request Body에 refreshToken을 포함하므로 Authorization 헤더 제거
+            delete config.headers.Authorization;
+            return config;
+        }
+
         const token = useAuthStore.getState().token;
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
@@ -129,6 +139,17 @@ apiClient.interceptors.response.use(
         const isPublicApi = originalRequest.url?.includes('/api/v1/system/status') || 
                            originalRequest.url?.includes('/api/v1/auth/');
 
+        // 429 Rate Limiting 에러 처리
+        if (error.response?.status === 429) {
+            const errorMessage = error.response?.data?.message || 
+                '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.';
+            toast.error(errorMessage, {
+                description: '너무 많은 요청이 발생했습니다. 1시간 후 다시 시도해주세요.',
+                duration: 5000,
+            });
+            return Promise.reject(error);
+        }
+
         // 401 에러이고, refresh 엔드포인트가 아닌 경우에만 처리
         if (error.response?.status === 401 && !originalRequest._retry && 
             !originalRequest.url?.includes('/auth/refresh') && !isPublicApi) {
@@ -163,14 +184,25 @@ apiClient.interceptors.response.use(
             }
 
             try {
-                const { authApi } = await import('./endpoints/auth.api');
-                const response = await authApi.refresh({ refreshToken });
+                // Refresh API 호출 시 별도의 axios 인스턴스 사용 (interceptor 우회)
+                // 만료된 Access Token이 Authorization 헤더에 추가되지 않도록 함
+                const refreshResponse = await axios.post(
+                    `${API_BASE_URL}/api/v1/auth/refresh`,
+                    { refreshToken },
+                    {
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    }
+                );
+
+                const { token: newAccessToken, refreshToken: newRefreshToken } = refreshResponse.data;
                 const { setTokens } = useAuthStore.getState();
-                setTokens(response.token, response.refreshToken);
+                setTokens(newAccessToken, newRefreshToken);
 
                 // 원래 요청 재시도
-                originalRequest.headers.Authorization = `Bearer ${response.token}`;
-                processQueue(null, response.token);
+                originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+                processQueue(null, newAccessToken);
                 isRefreshing = false;
                 return apiClient(originalRequest);
             } catch (refreshError) {

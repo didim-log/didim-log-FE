@@ -22,6 +22,15 @@ export const memberApi = {
     updateMyNickname: async (data: UpdateMyNicknameRequest): Promise<void> => {
         await apiClient.patch('/api/v1/members/me/nickname', data);
     },
+
+    /**
+     * 온보딩 투어 완료
+     */
+    completeOnboarding: async (): Promise<void> => {
+        await apiClient.patch('/api/v1/members/onboarding/complete');
+    },
 };
+
+
 
 

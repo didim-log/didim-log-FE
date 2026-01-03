@@ -2,11 +2,13 @@
  * 문제 크롤링 제어 컴포넌트
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { FC } from 'react';
-import { useCollectMetadata, useCollectDetails } from '../../../hooks/api/useAdmin';
+import { useCollectMetadata, useCollectDetails, useProblemStats } from '../../../hooks/api/useAdmin';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
+import { Spinner } from '../../../components/ui/Spinner';
+import { BookOpen, Minus, Maximize } from 'lucide-react';
 
 export const ProblemCollector: FC = () => {
     const [start, setStart] = useState('');
@@ -14,6 +16,14 @@ export const ProblemCollector: FC = () => {
 
     const collectMetadataMutation = useCollectMetadata();
     const collectDetailsMutation = useCollectDetails();
+    const { data: stats, isLoading: isStatsLoading, refetch: refetchStats } = useProblemStats();
+
+    // 최대 문제 ID가 있으면 시작 ID를 자동으로 채움
+    useEffect(() => {
+        if (stats?.maxProblemId && !start) {
+            setStart((stats.maxProblemId + 1).toString());
+        }
+    }, [stats?.maxProblemId, start]);
 
     const handleCollectMetadata = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -33,10 +43,14 @@ export const ProblemCollector: FC = () => {
         try {
             await collectMetadataMutation.mutateAsync({ start: startNum, end: endNum });
             alert('문제 메타데이터 수집이 완료되었습니다.');
-            setStart('');
+            // 통계 갱신
+            refetchStats();
+            // 최대 ID 업데이트 후 자동으로 다음 시작 ID 설정
+            if (stats?.maxProblemId && endNum > stats.maxProblemId) {
+                setStart((endNum + 1).toString());
+            }
             setEnd('');
-        } catch (error) {
-            console.error('Collect metadata failed:', error);
+        } catch {
             alert('수집에 실패했습니다.');
         }
     };
@@ -49,14 +63,59 @@ export const ProblemCollector: FC = () => {
         try {
             await collectDetailsMutation.mutateAsync();
             alert('문제 상세 정보 크롤링이 완료되었습니다.');
-        } catch (error) {
-            console.error('Collect details failed:', error);
+        } catch {
             alert('크롤링에 실패했습니다.');
         }
     };
 
     return (
         <div className="space-y-6">
+            {/* 문제 통계 대시보드 */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 border border-gray-200 dark:border-gray-700">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">문제 수집 현황</h2>
+                {isStatsLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                        <Spinner />
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-3 gap-4">
+                        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+                            <div className="flex items-center gap-2 mb-2">
+                                <BookOpen className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                                <p className="text-sm font-medium text-blue-600 dark:text-blue-400">수집된 문제 수</p>
+                            </div>
+                            <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                                {stats?.totalCount.toLocaleString() ?? 0}개
+                            </p>
+                        </div>
+                        <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border border-green-200 dark:border-green-800">
+                            <div className="flex items-center gap-2 mb-2">
+                                <Minus className="w-5 h-5 text-green-600 dark:text-green-400" />
+                                <p className="text-sm font-medium text-green-600 dark:text-green-400">최소 문제 ID</p>
+                            </div>
+                            <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                                {stats?.minProblemId ? `${stats.minProblemId}번` : '-'}
+                            </p>
+                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                제일 빠른 문제 번호
+                            </p>
+                        </div>
+                        <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-800">
+                            <div className="flex items-center gap-2 mb-2">
+                                <Maximize className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                                <p className="text-sm font-medium text-purple-600 dark:text-purple-400">최대 문제 ID</p>
+                            </div>
+                            <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                                {stats?.maxProblemId ? `${stats.maxProblemId}번` : '-'}
+                            </p>
+                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                제일 느린 문제 번호
+                            </p>
+                        </div>
+                    </div>
+                )}
+            </div>
+
             {/* 메타데이터 수집 */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 border border-gray-200 dark:border-gray-700">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">문제 메타데이터 수집</h2>

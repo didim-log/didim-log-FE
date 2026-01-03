@@ -31,18 +31,17 @@ export const DashboardStats: FC<DashboardStatsProps> = () => {
     const { data: statistics, isLoading, error } = useStatistics();
 
     // 카테고리 레이더 차트 데이터 준비
+    // 백엔드에서 이미 집계된 categoryStats 사용
     const prepareRadarData = () => {
-        if (statistics?.algorithmCategoryDistribution && Object.keys(statistics.algorithmCategoryDistribution).length > 0) {
-            // 상위 5개 카테고리 추출
-            const entries = Object.entries(statistics.algorithmCategoryDistribution)
-                .sort(([, a], [, b]) => b - a)
-                .slice(0, 5);
+        if (statistics?.categoryStats && statistics.categoryStats.length > 0) {
+            // 상위 5개 카테고리 추출 (백엔드에서 이미 정렬되어 있음)
+            const top5 = statistics.categoryStats.slice(0, 5);
 
             // 최대값 기준으로 100점 만점으로 정규화
-            const maxCount = Math.max(...entries.map(([, count]) => count));
-            return entries.map(([name, count]) => ({
-                category: name,
-                value: Math.round((count / maxCount) * 100),
+            const maxCount = top5.length > 0 ? Math.max(...top5.map((item) => item.count)) : 1;
+            return top5.map((item) => ({
+                category: item.category,
+                value: maxCount > 0 ? Math.round((item.count / maxCount) * 100) : 0,
             }));
         }
         return mockCategoryData;
@@ -53,8 +52,8 @@ export const DashboardStats: FC<DashboardStatsProps> = () => {
     // 핵심 지표 계산
     const calculateMetrics = () => {
         if (statistics) {
-            // 총 회고 수는 totalSolvedCount 사용 (또는 별도 API 필요)
-            const totalRetrospectives = statistics.totalSolvedCount || mockMetrics.totalRetrospectives;
+            // 총 회고 수는 totalRetrospectives 사용
+            const totalRetrospectives = statistics.totalRetrospectives || mockMetrics.totalRetrospectives;
             
             // 평균 풀이 시간과 성공률은 현재 API에 없으므로 mock 데이터 사용
             // TODO: 백엔드 API에 추가 필요

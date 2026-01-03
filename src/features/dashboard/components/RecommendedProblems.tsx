@@ -37,10 +37,15 @@ interface RecommendedProblemsProps {
 
 export const RecommendedProblems: FC<RecommendedProblemsProps> = ({ count = 4, category: initialCategory }) => {
     const [selectedCategory, setSelectedCategory] = useState<string | null>(initialCategory || null);
+    const [onlyKorean, setOnlyKorean] = useState<boolean>(false);
     const [showLeftArrow, setShowLeftArrow] = useState(false);
     const [showRightArrow, setShowRightArrow] = useState(true);
     // 백엔드 @Min(1) 변경으로 count만큼 직접 요청 가능 (최적화)
-    const { data: problems, isLoading, error, refetch } = useProblemRecommend({ count, category: selectedCategory || undefined });
+    const { data: problems, isLoading, error, refetch } = useProblemRecommend({ 
+        count, 
+        category: selectedCategory || undefined,
+        language: onlyKorean ? 'ko' : undefined
+    });
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
@@ -131,12 +136,24 @@ export const RecommendedProblems: FC<RecommendedProblemsProps> = ({ count = 4, c
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 border border-gray-200 dark:border-gray-700 tour-recommend-problems">
             <div className="flex items-center justify-between mb-3">
                 <h3 className="text-base font-semibold text-gray-900 dark:text-white">추천 문제</h3>
-                <Link
-                    to="/problems"
-                    className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
-                >
-                    더보기 &gt;
-                </Link>
+                <div className="flex items-center gap-3">
+                    {/* 한국어만 보기 토글 */}
+                    <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            checked={onlyKorean}
+                            onChange={(e) => setOnlyKorean(e.target.checked)}
+                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                        />
+                        <span className="text-xs text-gray-700 dark:text-gray-300">한국어 문제만</span>
+                    </label>
+                    <Link
+                        to="/problems"
+                        className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                    >
+                        더보기 &gt;
+                    </Link>
+                </div>
             </div>
 
             {/* 카테고리 칩 버튼 그룹 - 항상 표시 */}
@@ -306,6 +323,7 @@ interface ProblemCardProps {
 
 const ProblemCard: FC<ProblemCardProps> = ({ problem }) => {
     const difficultyDisplay = formatTierFromDifficulty(problem.difficulty, problem.difficultyLevel);
+    const isEnglish = problem.language === 'en';
 
     return (
         <Link
@@ -314,7 +332,18 @@ const ProblemCard: FC<ProblemCardProps> = ({ problem }) => {
         >
             <div className="flex items-start justify-between mb-1.5">
                 <div className="flex-1">
-                    <p className="text-xs text-gray-600 dark:text-gray-400">#{problem.id}</p>
+                    <div className="flex items-center gap-2 mb-1">
+                        <p className="text-xs text-gray-600 dark:text-gray-400">#{problem.id}</p>
+                        {/* EN 배지 */}
+                        {isEnglish && (
+                            <span 
+                                className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                                title="This is an English problem"
+                            >
+                                🇺🇸 EN
+                            </span>
+                        )}
+                    </div>
                     <h4 className="text-sm font-semibold text-gray-900 dark:text-white mt-1">{problem.title}</h4>
                     {/* 카테고리 정보 표시 */}
                     {problem.category && (

@@ -105,8 +105,8 @@ export const ProfilePage: FC = () => {
             await deleteAccountMutation.mutateAsync();
             logout();
             window.location.href = '/login';
-        } catch (error) {
-            console.error('Account deletion failed:', error);
+        } catch {
+            // Account deletion failed, error is handled by React Query mutation
         }
     };
 

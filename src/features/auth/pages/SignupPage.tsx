@@ -10,6 +10,7 @@ import { authApi } from '../../../api/endpoints/auth.api';
 import { useOnboardingStore } from '../../../stores/onboarding.store';
 import { useAuthStore } from '../../../stores/auth.store';
 import { toast } from 'sonner';
+import { isApiError, getErrorMessage } from '../../../types/api/common.types';
 
 export const SignupPage: FC = () => {
     const navigate = useNavigate();
@@ -50,12 +51,11 @@ export const SignupPage: FC = () => {
 
             toast.success('회원가입이 완료되었습니다!');
             navigate('/dashboard', { replace: true });
-        } catch (error: any) {
-            console.error('Signup failed:', error);
-            
-            const errorCode = error.response?.data?.code;
-            const errorStatus = error.response?.status;
-            const fieldErrors = error.response?.data?.errors;
+        } catch (error: unknown) {
+            const errorCode = isApiError(error) ? error.response?.data?.code : undefined;
+            const errorStatus = isApiError(error) ? error.response?.status : undefined;
+            // fieldErrors는 백엔드에서 제공하지 않으므로 undefined로 처리
+            const fieldErrors = undefined;
 
             if (errorStatus === 409 && errorCode === 'DUPLICATE_BOJ_ID') {
                 // 이미 가입된 BOJ ID - SignupWizard에서 2단계로 돌아가도록 에러 전달
@@ -81,8 +81,9 @@ export const SignupPage: FC = () => {
                 });
             } else {
                 // 기타 서버 에러
+                const errorMessage = getErrorMessage(error);
                 setApiError({
-                    message: error.response?.data?.message || error.message || '일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
+                    message: errorMessage,
                     code: errorCode,
                     status: errorStatus,
                 });

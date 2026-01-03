@@ -16,10 +16,11 @@ import { Spinner } from '../../../components/ui/Spinner';
 import { Button } from '../../../components/ui/Button';
 import { Layout } from '../../../components/layout/Layout';
 import { useAuthStore } from '../../../stores/auth.store';
+import { useOnboardingStore } from '../../../stores/onboarding.store';
 import type { SolutionSubmitResponse } from '../../../types/api/study.types';
 import { ChevronLeft, ExternalLink, Clock, Pause, Play } from 'lucide-react';
 import { formatTierFromDifficulty, getTierColor } from '../../../utils/tier';
-import { getLanguageBadgeColor, getLanguageLabel } from '../../../utils/badge';
+import { LanguageBadge } from '../../../components/common/LanguageBadge';
 
 const LANGUAGE_OPTIONS = [
     { value: 'text', label: 'Text' },
@@ -49,6 +50,7 @@ export const StudyPage: FC = () => {
     const { problemId } = useParams<{ problemId: string }>();
     const navigate = useNavigate();
     const { user } = useAuthStore();
+    const { completePhase } = useOnboardingStore();
     const { data: problem, isLoading, error } = useProblemDetail(problemId || '');
     const submitSolutionMutation = useSubmitSolution();
     const staticTemplateMutation = useStaticTemplate();
@@ -133,8 +135,10 @@ export const StudyPage: FC = () => {
             setSubmitResult(result);
             setShowResult(true);
             setIsSubmitted(true); // 제출 완료 표시
-        } catch (error) {
-            console.error('Submit failed:', error);
+            
+            // 온보딩 Phase 완료 처리
+            completePhase('study');
+        } catch {
             // 에러 발생 시에도 제출 완료로 표시하여 중복 제출 방지
             setIsSubmitted(true);
         } finally {
@@ -161,13 +165,6 @@ export const StudyPage: FC = () => {
             // 0) 로그 생성 (AI 한 줄 리뷰를 위해 선행)
             // 실패해도 회고 작성은 가능해야 하므로, 실패 시 logId 없이 진행합니다.
             try {
-                console.log('[StudyPage] Attempting to create log with:', {
-                    title: `${problemId}. ${problem.title}`,
-                    content: ' ', // 빈 문자열은 @NotBlank 검증에 실패하므로 공백 문자 사용
-                    codeLength: code.length,
-                    isSuccess,
-                });
-                
                 const created = await logApi.createLog({
                     title: `${problemId}. ${problem.title}`,
                     content: 'AI 리뷰를 위한 코드 제출', // @NotBlank 검증을 통과하기 위한 의미 있는 값
@@ -176,13 +173,8 @@ export const StudyPage: FC = () => {
                 });
                 
                 logId = created.id;
-                console.log('[StudyPage] Log created successfully, logId:', logId);
-            } catch (error: any) {
-                console.error('[StudyPage] Log create failed. Proceed without logId.');
-                console.error('[StudyPage] Error object:', error);
-                console.error('[StudyPage] Error message:', error?.message);
-                console.error('[StudyPage] Error response:', error?.response?.data);
-                console.error('[StudyPage] Error status:', error?.response?.status);
+            } catch {
+                // Log creation failed, proceed without logId
                 logId = null;
             }
 
@@ -214,19 +206,20 @@ export const StudyPage: FC = () => {
                     problemId,
                     template: templateResult.template,
                     isSuccess,
+                    status: isSuccess ? 'SOLVED' : 'FAIL', // 명시적 status 전달
                     code,
                     logId,
                     solveTime: timeTaken > 0 ? formatSolveTime(timeTaken) : null,
                     language, // 선택한 언어 정보 전달
                 },
             });
-        } catch (error) {
-            console.error('Template fetch failed:', error);
+        } catch {
             // 템플릿 없이 회고 작성 페이지로 이동
             navigate('/retrospectives/write', {
                 state: {
                     problemId,
                     isSuccess,
+                    status: isSuccess ? 'SOLVED' : 'FAIL', // 명시적 status 전달
                     code,
                     logId,
                     language, // 선택한 언어 정보 전달
@@ -291,11 +284,7 @@ export const StudyPage: FC = () => {
                                             {formatTierFromDifficulty(problem.difficulty, problem.difficultyLevel)}
                                         </span>
                                         {/* 언어 배지 */}
-                                        {language && language !== 'text' && (
-                                            <span className={`px-2 py-1 rounded text-sm font-medium ${getLanguageBadgeColor(language)}`}>
-                                                {getLanguageLabel(language)}
-                                            </span>
-                                        )}
+                                        <LanguageBadge language={language} />
                                     </div>
                                 </div>
                             </div>
@@ -317,7 +306,7 @@ export const StudyPage: FC = () => {
                                 </a>
                             )}
                             {/* 타이머 (Badge 스타일) */}
-                            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 tour-timer">
                                 <Clock className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                                 <Timer 
                                     isRunning={isTimerRunning} 
@@ -356,15 +345,19 @@ export const StudyPage: FC = () => {
                                     </option>
                                 ))}
                             </select>
+                            <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                                <span>ℹ️</span>
+                                <span>올바른 구문 강조(Syntax Highlighting)를 위해 작성한 코드의 언어를 정확히 선택해주세요. (기본값: Text)</span>
+                            </p>
                         </div>
 
                         {/* Body Section - 코드 에디터 */}
-                        <div className="p-4">
+                        <div className="p-4 tour-code-editor">
                             <CodeEditor value={code} onChange={setCode} language={language} />
                         </div>
 
                         {/* Footer Section - 액션 버튼 */}
-                        <div className="p-4 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3">
+                        <div className="p-4 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3 tour-submit-buttons">
                             {/* 실패 제출 (Outline/Ghost) */}
                             <Button
                                 onClick={() => handleSubmit(false)}

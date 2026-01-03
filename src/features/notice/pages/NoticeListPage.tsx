@@ -9,6 +9,7 @@ import { Layout } from '../../../components/layout/Layout';
 import { Spinner } from '../../../components/ui/Spinner';
 import { Button } from '../../../components/ui/Button';
 import { useNotices } from '../../../hooks/api/useNotice';
+import { formatDateToKST } from '../../../utils/date';
 
 export const NoticeListPage: FC = () => {
     const [page, setPage] = useState(1);
@@ -76,7 +77,7 @@ export const NoticeListPage: FC = () => {
                                                 </h2>
                                             </div>
                                             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                                {new Date(notice.createdAt).toLocaleString('ko-KR')}
+                                                {formatDateToKST(notice.createdAt, { includeDate: true })}
                                             </p>
                                         </div>
                                         <span className="shrink-0 text-xs text-gray-500 dark:text-gray-400">
@@ -118,5 +119,6 @@ export const NoticeListPage: FC = () => {
         </Layout>
     );
 };
+
 
 

@@ -9,8 +9,9 @@ import { Input } from '../../../components/ui/Input';
 import { validation } from '../../../utils/validation';
 import { useAuthStore } from '../../../stores/auth.store';
 import { useCheckNickname } from '../../../hooks/api/useMember';
-import type { UpdateProfileRequest } from '../../../types/api/student.types';
+import type { UpdateProfileRequest, PrimaryLanguage } from '../../../types/api/student.types';
 import { Check, X } from 'lucide-react';
+import { isApiError } from '../../../types/api/common.types';
 
 interface ProfileEditFormProps {
     initialNickname: string;
@@ -105,7 +106,9 @@ export const ProfileEditForm: FC<ProfileEditFormProps> = ({
         }
 
         // 주 언어 처리: 빈 문자열이면 null로, 값이 있으면 대문자로 변환
-        const normalizedPrimaryLanguage = primaryLanguage.trim() === '' ? null : (primaryLanguage.toUpperCase() as any);
+        const normalizedPrimaryLanguage = primaryLanguage.trim() === '' 
+            ? null 
+            : (primaryLanguage.toUpperCase() as PrimaryLanguage);
         const normalizedInitialLanguage = initialPrimaryLanguage 
             ? (initialPrimaryLanguage.trim() === '' ? null : initialPrimaryLanguage.toUpperCase())
             : null;
@@ -136,10 +139,9 @@ export const ProfileEditForm: FC<ProfileEditFormProps> = ({
             }
             setCurrentPassword('');
             setNewPassword('');
-        } catch (err: any) {
-            console.error('Profile update failed:', err);
-            const errorCode = err?.response?.data?.code;
-            const errorMessage = err?.response?.data?.message || '';
+        } catch (err: unknown) {
+            const errorCode = isApiError(err) ? err.response?.data?.code : undefined;
+            const errorMessage = isApiError(err) ? err.response?.data?.message || '' : '';
             
             // 백엔드에서 닉네임 중복 에러 처리
             if (errorCode === 'DUPLICATE_NICKNAME' || errorMessage.includes('이미 사용 중인 닉네임')) {
@@ -235,8 +237,7 @@ export const ProfileEditForm: FC<ProfileEditFormProps> = ({
                                         setNicknameChecked(false);
                                         setErrors({ nickname: '이미 사용 중인 닉네임입니다. 다른 닉네임을 사용해주세요.' });
                                     }
-                                } catch (err: any) {
-                                    console.error('Nickname check failed:', err);
+                                } catch {
                                     setNicknameChecked(false);
                                     setErrors({ nickname: '닉네임을 확인할 수 없습니다. 잠시 후 다시 시도해주세요.' });
                                 }

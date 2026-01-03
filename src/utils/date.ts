@@ -13,19 +13,62 @@
  * @example
  * formatDateToKST("2024-01-15T10:30:00Z") // "19:30"
  * formatDateToKST("2024-01-15T10:30:00Z", { includeDate: true }) // "2024-01-15 19:30"
+ * formatDateToKST("2024-01-15T10:30:00Z", { format: 'full' }) // "2024. 1. 15. 오후 7:30"
+ * formatDateToKST("2024-01-15T10:30:00Z", { format: 'dateOnly' }) // "2024-01-15"
  */
 export const formatDateToKST = (
     dateString: string,
     options?: {
         includeDate?: boolean;
         includeSeconds?: boolean;
+        format?: 'default' | 'full' | 'dateOnly' | 'timeOnly';
     }
 ): string => {
     const date = new Date(dateString);
     
-    // UTC 시간에 9시간을 더하여 KST로 변환
-    const kstDate = new Date(date.getTime() + 9 * 60 * 60 * 1000);
+    // dateOnly 형식
+    if (options?.format === 'dateOnly') {
+        const formatOptions: Intl.DateTimeFormatOptions = {
+            timeZone: 'Asia/Seoul',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+        };
+        const formatted = new Intl.DateTimeFormat('ko-KR', formatOptions).format(date);
+        // "2024. 01. 15." 형식을 "2024-01-15"로 변환
+        return formatted.replace(/\./g, '').replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+    }
     
+    // full 형식 (한국어 형식)
+    if (options?.format === 'full') {
+        const formatOptions: Intl.DateTimeFormatOptions = {
+            timeZone: 'Asia/Seoul',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+        };
+        if (options?.includeSeconds) {
+            formatOptions.second = '2-digit';
+        }
+        return new Intl.DateTimeFormat('ko-KR', formatOptions).format(date);
+    }
+    
+    // timeOnly 형식
+    if (options?.format === 'timeOnly') {
+        const formatOptions: Intl.DateTimeFormatOptions = {
+            timeZone: 'Asia/Seoul',
+            hour: '2-digit',
+            minute: '2-digit',
+        };
+        if (options?.includeSeconds) {
+            formatOptions.second = '2-digit';
+        }
+        return new Intl.DateTimeFormat('ko-KR', formatOptions).format(date);
+    }
+    
+    // default 형식
     const formatOptions: Intl.DateTimeFormatOptions = {
         timeZone: 'Asia/Seoul',
         hour: '2-digit',
@@ -42,7 +85,7 @@ export const formatDateToKST = (
         formatOptions.day = '2-digit';
     }
     
-    return new Intl.DateTimeFormat('ko-KR', formatOptions).format(kstDate);
+    return new Intl.DateTimeFormat('ko-KR', formatOptions).format(date);
 };
 
 /**
@@ -54,9 +97,10 @@ export const formatDateToKST = (
  */
 export const formatRelativeTime = (dateString: string): string => {
     const date = new Date(dateString);
-    const kstDate = new Date(date.getTime() + 9 * 60 * 60 * 1000);
     const now = new Date();
-    const diffMs = now.getTime() - kstDate.getTime();
+    
+    // UTC 시간 차이를 계산 (밀리초)
+    const diffMs = now.getTime() - date.getTime();
     const diffSeconds = Math.floor(diffMs / 1000);
     const diffMinutes = Math.floor(diffSeconds / 60);
     const diffHours = Math.floor(diffMinutes / 60);
@@ -85,5 +129,6 @@ export const formatRelativeTime = (dateString: string): string => {
     // 7일 이상 지난 경우 날짜로 표시
     return formatDateToKST(dateString, { includeDate: true });
 };
+
 
 

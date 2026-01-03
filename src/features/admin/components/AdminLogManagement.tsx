@@ -9,6 +9,8 @@ import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { Spinner } from '../../../components/ui/Spinner';
 import { toast } from 'sonner';
+import { formatKST } from '../../../utils/dateUtils';
+import { getErrorMessage } from '../../../types/api/common.types';
 
 export const AdminLogManagement: FC = () => {
     const [page, setPage] = useState(1);
@@ -33,8 +35,8 @@ export const AdminLogManagement: FC = () => {
             const result = await cleanupLogsMutation.mutateAsync(olderThanDays);
             toast.success(result.message);
             refetch();
-        } catch (error: any) {
-            const errorMessage = error.response?.data?.message || error.message || '로그 정리에 실패했습니다.';
+        } catch (error: unknown) {
+            const errorMessage = getErrorMessage(error);
             toast.error(errorMessage);
         }
     };
@@ -143,7 +145,7 @@ export const AdminLogManagement: FC = () => {
                             {data.content.map((log) => (
                                 <tr key={log.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                                        {new Date(log.createdAt).toLocaleString('ko-KR')}
+                                        {formatKST(log.createdAt, 'full')}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                                         {log.bojId || '-'}

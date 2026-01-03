@@ -4,7 +4,6 @@
  */
 
 import { useState, useEffect } from 'react';
-import type { FC } from 'react';
 import { useAiStatus, useUpdateAiStatus, useUpdateAiLimits } from '../../../hooks/api/useAdmin';
 import { Spinner } from '../../../components/ui/Spinner';
 import { Button } from '../../../components/ui/Button';
@@ -12,7 +11,7 @@ import { Input } from '../../../components/ui/Input';
 import { toast } from 'sonner';
 
 export const AiServiceControl: React.FC = () => {
-    const { data: status, isLoading, error } = useAiStatus();
+    const { data: status, isLoading, error, refetch: refetchAiStatus } = useAiStatus();
     const updateStatusMutation = useUpdateAiStatus();
     const updateLimitsMutation = useUpdateAiLimits();
 
@@ -36,8 +35,9 @@ export const AiServiceControl: React.FC = () => {
         try {
             await updateStatusMutation.mutateAsync({ enabled: !status.isEnabled });
             toast.success(status.isEnabled ? 'AI 서비스가 비활성화되었습니다.' : 'AI 서비스가 활성화되었습니다.');
-        } catch (err) {
-            console.error('AI 서비스 상태 변경 실패:', err);
+            // 상태 변경 후 즉시 갱신
+            refetchAiStatus();
+        } catch {
             toast.error('AI 서비스 상태 변경에 실패했습니다.');
         }
     };
@@ -54,8 +54,9 @@ export const AiServiceControl: React.FC = () => {
             });
             setIsEditingLimits(false);
             toast.success('사용량 제한이 업데이트되었습니다.');
-        } catch (err) {
-            console.error('사용량 제한 업데이트 실패:', err);
+            // 제한 변경 후 즉시 갱신
+            refetchAiStatus();
+        } catch {
             toast.error('사용량 제한 업데이트에 실패했습니다.');
         }
     };

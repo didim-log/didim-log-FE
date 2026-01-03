@@ -41,7 +41,7 @@ export const StatisticsPreview: FC = () => {
     const metrics = getMetrics();
 
     return (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 border border-gray-200 dark:border-gray-700">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 border border-gray-200 dark:border-gray-700 tour-statistics">
             <div className="flex items-center justify-between mb-3">
                 <h3 className="text-base font-semibold text-gray-900 dark:text-white">통계</h3>
                 <Link

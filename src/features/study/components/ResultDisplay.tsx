@@ -5,6 +5,7 @@
 import type { FC } from 'react';
 import { Button } from '../../../components/ui/Button';
 import type { SolutionSubmitResponse } from '../../../types/api/study.types';
+import { X } from 'lucide-react';
 
 interface ResultDisplayProps {
     result: SolutionSubmitResponse | null;
@@ -18,9 +19,28 @@ export const ResultDisplay: FC<ResultDisplayProps> = ({ result, isSuccess, onWri
         return null;
     }
 
+    const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
+        // 모달 내부 클릭은 무시
+        if (e.target === e.currentTarget) {
+            onClose();
+        }
+    };
+
     return (
-        <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50 p-4">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6 space-y-4">
+        <div 
+            className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50 p-4"
+            onClick={handleBackdropClick}
+        >
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6 space-y-4 relative">
+                {/* X 닫기 버튼 (우측 상단) */}
+                <button
+                    onClick={onClose}
+                    className="absolute top-4 right-4 p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    aria-label="닫기"
+                >
+                    <X className="w-5 h-5" />
+                </button>
+
                 <div className="text-center">
                     {isSuccess ? (
                         <div className="mb-4">
@@ -64,12 +84,15 @@ export const ResultDisplay: FC<ResultDisplayProps> = ({ result, isSuccess, onWri
                     </p>
                 </div>
 
-                <div className="flex gap-3">
-                    <Button onClick={onClose} variant="outline" className="flex-1">
-                        닫기
-                    </Button>
-                    <Button onClick={onWriteRetrospective} variant="primary" className="flex-1">
-                        회고 작성하기
+                {/* 단일 Primary 버튼 - 회고 작성하러 가기 */}
+                <div className="pt-2">
+                    <Button 
+                        onClick={onWriteRetrospective} 
+                        variant="primary" 
+                        className="w-full"
+                        size="lg"
+                    >
+                        회고 작성하러 가기
                     </Button>
                 </div>
             </div>

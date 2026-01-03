@@ -37,7 +37,6 @@ export const LoginPage: FC = () => {
                     setMaintenanceStatus(status);
                 }
             } catch (err) {
-                console.error('유지보수 상태 확인 실패:', err);
                 // 에러가 발생해도 로그인은 가능하도록 함
                 // 503 에러(유지보수 모드)인 경우에도 정상적으로 처리
                 if (isMounted) {
@@ -60,8 +59,9 @@ export const LoginPage: FC = () => {
     // 에러가 변경될 때 처리
     useEffect(() => {
         if (error) {
-            const errorCode = (error as any).code;
-            const errorStatus = (error as any).status;
+            // LoginError는 이미 변환된 에러이므로 직접 접근
+            const errorCode = error.code;
+            const errorStatus = error.status;
 
             if (errorStatus === 404 && errorCode === 'STUDENT_NOT_FOUND') {
                 // 계정이 없는 경우: 필드 에러로만 표시 (빨간 박스 숨김)
@@ -198,6 +198,37 @@ export const LoginPage: FC = () => {
         window.location.href = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'}/oauth2/authorization/${provider}`;
     };
 
+    const formatMaintenanceTime = (startTime: string, endTime: string): string => {
+        try {
+            const start = new Date(startTime);
+            const end = new Date(endTime);
+            
+            const formatDate = (date: Date): string => {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                return `${year}.${month}.${day} ${hours}:${minutes}`;
+            };
+            
+            const formatTime = (date: Date): string => {
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                return `${hours}:${minutes}`;
+            };
+            
+            // 같은 날이면 날짜는 한 번만 표시
+            if (start.toDateString() === end.toDateString()) {
+                return `${formatDate(start)} ~ ${formatTime(end)}`;
+            }
+            
+            return `${formatDate(start)} ~ ${formatDate(end)}`;
+        } catch {
+            return `${startTime} ~ ${endTime}`;
+        }
+    };
+
     const isUnderMaintenance = !isCheckingMaintenance && maintenanceStatus?.underMaintenance;
 
     return (
@@ -212,17 +243,34 @@ export const LoginPage: FC = () => {
 
                 {/* 유지보수 알림 배너 */}
                 {isUnderMaintenance && (
-                    <div className="bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 dark:border-red-500 rounded-md p-3 mb-4 flex items-center gap-2">
-                        <svg className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                            <path
-                                fillRule="evenodd"
-                                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                                clipRule="evenodd"
-                            />
-                        </svg>
-                        <p className="text-sm text-red-600 dark:text-red-400 font-medium">
-                            {maintenanceStatus?.maintenanceMessage || '서버 점검 중입니다. 잠시 후 다시 시도해주세요.'}
-                        </p>
+                    <div className="bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 dark:border-red-500 rounded-md p-4 mb-4 space-y-3">
+                        <div className="flex items-start gap-2">
+                            <svg className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path
+                                    fillRule="evenodd"
+                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                                    clipRule="evenodd"
+                                />
+                            </svg>
+                            <div className="flex-1">
+                                <p className="text-sm text-red-600 dark:text-red-400 font-medium mb-1">
+                                    🚨 현재 서버 점검 중입니다.
+                                </p>
+                                {maintenanceStatus?.startTime && maintenanceStatus?.endTime && (
+                                    <p className="text-xs text-red-600 dark:text-red-400 mb-2">
+                                        점검 시간: {formatMaintenanceTime(maintenanceStatus.startTime, maintenanceStatus.endTime)}
+                                    </p>
+                                )}
+                                {maintenanceStatus?.noticeId && (
+                                    <button
+                                        onClick={() => navigate(`/notices/${maintenanceStatus.noticeId}`)}
+                                        className="text-xs text-red-700 dark:text-red-300 underline hover:text-red-900 dark:hover:text-red-100 font-medium"
+                                    >
+                                        점검 상세 내용 보기 &gt;
+                                    </button>
+                                )}
+                            </div>
+                        </div>
                     </div>
                 )}
 

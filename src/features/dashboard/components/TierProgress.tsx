@@ -2,15 +2,24 @@
  * 티어 진행률 시각화 컴포넌트
  */
 
+import { useState } from 'react';
 import type { FC } from 'react';
 import type { DashboardResponse } from '../../../types/api/dashboard.types';
 import { TierBadge } from './TierBadge';
+import { LanguageBadge } from '../../../components/common/LanguageBadge';
+import { RefreshCw } from 'lucide-react';
+import { useSyncBojProfile } from '../../../hooks/api/useStudent';
+import { toast } from 'sonner';
+import { getErrorMessage } from '../../../types/api/common.types';
 
 interface TierProgressProps {
     dashboard: DashboardResponse;
 }
 
 export const TierProgress: FC<TierProgressProps> = ({ dashboard }) => {
+    const syncMutation = useSyncBojProfile();
+    const [isSyncing, setIsSyncing] = useState(false);
+
     // 데이터 안전장치: dashboard 또는 studentProfile이 없는 경우
     if (!dashboard || !dashboard.studentProfile) {
         return (
@@ -23,19 +32,45 @@ export const TierProgress: FC<TierProgressProps> = ({ dashboard }) => {
     const { currentTierTitle, nextTierTitle, currentRating, requiredRatingForNextTier, progressPercentage } = dashboard;
     const { nickname, currentTierLevel, consecutiveSolveDays } = dashboard.studentProfile;
 
+    const handleSync = async () => {
+        setIsSyncing(true);
+        try {
+            await syncMutation.mutateAsync();
+            // 동기화 성공 시 localStorage에 시간 저장
+            localStorage.setItem('boj_last_sync_time', Date.now().toString());
+            toast.success('최신 정보를 가져왔습니다.');
+        } catch (error: unknown) {
+            const errorMessage = getErrorMessage(error);
+            toast.error(errorMessage);
+        } finally {
+            setIsSyncing(false);
+        }
+    };
+
     return (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-5 border border-gray-200 dark:border-gray-700">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-5 border border-gray-200 dark:border-gray-700 tour-profile-card">
             <div className="space-y-4">
                 {/* 사용자 정보 */}
-                <div className="flex items-center gap-2">
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                        {nickname || '사용자'}
-                    </h2>
-                    {dashboard.studentProfile.primaryLanguage && (
-                        <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700">
-                            {dashboard.studentProfile.primaryLanguage}
-                        </span>
-                    )}
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                            {nickname || '사용자'}
+                        </h2>
+                        {dashboard.studentProfile.primaryLanguage && dashboard.studentProfile.primaryLanguage !== 'TEXT' && (
+                            <LanguageBadge language={dashboard.studentProfile.primaryLanguage} size="sm" />
+                        )}
+                    </div>
+                    <button
+                        onClick={handleSync}
+                        disabled={isSyncing || syncMutation.isPending}
+                        className="p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="BOJ 정보 동기화"
+                        aria-label="BOJ 정보 동기화"
+                    >
+                        <RefreshCw
+                            className={`w-5 h-5 ${isSyncing || syncMutation.isPending ? 'animate-spin' : ''}`}
+                        />
+                    </button>
                 </div>
 
                 {/* 티어 정보 */}

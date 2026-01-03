@@ -9,6 +9,7 @@ import { authApi } from '../../../api/endpoints/auth.api';
 import { Button } from '../../../components/ui/Button';
 import { validation } from '../../../utils/validation';
 import { toast } from 'sonner';
+import { getErrorMessage } from '../../../types/api/common.types';
 
 export const FindPasswordPage: FC = () => {
     const navigate = useNavigate();
@@ -44,8 +45,8 @@ export const FindPasswordPage: FC = () => {
             await authApi.findPassword({ email: email.trim(), bojId: bojId.trim() });
             setIsSuccess(true);
             toast.success('이메일로 비밀번호 재설정 코드가 전송되었습니다.');
-        } catch (err: any) {
-            const errorMessage = err.response?.data?.message || err.message || '비밀번호 찾기에 실패했습니다.';
+        } catch (err: unknown) {
+            const errorMessage = getErrorMessage(err);
             setError(errorMessage);
         } finally {
             setIsSubmitting(false);

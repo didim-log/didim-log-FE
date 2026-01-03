@@ -3,7 +3,7 @@
  */
 
 import { apiClient } from '../client';
-import type { AiReviewResponse, LogCreateRequest, LogFeedbackRequest, LogFeedbackResponse, LogResponse, LogTemplateResponse } from '../../types/api/log.types';
+import type { AiReviewResponse, AiUsageResponse, LogCreateRequest, LogFeedbackRequest, LogFeedbackResponse, LogResponse, LogTemplateResponse } from '../../types/api/log.types';
 
 export const logApi = {
     /**
@@ -45,6 +45,15 @@ export const logApi = {
             `/api/v1/logs/${logId}/feedback`,
             feedback
         );
+        return response.data;
+    },
+    
+    /**
+     * AI 사용량 조회
+     * @returns AI 사용량 정보
+     */
+    getAiUsage: async (): Promise<AiUsageResponse> => {
+        const response = await apiClient.get<AiUsageResponse>('/api/v1/logs/ai-usage/me');
         return response.data;
     },
 };

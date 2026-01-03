@@ -9,11 +9,10 @@ import { TrendingUp, BarChart3 } from 'lucide-react';
 
 interface CategoryAnalysisCardProps {
     radarData: Array<{ category: string; value: number }>;
-    distributionData: Record<string, number>;
 }
 
-export const CategoryAnalysisCard: FC<CategoryAnalysisCardProps> = ({ radarData, distributionData }) => {
-    const hasData = radarData.length > 0 || Object.keys(distributionData).length > 0;
+export const CategoryAnalysisCard: FC<CategoryAnalysisCardProps> = ({ radarData }) => {
+    const hasData = radarData.length > 0;
 
     return (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 border border-gray-200 dark:border-gray-700 h-[420px] flex flex-col">
@@ -39,12 +38,19 @@ export const CategoryAnalysisCard: FC<CategoryAnalysisCardProps> = ({ radarData,
                     {radarData.length > 0 ? (
                         <div className="flex-1 min-h-0">
                             <ResponsiveContainer width="100%" height={350}>
-                                <RadarChart data={radarData}>
+                                <RadarChart data={radarData} margin={{ top: 20, right: 30, bottom: 20, left: 30 }}>
                                     <PolarGrid stroke="#e5e7eb" strokeDasharray="3 3" />
                                     <PolarAngleAxis
                                         dataKey="category"
-                                        tick={{ fill: '#6b7280', fontSize: 12, fontWeight: 500 }}
+                                        tick={{ fill: '#6b7280', fontSize: 11, fontWeight: 500 }}
                                         className="dark:[&_text]:fill-gray-400"
+                                        tickFormatter={(value: string) => {
+                                            // 긴 레이블은 10자로 제한하고 말줄임표 추가
+                                            if (value.length > 10) {
+                                                return `${value.substring(0, 10)}...`;
+                                            }
+                                            return value;
+                                        }}
                                     />
                                     <PolarRadiusAxis
                                         angle={90}

@@ -7,6 +7,7 @@ import type { FC } from 'react';
 import { Link } from 'react-router-dom';
 import { useNotices } from '../../../hooks/api/useNotice';
 import { Spinner } from '../../../components/ui/Spinner';
+import { formatDateToKST } from '../../../utils/date';
 
 export const NoticeWidget: FC = () => {
     const { data, isLoading, error } = useNotices({ page: 1, size: 3 });
@@ -59,11 +60,7 @@ export const NoticeWidget: FC = () => {
                 <div className="space-y-1.5 flex-1 overflow-y-auto scrollbar-thin">
                     {notices.map((notice) => {
                         // 날짜 포맷팅 (YYYY-MM-DD)
-                        const dateObj = new Date(notice.createdAt);
-                        const year = dateObj.getFullYear();
-                        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-                        const day = String(dateObj.getDate()).padStart(2, '0');
-                        const date = `${year}-${month}-${day}`;
+                        const date = formatDateToKST(notice.createdAt, { format: 'dateOnly' });
 
                         return (
                             <Link

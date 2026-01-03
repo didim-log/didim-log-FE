@@ -8,6 +8,7 @@ import { useAdminFeedbacks, useUpdateFeedbackStatus, useDeleteFeedback } from '.
 import { Button } from '../../../components/ui/Button';
 import { Spinner } from '../../../components/ui/Spinner';
 import type { FeedbackStatus } from '../../../types/api/feedback.types';
+import { formatKST } from '../../../utils/dateUtils';
 
 export const FeedbackManagement: FC = () => {
     const [page, setPage] = useState(1);
@@ -20,7 +21,7 @@ export const FeedbackManagement: FC = () => {
         try {
             await updateStatusMutation.mutateAsync({ feedbackId, data: { status } });
         } catch (error) {
-            console.error('Status update failed:', error);
+            // Error is handled by React Query mutation
         }
     };
 
@@ -29,7 +30,7 @@ export const FeedbackManagement: FC = () => {
             try {
                 await deleteMutation.mutateAsync(feedbackId);
             } catch (error) {
-                console.error('Delete failed:', error);
+                // Error is handled by React Query mutation
             }
         }
     };
@@ -38,10 +39,6 @@ export const FeedbackManagement: FC = () => {
         setPage(newPage);
     };
 
-    const formatDate = (dateString: string) => {
-        const date = new Date(dateString);
-        return date.toLocaleString('ko-KR');
-    };
 
     if (isLoading) {
         return <Spinner />;
@@ -115,7 +112,7 @@ export const FeedbackManagement: FC = () => {
                                     </span>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                                    {formatDate(feedback.createdAt)}
+                                    {formatKST(feedback.createdAt, 'full')}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
                                     <Button

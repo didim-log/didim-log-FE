@@ -5,6 +5,8 @@
 import { apiClient } from '../client';
 import type { UpdateProfileRequest } from '../../types/api/student.types';
 
+import type { StudentProfileResponse } from '../../types/api/dashboard.types';
+
 export const studentApi = {
     /**
      * 프로필 수정
@@ -19,6 +21,16 @@ export const studentApi = {
     deleteAccount: async (): Promise<void> => {
         await apiClient.delete('/api/v1/students/me');
     },
+
+    /**
+     * BOJ 프로필 동기화
+     */
+    syncBojProfile: async (): Promise<StudentProfileResponse> => {
+        const response = await apiClient.post<StudentProfileResponse>('/api/v1/students/sync');
+        return response.data;
+    },
 };
+
+
 
 

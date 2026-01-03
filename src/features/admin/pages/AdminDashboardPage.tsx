@@ -17,10 +17,11 @@ import { AdminLogManagement } from '../components/AdminLogManagement';
 import { AiQualityWidget } from '../components/AiQualityWidget';
 import { AiServiceControl } from '../components/AiServiceControl';
 import { StorageHealthWidget } from '../components/StorageHealthWidget';
+import { AdminAuditLogWidget } from '../components/AdminAuditLogWidget';
 import { Spinner } from '../../../components/ui/Spinner';
 import { Layout } from '../../../components/layout/Layout';
 
-type TabType = 'dashboard' | 'users' | 'quotes' | 'feedbacks' | 'problems' | 'notices' | 'metrics' | 'system' | 'logs';
+type TabType = 'dashboard' | 'users' | 'quotes' | 'feedbacks' | 'problems' | 'notices' | 'metrics' | 'system' | 'logs' | 'audit';
 
 export const AdminDashboardPage: FC = () => {
     const [activeTab, setActiveTab] = useState<TabType>('dashboard');
@@ -36,6 +37,7 @@ export const AdminDashboardPage: FC = () => {
         { id: 'metrics' as TabType, label: '성능 메트릭' },
         { id: 'system' as TabType, label: '시스템' },
         { id: 'logs' as TabType, label: 'AI 로그' },
+        { id: 'audit' as TabType, label: '감사 로그' },
     ];
 
     if (isLoading) {
@@ -184,6 +186,7 @@ export const AdminDashboardPage: FC = () => {
                         {activeTab === 'metrics' && <PerformanceMetrics />}
                         {activeTab === 'system' && <SystemSettings />}
                         {activeTab === 'logs' && <AdminLogManagement />}
+                        {activeTab === 'audit' && <AdminAuditLogWidget />}
                     </div>
                 </div>
             </div>

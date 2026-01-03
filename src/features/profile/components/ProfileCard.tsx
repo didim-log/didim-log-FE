@@ -8,6 +8,7 @@ import { Button } from '../../../components/ui/Button';
 import { Edit2 } from 'lucide-react';
 import { getTierColor } from '../../../utils/tier';
 import type { DashboardResponse } from '../../../types/api/dashboard.types';
+import { LanguageBadge } from '../../../components/common/LanguageBadge';
 
 interface ProfileCardProps {
     dashboard: DashboardResponse;
@@ -15,21 +16,6 @@ interface ProfileCardProps {
     onEdit: () => void;
 }
 
-const LANGUAGE_LABELS: Record<string, string> = {
-    JAVA: 'Java',
-    PYTHON: 'Python',
-    KOTLIN: 'Kotlin',
-    JAVASCRIPT: 'JavaScript',
-    CPP: 'C++',
-    GO: 'Go',
-    R: 'R',
-    RUBY: 'Ruby',
-    SCALA: 'Scala',
-    SWIFT: 'Swift',
-    TEXT: 'Text',
-    C: 'C',
-    CSHARP: 'C#',
-};
 
 export const ProfileCard: FC<ProfileCardProps> = ({ dashboard, primaryLanguage, onEdit }) => {
     const { studentProfile, currentTierTitle } = dashboard;
@@ -64,9 +50,7 @@ export const ProfileCard: FC<ProfileCardProps> = ({ dashboard, primaryLanguage, 
                                 </span>
                                 
                                 {primaryLanguage && primaryLanguage !== 'TEXT' ? (
-                                    <span className="px-3 py-1 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded-lg text-sm font-medium">
-                                        {LANGUAGE_LABELS[primaryLanguage] || primaryLanguage}
-                                    </span>
+                                    <LanguageBadge language={primaryLanguage} size="md" />
                                 ) : (
                                     <span className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg text-sm font-medium">
                                         언어 미설정

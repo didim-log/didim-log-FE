@@ -3,6 +3,7 @@
  * 히트맵 제거, 차트 확대, Footer 하단 고정
  */
 
+import { useMemo } from 'react';
 import type { FC } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStatistics } from '../../../hooks/api/useStatistics';
@@ -10,6 +11,7 @@ import { StatCard } from '../components/StatCard';
 import { CategoryAnalysisCard } from '../components/CategoryAnalysisCard';
 import { AlgorithmChart } from '../components/AlgorithmChart';
 import { WeaknessAnalysisCard } from '../components/WeaknessAnalysisCard';
+import { ActivityHeatmap } from '../../dashboard/components/ActivityHeatmap';
 import { Spinner } from '../../../components/ui/Spinner';
 import { Layout } from '../../../components/layout/Layout';
 import { BookOpen, FileText, Clock, Target } from 'lucide-react';
@@ -17,6 +19,40 @@ import { BookOpen, FileText, Clock, Target } from 'lucide-react';
 export const StatisticsPage: FC = () => {
     const navigate = useNavigate();
     const { data: statistics, isLoading, error } = useStatistics();
+
+    // 시간 포맷 유틸리티 함수
+    const formatTime = (seconds: number): string => {
+        if (seconds === 0) return '0분';
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = Math.floor(seconds % 60);
+        
+        if (minutes === 0) {
+            return `${remainingSeconds}초`;
+        }
+        if (remainingSeconds === 0) {
+            return `${minutes}분`;
+        }
+        return `${minutes}분 ${remainingSeconds}초`;
+    };
+
+    // 레이더 차트 데이터 준비
+    // 백엔드에서 이미 집계된 categoryStats를 사용하여 레이더 차트 데이터 생성
+    // CRITICAL: 모든 hooks는 early return 전에 호출되어야 함 (React Hooks 규칙)
+    const radarData = useMemo(() => {
+        if (!statistics?.categoryStats || statistics.categoryStats.length === 0) {
+            return [];
+        }
+
+        // 상위 8개만 사용 (레이더 차트가 너무 복잡해지지 않도록)
+        const topCategories = statistics.categoryStats.slice(0, 8);
+        const maxCount = topCategories.length > 0 ? Math.max(...topCategories.map((item) => item.count)) : 1;
+
+        // 백엔드에서 이미 정렬되어 있으므로 그대로 사용
+        return topCategories.map((item) => ({
+            category: item.category,
+            value: maxCount > 0 ? Math.round((item.count / maxCount) * 100) : 0,
+        }));
+    }, [statistics?.categoryStats]);
 
     if (isLoading) {
         return (
@@ -43,45 +79,6 @@ export const StatisticsPage: FC = () => {
         );
     }
 
-    // 시간 포맷 유틸리티 함수
-    const formatTime = (seconds: number): string => {
-        if (seconds === 0) return '0분';
-        const minutes = Math.floor(seconds / 60);
-        const remainingSeconds = Math.floor(seconds % 60);
-        
-        if (minutes === 0) {
-            return `${remainingSeconds}초`;
-        }
-        if (remainingSeconds === 0) {
-            return `${minutes}분`;
-        }
-        return `${minutes}분 ${remainingSeconds}초`;
-    };
-
-    // 레이더 차트 데이터 준비
-    const prepareRadarData = () => {
-        if (statistics?.tagRadarData && statistics.tagRadarData.length > 0) {
-            return statistics.tagRadarData.map((item) => ({
-                category: item.tag,
-                value: item.fullMark > 0 ? Math.round((item.count / item.fullMark) * 100) : 0,
-            }));
-        }
-        if (statistics?.algorithmCategoryDistribution && Object.keys(statistics.algorithmCategoryDistribution).length > 0) {
-            const entries = Object.entries(statistics.algorithmCategoryDistribution)
-                .sort(([, a], [, b]) => b - a)
-                .slice(0, 5);
-
-            const maxCount = Math.max(...entries.map(([, count]) => count));
-            return entries.map(([name, count]) => ({
-                category: name,
-                value: maxCount > 0 ? Math.round((count / maxCount) * 100) : 0,
-            }));
-        }
-        return [];
-    };
-
-    const radarData = prepareRadarData();
-
     return (
         <Layout>
             <div className="min-h-full bg-gray-50 dark:bg-gray-900 py-8 px-4 sm:px-6 lg:px-8">
@@ -98,11 +95,16 @@ export const StatisticsPage: FC = () => {
                     </div>
                     {/* CSS Grid 레이아웃: 12열 그리드 */}
                     <div className="grid grid-cols-12 gap-4">
+                        {/* Row 0: Activity Heatmap (Span 12) */}
+                        <div className="col-span-12">
+                            <ActivityHeatmap />
+                        </div>
+
                         {/* Row 1: KPI Cards (Span 12) */}
                         <div className="col-span-12 grid grid-cols-4 gap-3">
                             <StatCard
                                 title="총 풀이 수"
-                                value={statistics.totalSolvedCount}
+                                value={statistics.totalSolved ?? 0}
                                 icon={BookOpen}
                                 iconColor="text-blue-600 dark:text-blue-400"
                                 bgColor="bg-blue-100 dark:bg-blue-900/30"
@@ -137,18 +139,12 @@ export const StatisticsPage: FC = () => {
                         {/* Row 2: Main Analysis (3-column layout) - 확대된 차트 */}
                         {/* Left: Radar Chart (Span 4) */}
                         <div className="col-span-12 lg:col-span-4">
-                            <CategoryAnalysisCard
-                                radarData={radarData}
-                                distributionData={statistics.algorithmCategoryDistribution || {}}
-                            />
+                            <CategoryAnalysisCard radarData={radarData} />
                         </div>
 
                         {/* Center: Algorithm Bar Chart (Span 4) */}
                         <div className="col-span-12 lg:col-span-4">
-                            <AlgorithmChart
-                                topAlgorithms={statistics.topUsedAlgorithms}
-                                distribution={statistics.algorithmCategoryDistribution}
-                            />
+                            <AlgorithmChart categoryStats={statistics.categoryStats || []} />
                         </div>
 
                         {/* Right: Weakness Analysis (Span 4) */}

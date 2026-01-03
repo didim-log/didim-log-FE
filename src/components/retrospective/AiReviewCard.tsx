@@ -9,6 +9,8 @@ import { logApi } from '../../api/endpoints/log.api';
 import type { AiReviewResponse } from '../../types/api/log.types';
 import { Button } from '../ui/Button';
 import { toast } from 'sonner';
+import { useAiUsage } from '../../hooks/api/useAiUsage';
+import { isApiError } from '../../types/api/common.types';
 
 interface AiReviewCardProps {
     logId?: string | null;
@@ -43,6 +45,8 @@ export const AiReviewCard: FC<AiReviewCardProps> = ({
     const [feedbackStatus, setFeedbackStatus] = useState<'LIKE' | 'DISLIKE' | null>(null);
     const [showDislikeModal, setShowDislikeModal] = useState<boolean>(false);
     const [submittingFeedback, setSubmittingFeedback] = useState<boolean>(false);
+    
+    const { data: aiUsage, refetch: refetchAiUsage } = useAiUsage();
 
     // logId로 AI 리뷰 조회
     const fetchAiReviewByLogId = async (targetLogId: string) => {
@@ -88,13 +92,16 @@ export const AiReviewCard: FC<AiReviewCardProps> = ({
                 setIsGenerating(false);
                 setLoading(false);
                 
+                // AI 사용량 갱신
+                refetchAiUsage();
+                
                 if (pollInterval) {
                     clearInterval(pollInterval);
                 }
-            } catch (err: any) {
+            } catch (err: unknown) {
                 // AI 사용량 제한 관련 에러 처리
-                const errorCode = err?.response?.data?.code;
-                const errorMessage = err?.response?.data?.message;
+                const errorCode = isApiError(err) ? err.response?.data?.code : undefined;
+                const errorMessage = isApiError(err) ? err.response?.data?.message : undefined;
                 
                 if (errorCode === 'AI_USER_LIMIT_EXCEEDED' || errorCode === 'AI_GLOBAL_LIMIT_EXCEEDED' || errorCode === 'AI_SERVICE_DISABLED') {
                     const finalMessage = errorMessage || 'AI 서비스를 사용할 수 없습니다.';
@@ -167,12 +174,13 @@ export const AiReviewCard: FC<AiReviewCardProps> = ({
 
             // AI 리뷰 요청
             await fetchAiReviewByLogId(targetLogId);
-        } catch (err: any) {
-            console.error('[AiReviewCard] Failed to create log or request AI review:', err);
             
+            // AI 사용량 갱신
+            refetchAiUsage();
+        } catch (err: unknown) {
             // AI 사용량 제한 관련 에러 처리
-            const errorCode = err?.response?.data?.code;
-            const errorMessage = err?.response?.data?.message;
+            const errorCode = isApiError(err) ? err.response?.data?.code : undefined;
+            const errorMessage = isApiError(err) ? err.response?.data?.message : undefined;
             
             if (errorCode === 'AI_USER_LIMIT_EXCEEDED' || errorCode === 'AI_GLOBAL_LIMIT_EXCEEDED' || errorCode === 'AI_SERVICE_DISABLED') {
                 setError(errorMessage || 'AI 서비스를 사용할 수 없습니다.');
@@ -196,8 +204,7 @@ export const AiReviewCard: FC<AiReviewCardProps> = ({
             await logApi.submitFeedback(currentLogId, { status: 'LIKE' });
             setFeedbackStatus('LIKE');
             toast.success('피드백 감사합니다!');
-        } catch (err) {
-            console.error('피드백 제출 실패:', err);
+        } catch {
             toast.error('피드백 제출에 실패했습니다.');
         } finally {
             setSubmittingFeedback(false);
@@ -224,8 +231,7 @@ export const AiReviewCard: FC<AiReviewCardProps> = ({
             await logApi.submitFeedback(currentLogId, { status: 'DISLIKE', reason });
             setFeedbackStatus('DISLIKE');
             toast.success('피드백 감사합니다. 더 나은 서비스를 위해 노력하겠습니다.');
-        } catch (err) {
-            console.error('피드백 제출 실패:', err);
+        } catch {
             toast.error('피드백 제출에 실패했습니다.');
         } finally {
             setSubmittingFeedback(false);
@@ -266,12 +272,37 @@ export const AiReviewCard: FC<AiReviewCardProps> = ({
                         <p className="mt-1 text-xs text-blue-700 dark:text-blue-300">
                             코드를 분석하여 한 줄 리뷰를 받아보세요.
                         </p>
-                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                            💡 AI 리뷰는 하루 5회(설정값)까지 무료로 제공됩니다.
-                        </p>
+                        {aiUsage ? (
+                            <>
+                                <div className="mt-2 flex items-center gap-2">
+                                    <span className="text-xs text-gray-600 dark:text-gray-400">
+                                        AI 리뷰 사용량: <span className="font-semibold">{aiUsage.usage} / {aiUsage.limit}</span>
+                                    </span>
+                                    {aiUsage.remaining > 0 && (
+                                        <span className="text-xs text-green-600 dark:text-green-400">
+                                            (남은 횟수: {aiUsage.remaining})
+                                        </span>
+                                    )}
+                                </div>
+                                {aiUsage.usage >= aiUsage.limit && (
+                                    <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+                                        오늘 사용량을 모두 소진했습니다 ({aiUsage.limit}회).
+                                    </p>
+                                )}
+                                {!aiUsage.isServiceEnabled && (
+                                    <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+                                        AI 서비스가 점검 중입니다.
+                                    </p>
+                                )}
+                            </>
+                        ) : (
+                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                💡 AI 리뷰는 일일 제한이 있습니다.
+                            </p>
+                        )}
                         <Button
                             onClick={handleRequestAiReview}
-                            disabled={loading || isGenerating}
+                            disabled={loading || isGenerating || (aiUsage && (aiUsage.usage >= aiUsage.limit || !aiUsage.isServiceEnabled))}
                             variant="primary"
                             size="sm"
                             className="mt-3"

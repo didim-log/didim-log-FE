@@ -27,6 +27,13 @@ export interface LogFeedbackRequest {
     reason?: string;
 }
 
+export interface AiUsageResponse {
+    limit: number;
+    usage: number;
+    remaining: number;
+    isServiceEnabled: boolean;
+}
+
 export interface LogFeedbackResponse {
     message: string;
 }

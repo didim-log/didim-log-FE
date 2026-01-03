@@ -18,5 +18,9 @@ export interface User {
      * - 미설정: null
      */
     primaryLanguage?: string | null;
+    /**
+     * 온보딩 투어 완료 여부
+     */
+    isOnboardingFinished?: boolean;
 }
 
