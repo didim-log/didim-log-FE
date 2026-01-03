@@ -2,12 +2,13 @@
  * 추천 문제 카드 컴포넌트
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import type { FC } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 import { useProblemRecommend } from '../../../hooks/api/useProblem';
-import { formatTierFromDifficulty, getTierColor } from '../../../utils/tier';
+import { formatTierFromDifficulty, getTierColor, formatTier } from '../../../utils/tier';
+import { useAuthStore } from '../../../stores/auth.store';
 import type { ProblemResponse } from '../../../types/api/problem.types';
 
 /**
@@ -37,6 +38,7 @@ interface RecommendedProblemsProps {
 }
 
 export const RecommendedProblems: FC<RecommendedProblemsProps> = ({ count = 4, category: initialCategory }) => {
+    const { user } = useAuthStore();
     const [selectedCategory, setSelectedCategory] = useState<string | null>(initialCategory || null);
     const [onlyKorean, setOnlyKorean] = useState<boolean>(false);
     const [showLeftArrow, setShowLeftArrow] = useState(false);
@@ -49,6 +51,40 @@ export const RecommendedProblems: FC<RecommendedProblemsProps> = ({ count = 4, c
     });
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+    // 사용자 티어 기반 개인화된 빈 상태 버튼 정보 계산
+    const personalizedEmptyState = useMemo(() => {
+        if (!user) {
+            return {
+                buttonText: '알고리즘 입문하기 (Bronze)',
+                targetUrl: '/problems',
+            };
+        }
+
+        const userRating = user.rating || 0;
+        const userTierLevel = user.tierLevel || 0;
+        
+        // Unrated인 경우 (rating === 0 또는 tierLevel === 0)
+        if (userRating === 0 || userTierLevel === 0) {
+            return {
+                buttonText: '알고리즘 입문하기 (Bronze)',
+                targetUrl: '/problems',
+            };
+        }
+
+        // Rated인 경우: 현재 티어 레벨 범위 사용
+        // 티어 레벨 범위 계산 (현재 티어의 min~max 레벨)
+        const currentTierMinLevel = Math.max(1, userTierLevel - 2); // 현재 레벨 - 2 (최소 1)
+        const currentTierMaxLevel = Math.min(30, userTierLevel + 2); // 현재 레벨 + 2 (최대 30)
+        
+        // 티어 이름 포맷팅 (예: "Gold III")
+        const tierName = formatTier(userTierLevel);
+        
+        return {
+            buttonText: `내 수준에 맞는 ${tierName} 문제 풀기`,
+            targetUrl: `/problems?minLevel=${currentTierMinLevel}&maxLevel=${currentTierMaxLevel}`,
+        };
+    }, [user]);
 
     // 디버그 로그 (개발 환경에서만)
     useEffect(() => {
@@ -286,23 +322,16 @@ export const RecommendedProblems: FC<RecommendedProblemsProps> = ({ count = 4, c
                         아직 풀이 기록이 부족해요!
                     </p>
                     <p className="text-gray-600 dark:text-gray-400 text-xs mb-4">
-                        먼저 기초 문제를 풀어보세요. 문제를 풀면 실력에 맞는 추천을 받을 수 있어요.
+                        문제를 풀면 실력에 맞는 추천을 받을 수 있어요.
                     </p>
-                    <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                    <div className="flex justify-center">
                         <Link
-                            to="/problems"
-                            className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+                            to={personalizedEmptyState.targetUrl}
+                            className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-md hover:shadow-lg"
                         >
-                            문제 목록 보기
+                            {personalizedEmptyState.buttonText}
+                            <ArrowRight className="w-4 h-4" />
                         </Link>
-                        <a
-                            href="https://solved.ac/class/1"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center justify-center px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg transition-colors"
-                        >
-                            Solved.ac Class 1 문제
-                        </a>
                     </div>
                 </div>
             ) : (
