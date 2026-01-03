@@ -103,6 +103,21 @@ export const ProblemDetail: FC<ProblemDetailProps> = ({ problem, isBlurred }) =>
                         className="prose dark:prose-invert max-w-none text-gray-900 dark:text-gray-100"
                         dangerouslySetInnerHTML={{ __html: problem.descriptionHtml! }}
                     />
+                    {/* 저작권 안내 (문제 본문 하단) */}
+                    <div className="mt-8 pt-4 border-t border-gray-200 dark:border-gray-700">
+                        <p className="text-xs text-gray-400 dark:text-gray-500">
+                            문제의 저작권은 원작자에게 있습니다. 정확한 내용은{' '}
+                            <a
+                                href={problem.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="underline hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                            >
+                                백준 사이트
+                            </a>
+                            를 참고하세요.
+                        </p>
+                    </div>
                 </div>
             ) : (
                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-12 border border-gray-200 dark:border-gray-700 text-center">

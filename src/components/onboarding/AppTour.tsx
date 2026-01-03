@@ -296,6 +296,24 @@ export const AppTour: FC = () => {
         return null;
     }
 
+    // 핵심 버그 수정: 현재 경로가 현재 스텝의 목표 경로와 일치하지 않으면 투어를 렌더링하지 않음
+    // 이렇게 하면 페이지 이동 중에 투어가 끊기거나 깜빡이는 현상을 방지
+    const currentStep = appTourSteps[stepIndex];
+    if (currentStep?.data?.route && location.pathname !== currentStep.data.route) {
+        // 페이지 이동 중이므로 투어를 숨김
+        return null;
+    }
+
+    // 타겟 요소가 존재하는지 확인 (body가 아닌 경우)
+    const targetElement = currentSteps[currentStepIndex]?.target;
+    if (targetElement && targetElement !== 'body') {
+        const element = document.querySelector(targetElement as string);
+        if (!element) {
+            // 타겟 요소가 아직 렌더링되지 않았으면 잠시 대기
+            return null;
+        }
+    }
+
     return (
         <Joyride
             steps={currentSteps}
