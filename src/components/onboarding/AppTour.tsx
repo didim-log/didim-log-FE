@@ -229,6 +229,8 @@ export const AppTour: FC = () => {
                                 isOnboardingFinished: true,
                             });
                         }
+                        // 상태 업데이트 후 새로고침하여 배너가 남아있는 버그 해결
+                        window.location.reload();
                     } else if (status === STATUS.SKIPPED) {
                         completeOnboardingInStore();
                     }
@@ -312,6 +314,56 @@ export const AppTour: FC = () => {
     if (!run) {
         return null;
     }
+
+    // Enter 키로 다음 단계로 이동하는 핸들러
+    useEffect(() => {
+        if (!run || forceHide) {
+            return;
+        }
+
+        const handleKeyDown = (event: KeyboardEvent) => {
+            // Enter 키가 눌렸을 때
+            if (event.key === 'Enter' && !event.shiftKey && !event.ctrlKey && !event.metaKey) {
+                // 입력 필드에 포커스가 있으면 무시 (사용자가 입력 중일 수 있음)
+                const activeElement = document.activeElement;
+                if (
+                    activeElement &&
+                    (activeElement.tagName === 'INPUT' ||
+                        activeElement.tagName === 'TEXTAREA' ||
+                        (activeElement instanceof HTMLElement && activeElement.isContentEditable))
+                ) {
+                    return;
+                }
+
+                event.preventDefault();
+                event.stopPropagation();
+
+                // 현재 스텝이 마지막이면 완료 처리
+                if (stepIndex === steps.length - 1) {
+                    handleCallback({
+                        status: STATUS.FINISHED,
+                        type: EVENTS.TOUR_END,
+                        index: stepIndex,
+                        action: ACTIONS.CLOSE,
+                        size: steps.length,
+                    } as CallBackProps);
+                } else {
+                    // 다음 스텝으로 이동
+                    const nextStepIndex = stepIndex + 1;
+                    const nextRoute = steps[nextStepIndex]?.data?.route;
+                    if (nextRoute && !location.pathname.includes(nextRoute.split('?')[0])) {
+                        navigate(nextRoute);
+                    }
+                    setStepIndex(nextStepIndex);
+                }
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [run, forceHide, stepIndex, steps, location.pathname, navigate, setStepIndex, handleCallback]);
 
     return (
         <Joyride
