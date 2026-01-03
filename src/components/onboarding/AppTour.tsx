@@ -21,60 +21,92 @@ const steps: Step[] = [
     // --- 1. Dashboard ---
     {
         target: 'body',
-        content: '디딤로그 온보딩을 시작합니다! 서비스의 핵심 흐름을 5단계로 알려드릴게요.',
+        content: (
+            <div className="text-left">
+                <strong>환영합니다! 👋</strong>
+                <br />
+                디딤로그의 핵심 기능을 빠르게 훑어볼까요?
+                <br />
+                총 9단계로 진행됩니다.
+            </div>
+        ),
         placement: 'center',
         disableBeacon: true,
         data: { route: '/dashboard' },
     },
     {
         target: '.tour-recommend-problems',
-        content: '먼저 대시보드입니다. 내 실력에 맞는 문제를 추천받아 바로 풀 수 있습니다.',
+        content: '먼저 대시보드입니다. 내 실력에 딱 맞는 문제를 추천받을 수 있습니다.',
         placement: 'bottom',
         data: { route: '/dashboard' },
     },
     // --- 2. Problem Detail (Move to ID 1000) ---
     {
         target: 'body',
-        content: '문제를 클릭하면 상세 페이지로 이동합니다. 여기서 문제를 읽고 풀이를 고민해보세요.',
+        content: '문제를 클릭하면 상세 페이지로 이동합니다. 여기서 지문을 읽고 풀이를 고민해보세요.',
         placement: 'center',
         data: { route: '/problems/1000' },
     },
     {
         target: '.tour-timer-btn',
-        content: '실전처럼 연습하려면 타이머 기능을 활용하세요!',
+        content: '실전 감각을 위해 타이머를 켜고 푸는 것을 추천합니다!',
         placement: 'top',
         data: { route: '/problems/1000' },
     },
-    // --- 3. Retrospective Write ---
+    // --- 3. Retrospective Write (Targeting Problem 1000) ---
     {
         target: 'body',
-        content: '문제를 다 풀었다면, 가장 중요한 "회고 작성" 단계입니다.',
+        content: '문제를 풀었다면, 성장의 핵심인 "회고"를 작성할 차례입니다.',
         placement: 'center',
         data: { route: '/retrospectives/write' },
     },
     {
         target: '.tour-ai-review-btn',
-        content: '내 코드에 대해 AI의 정밀한 피드백을 받아보세요. 실력이 쑥쑥 늘어납니다.',
+        content: (
+            <div className="text-left">
+                <strong>✨ AI 인사이트</strong>
+                <br />
+                이 버튼을 누르면 AI가 내 코드를 분석해
+                <br />
+                시간 복잡도와 개선점을 알려줍니다.
+            </div>
+        ),
         placement: 'top',
         data: { route: '/retrospectives/write' },
     },
     // --- 4. Ranking ---
     {
         target: 'body',
-        content: '열심히 활동하면 랭킹에 이름을 올릴 수 있습니다. 동기부여를 받아보세요!',
+        content: '열심히 활동하여 랭킹을 올려보세요. 다른 개발자들과 함께 성장하는 재미가 있습니다.',
         placement: 'center',
         data: { route: '/ranking' },
     },
     // --- 5. My Page ---
     {
-        target: '.tour-heatmap',
-        content: '마지막으로 마이페이지입니다. 꾸준함의 증거인 "잔디"를 채워보세요!',
+        target: '.tour-my-retros',
+        content: (
+            <div className="text-left">
+                <strong>📝 나의 회고 관리</strong>
+                <br />
+                내가 작성한 오답 노트와 회고들을
+                <br />
+                여기서 모아보고 관리할 수 있습니다.
+            </div>
+        ),
         placement: 'top',
         data: { route: '/profile' },
     },
     {
         target: 'body',
-        content: '모든 설명이 끝났습니다. 이제 디딤로그와 함께 성장해보세요!',
+        content: (
+            <div className="text-left">
+                <strong>준비 완료! 🚀</strong>
+                <br />
+                이제 디딤로그와 함께 알고리즘 실력을
+                <br />
+                체계적으로 키워보세요.
+            </div>
+        ),
         placement: 'center',
         data: { route: '/profile' },
     },
@@ -136,39 +168,40 @@ export const AppTour: FC = () => {
         return () => clearTimeout(timer);
     }, [dashboard, user, location.pathname, run, startTour]);
 
-    // 온보딩 완료 API 호출
-    const completeOnboarding = useCallback(async () => {
-        try {
-            completeOnboardingInStore();
-            localStorage.setItem('didim_onboarding_completed', 'true');
-            await memberApi.completeOnboarding();
-            if (user) {
-                setUser({
-                    ...user,
-                    isOnboardingFinished: true,
-                });
-            }
-        } catch (error: unknown) {
-            const errorMessage = getErrorMessage(error);
-            toast.error(`온보딩 완료 처리에 실패했습니다: ${errorMessage}`);
-        }
-    }, [user, setUser, completeOnboardingInStore]);
-
     // Smart Navigation Logic
     const handleCallback = useCallback(
-        (data: CallBackProps) => {
+        async (data: CallBackProps) => {
             const { status, type, index, action } = data;
             const finishedStatuses: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
 
             if (finishedStatuses.includes(status)) {
-                // End Tour
+                // 1. Immediately stop tour UI to prevent lingering card
                 stopTour();
-                if (status === STATUS.FINISHED) {
-                    completeOnboarding();
-                } else if (status === STATUS.SKIPPED) {
-                    localStorage.setItem('didim_onboarding_completed', 'true');
-                    completeOnboardingInStore();
+
+                // 2. Update DB & Local State (async, but UI is already closed)
+                try {
+                    if (status === STATUS.FINISHED) {
+                        await memberApi.completeOnboarding();
+                        completeOnboardingInStore();
+                        localStorage.setItem('didim_onboarding_completed', 'true');
+                        if (user) {
+                            setUser({
+                                ...user,
+                                isOnboardingFinished: true,
+                            });
+                        }
+                    } else if (status === STATUS.SKIPPED) {
+                        localStorage.setItem('didim_onboarding_completed', 'true');
+                        completeOnboardingInStore();
+                    }
+                } catch (error: unknown) {
+                    if (import.meta.env.DEV) {
+                        console.error('Onboarding sync failed', error);
+                    }
+                    const errorMessage = getErrorMessage(error);
+                    toast.error(`온보딩 완료 처리에 실패했습니다: ${errorMessage}`);
                 }
+                return; // Early return to prevent further processing
             } else if (type === EVENTS.STEP_AFTER && action === ACTIONS.NEXT) {
                 // Logic for moving to next step
                 const nextStepIndex = index + 1;
@@ -206,7 +239,7 @@ export const AppTour: FC = () => {
                 stopTour();
             }
         },
-        [location.pathname, navigate, completeOnboarding, completeOnboardingInStore, stopTour, setStepIndex]
+        [location.pathname, navigate, completeOnboardingInStore, stopTour, setStepIndex, user, setUser]
     );
 
     // Prevent rendering if we are on the wrong page (wait for navigation)
@@ -246,6 +279,7 @@ export const AppTour: FC = () => {
                 options: {
                     zIndex: 10000,
                     primaryColor: '#3b82f6',
+                    width: 400, // Wider tooltip for better readability
                 },
                 overlay: {
                     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -254,6 +288,11 @@ export const AppTour: FC = () => {
                 tooltip: {
                     borderRadius: '12px',
                     zIndex: 10001,
+                    width: 400, // Ensure tooltip width matches options
+                },
+                tooltipContent: {
+                    textAlign: 'left', // Better text alignment
+                    fontSize: '15px',
                 },
                 tooltipContainer: {
                     zIndex: 10001,

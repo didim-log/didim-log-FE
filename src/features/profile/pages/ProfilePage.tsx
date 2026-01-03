@@ -134,7 +134,7 @@ export const ProfilePage: FC = () => {
                     )}
 
                     {/* 내 회고 섹션 */}
-                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 border border-gray-200 dark:border-gray-700">
+                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 border border-gray-200 dark:border-gray-700 tour-my-retros">
                         <div className="flex items-center justify-between mb-6">
                             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">나의 회고</h2>
                             <Link
