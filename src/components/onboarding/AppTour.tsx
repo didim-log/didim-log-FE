@@ -5,7 +5,7 @@
  * Dashboard -> Problem Detail -> Write Retrospective -> Ranking -> My Page
  */
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import type { FC } from 'react';
 import Joyride, { type Step, type CallBackProps, STATUS, EVENTS, ACTIONS } from 'react-joyride';
@@ -66,9 +66,9 @@ const steps: Step[] = [
             <div className="text-left">
                 <strong>✨ AI 코드 분석</strong>
                 <br />
-                성공/실패 여부를 선택하면 입력창이 뜹니다.
+                성공/실패 여부를 선택하면 입력창이 열립니다.
                 <br />
-                이 버튼을 눌러 AI에게 피드백을 받아보세요.
+                그 후 이 버튼을 눌러 AI 피드백을 받아보세요.
             </div>
         ),
         placement: 'top',
@@ -86,11 +86,11 @@ const steps: Step[] = [
         target: '.tour-language-badge',
         content: (
             <div className="text-left">
-                <strong>내 주언어 설정</strong>
+                <strong>주 언어 확인</strong>
                 <br />
-                여기서 내가 주로 사용하는 언어(Java 등)를
+                내가 설정한 주 언어가 맞는지 확인하세요.
                 <br />
-                확인하고 설정할 수 있습니다.
+                문제 추천과 분석의 기준이 됩니다.
             </div>
         ),
         placement: 'top',
@@ -132,6 +132,9 @@ export const AppTour: FC = () => {
     const { data: dashboard } = useDashboard();
     const { user, setUser, completeOnboarding: completeOnboardingInStore } = useAuthStore();
     const { run, stepIndex, stopTour, setStepIndex, startTour } = useTourStore();
+
+    // ⚡️ KILL SWITCH: Local state to force-kill the component immediately
+    const [forceHide, setForceHide] = useState(false);
 
     // 대시보드에서 온보딩 완료 여부 확인
     useEffect(() => {
@@ -183,11 +186,14 @@ export const AppTour: FC = () => {
             const finishedStatuses: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
 
             if (finishedStatuses.includes(status)) {
-                // ✅ Fix Zombie Bug: Set localStorage FIRST, then stop tour
-                localStorage.setItem('didim_onboarding_completed', 'true');
-                stopTour();
+                // ⚡️ EXECUTE KILL SWITCH: Immediate re-render to null
+                setForceHide(true);
 
-                // 2. Update DB & Local State (async, but UI is already closed)
+                // Cleanup Logic
+                stopTour();
+                localStorage.setItem('didim_onboarding_completed', 'true');
+
+                // Update DB & Local State (async, but UI is already closed)
                 try {
                     if (status === STATUS.FINISHED) {
                         await memberApi.completeOnboarding();
@@ -250,6 +256,11 @@ export const AppTour: FC = () => {
         },
         [location.pathname, navigate, completeOnboardingInStore, stopTour, setStepIndex, user, setUser]
     );
+
+    // 🛡️ Final Guard: If forced hidden, render NOTHING.
+    if (forceHide) {
+        return null;
+    }
 
     // Prevent rendering if we are on the wrong page (wait for navigation)
     const currentStep = steps[stepIndex];
