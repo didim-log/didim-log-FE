@@ -17,65 +17,73 @@ import { toast } from 'sonner';
 import { getErrorMessage } from '../../types/api/common.types';
 
 // 전체 서비스 플로우를 관통하는 스텝 정의
+// Dashboard -> Problem Detail -> Write Retrospective -> Ranking -> My Page
 const appTourSteps: Step[] = [
-    // --- Dashboard ---
+    // --- 1. Dashboard ---
     {
         target: 'body',
-        content: '디딤로그 전체 투어를 시작합니다! 핵심 기능을 따라와주세요.',
+        content: '디딤로그에 오신 것을 환영합니다! 서비스 핵심 흐름을 빠르게 알려드릴게요.',
         placement: 'center',
         disableBeacon: true,
         data: { route: '/dashboard' },
     },
     {
         target: '.tour-profile-card',
-        content: '내 티어와 성장 그래프를 확인하는 대시보드입니다. Solved.ac와 자동으로 동기화됩니다.',
+        content: '먼저 대시보드입니다. 내 티어와 다음 목표를 한눈에 확인할 수 있습니다.',
         placement: 'bottom',
         data: { route: '/dashboard' },
     },
     {
         target: '.tour-recommend-problems',
-        content: '내 실력에 딱 맞는 문제를 매일 추천해드립니다. 문제를 클릭하면 바로 풀 수 있어요!',
+        content: '내 실력에 딱 맞는 문제를 AI가 추천해 줍니다. 이제 문제를 풀러 가볼까요?',
         placement: 'bottom',
         data: { route: '/dashboard' },
     },
-    // --- Problem Detail (백준 1000번 문제 - A+B) ---
+    // --- 2. Problem Detail (Navigate to /problems/1000) ---
     {
         target: 'body',
-        content: '이곳은 문제 상세 페이지입니다. 문제를 풀고 타이머를 잴 수 있습니다.',
+        content: '이곳은 문제 상세 페이지입니다. 백준 문제를 확인하고 풀이를 고민해보세요.',
         placement: 'center',
         data: { route: '/problems/1000' },
     },
     {
         target: '.tour-problem-timer',
-        content: '문제 풀이를 시작할 때 타이머를 켜세요! 시간을 측정하면 더 효과적인 학습이 가능합니다.',
+        content: '문제를 풀기 시작할 때 타이머를 켜세요. 실제 코딩 테스트처럼 연습할 수 있습니다.',
         placement: 'top',
         data: { route: '/problems/1000' },
     },
-    // --- Write Retrospective ---
+    // --- 3. Write Retrospective (Navigate to /retrospectives/write) ---
     {
         target: 'body',
-        content: '문제를 풀었다면, 가장 중요한 "회고 작성" 단계입니다. 회고를 통해 실력을 키워보세요!',
+        content: '문제를 풀었다면 회고를 작성할 차례입니다. 디딤로그의 핵심 기능이죠!',
         placement: 'center',
         data: { route: '/retrospectives/write' },
     },
     {
         target: '.tour-ai-review-btn',
-        content: 'AI에게 내 코드에 대한 피드백을 받아보세요. 시간 복잡도 개선이나 버그 수정을 위한 구체적인 제안을 받을 수 있습니다.',
+        content: '작성한 코드에 대해 AI의 상세한 피드백과 개선점을 받아볼 수 있습니다.',
         placement: 'top',
         data: { route: '/retrospectives/write' },
     },
-    // --- Ranking ---
+    // --- 4. Ranking (Navigate to /ranking) ---
     {
         target: 'body',
-        content: '마지막으로 랭킹 페이지입니다. 다른 개발자들과 경쟁하며 동기부여를 받아보세요!',
+        content: '열심히 활동하면 랭킹이 올라갑니다. 다른 개발자들과 선의의 경쟁을 해보세요.',
         placement: 'center',
         data: { route: '/ranking' },
+    },
+    // --- 5. My Page (Navigate to /profile) ---
+    {
+        target: '.tour-heatmap',
+        content: '마지막으로 마이페이지입니다. 꾸준히 잔디를 심으며 성장 기록을 남겨보세요!',
+        placement: 'top',
+        data: { route: '/profile' },
     },
     {
         target: 'body',
         content: '투어가 완료되었습니다! 이제 디딤로그의 모든 핵심 기능을 사용할 수 있어요. 즐거운 코딩 되세요! 🚀',
         placement: 'center',
-        data: { route: '/ranking' },
+        data: { route: '/profile' },
     },
 ];
 

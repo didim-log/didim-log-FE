@@ -71,7 +71,7 @@ export const ProblemDetailPage: FC = () => {
                             백준에서 보기
                         </a>
 
-                        <Button onClick={handleGoToStudy} variant="primary" size="lg" className="tour-problem-timer tour-problem-start-btn w-full sm:w-auto">
+                        <Button onClick={handleGoToStudy} variant="primary" size="lg" className="tour-problem-timer tour-timer-btn tour-problem-start-btn w-full sm:w-auto">
                             문제 풀기 시작 →
                         </Button>
                     </div>

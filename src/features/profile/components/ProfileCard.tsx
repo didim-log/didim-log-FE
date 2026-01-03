@@ -22,7 +22,7 @@ export const ProfileCard: FC<ProfileCardProps> = ({ dashboard, primaryLanguage, 
     const tierLevel = studentProfile.currentTierLevel || 1;
 
     return (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 border border-gray-200 dark:border-gray-700">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 border border-gray-200 dark:border-gray-700 tour-heatmap">
             <div className="flex items-start gap-6">
                 {/* 좌측: 티어 이미지 */}
                 <div className="flex-shrink-0">
