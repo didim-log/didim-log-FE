@@ -467,7 +467,6 @@ export const AppTour: FC = () => {
                 disableAnimation: false,
                 hideArrow: false,
                 offset: 10,
-                placement: 'auto',
                 styles: {
                     arrow: {
                         length: 8,
