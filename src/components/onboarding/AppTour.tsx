@@ -94,6 +94,7 @@ const steps: Step[] = [
             </div>
         ),
         placement: 'bottom', // 상단 배너에 가려지지 않도록 bottom으로 변경
+        disableScrolling: true, // 스크롤 애니메이션 없이 바로 표시
         data: { route: '/profile' },
     },
     {
@@ -191,13 +192,18 @@ export const AppTour: FC = () => {
             const finishedStatuses: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
 
             if (finishedStatuses.includes(status)) {
-                // ⚡️ EXECUTE KILL SWITCH: Immediate re-render to null
-                setForceHide(true);
-
-                // Cleanup Logic: 모든 상태를 초기화 (순서 중요!)
-                localStorage.setItem('didim_onboarding_completed', 'true');
-                setStepIndex(0); // stepIndex도 초기화하여 다음 실행 시 첫 단계부터 시작
-                stopTour(); // 마지막에 stopTour 호출
+                // ⚡️ EXECUTE KILL SWITCH: 즉시 모든 상태 초기화 (순서 중요!)
+                setForceHide(true); // 1. 즉시 컴포넌트 숨김 (가장 먼저!)
+                localStorage.setItem('didim_onboarding_completed', 'true'); // 2. 완료 상태 저장
+                setStepIndex(0); // 3. stepIndex 초기화
+                stopTour(); // 4. 투어 중지
+                
+                // 추가 안전장치: 다음 렌더링 사이클에서도 확실히 숨김
+                requestAnimationFrame(() => {
+                    setForceHide(true);
+                    stopTour();
+                    setStepIndex(0);
+                });
 
                 // Update DB & Local State (async, but UI is already closed)
                 try {
@@ -263,15 +269,22 @@ export const AppTour: FC = () => {
         [location.pathname, navigate, completeOnboardingInStore, stopTour, setStepIndex, user, setUser]
     );
 
-    // 🛡️ Final Guard: If forced hidden, render NOTHING.
+    // 🛡️ Final Guard 1: If forced hidden, render NOTHING.
     if (forceHide) {
         return null;
     }
 
-    // ✅ 완료 상태 체크: localStorage가 true이고 run이 false이면 렌더링하지 않음
+    // 🛡️ Final Guard 2: 완료된 사용자는 아예 렌더링하지 않음 (가장 강력한 체크)
     const isCompleted = localStorage.getItem('didim_onboarding_completed') === 'true';
-    if (isCompleted && !run) {
-        // 완료되었고 수동 실행이 아니면 렌더링하지 않음
+    const isUserCompleted = user?.isOnboardingFinished === true || dashboard?.studentProfile?.isOnboardingFinished === true;
+    
+    // 완료된 사용자는 어떤 경우에도 렌더링하지 않음
+    if (isCompleted || isUserCompleted) {
+        // 추가 안전장치: 완료된 상태에서도 run이 true로 남아있으면 강제로 중지
+        if (run) {
+            stopTour();
+            setStepIndex(0);
+        }
         return null;
     }
 
@@ -314,7 +327,7 @@ export const AppTour: FC = () => {
             continuous={true}
             showProgress={true}
             showSkipButton={true}
-            disableScrolling={false}
+            disableScrolling={true}
             disableOverlayClose={true}
             disableCloseOnEsc={false}
             spotlightClicks={true}
