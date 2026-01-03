@@ -149,6 +149,18 @@ export const AppTour: FC = () => {
         }
     }, [dashboard?.studentProfile?.isOnboardingFinished, user, setUser]);
 
+    // ✅ 완료된 사용자의 run 상태 정리 (렌더링 중 상태 업데이트 방지)
+    useEffect(() => {
+        const isCompleted = localStorage.getItem('didim_onboarding_completed') === 'true';
+        const isUserCompleted = user?.isOnboardingFinished === true || dashboard?.studentProfile?.isOnboardingFinished === true;
+        
+        // 완료된 사용자가 run=true로 남아있으면 강제로 중지
+        if ((isCompleted || isUserCompleted) && run) {
+            stopTour();
+            setStepIndex(0);
+        }
+    }, [run, user?.isOnboardingFinished, dashboard?.studentProfile?.isOnboardingFinished, stopTour, setStepIndex]);
+
     // ✅ Auto-Start Logic (Only runs once on mount, for new users)
     useEffect(() => {
         const isCompleted = localStorage.getItem('didim_onboarding_completed') === 'true';
@@ -274,17 +286,13 @@ export const AppTour: FC = () => {
         return null;
     }
 
-    // 🛡️ Final Guard 2: 완료된 사용자는 아예 렌더링하지 않음 (가장 강력한 체크)
+    // 🛡️ Final Guard 2: 완료된 사용자는 아예 렌더링하지 않음
     const isCompleted = localStorage.getItem('didim_onboarding_completed') === 'true';
     const isUserCompleted = user?.isOnboardingFinished === true || dashboard?.studentProfile?.isOnboardingFinished === true;
     
     // 완료된 사용자는 어떤 경우에도 렌더링하지 않음
+    // (run 상태 정리는 위의 useEffect에서 처리)
     if (isCompleted || isUserCompleted) {
-        // 추가 안전장치: 완료된 상태에서도 run이 true로 남아있으면 강제로 중지
-        if (run) {
-            stopTour();
-            setStepIndex(0);
-        }
         return null;
     }
 
