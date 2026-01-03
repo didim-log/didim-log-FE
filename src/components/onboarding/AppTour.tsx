@@ -16,18 +16,17 @@ import { memberApi } from '../../api/endpoints/member.api';
 import { toast } from 'sonner';
 import { getErrorMessage } from '../../types/api/common.types';
 
-// 전체 서비스 플로우를 관통하는 스텝 정의 (5단계)
+// 전체 서비스 플로우를 관통하는 스텝 정의 (총 10단계)
 const steps: Step[] = [
     // --- 1. Dashboard ---
     {
         target: 'body',
+        title: '디딤로그 투어 (1/10)',
         content: (
             <div className="text-left">
                 <strong>환영합니다! 👋</strong>
                 <br />
                 디딤로그의 핵심 기능을 빠르게 훑어볼까요?
-                <br />
-                총 10단계로 진행됩니다.
             </div>
         ),
         placement: 'center',
@@ -36,6 +35,7 @@ const steps: Step[] = [
     },
     {
         target: '.tour-recommend-problems',
+        title: '맞춤 문제 추천 (2/10)',
         content: '먼저 대시보드입니다. 내 실력에 딱 맞는 문제를 추천받을 수 있습니다.',
         placement: 'top',
         data: { route: '/dashboard' },
@@ -43,12 +43,14 @@ const steps: Step[] = [
     // --- 2. Problem Detail (Move to ID 1000) ---
     {
         target: 'body',
+        title: '문제 상세 페이지 (3/10)',
         content: '문제를 클릭하면 상세 페이지로 이동합니다. 여기서 지문을 읽고 풀이를 고민해보세요.',
         placement: 'center',
         data: { route: '/problems/1000' },
     },
     {
         target: '.tour-timer-btn',
+        title: '타이머 기능 (4/10)',
         content: '실전 감각을 위해 타이머를 켜고 푸는 것을 추천합니다!',
         placement: 'left',
         data: { route: '/problems/1000' },
@@ -56,12 +58,14 @@ const steps: Step[] = [
     // --- 3. Retrospective Write (Auto-Open Mode) ---
     {
         target: 'body',
+        title: '회고 작성 (5/10)',
         content: '문제를 풀었다면 "회고 작성" 페이지로 이동합니다.',
         placement: 'center',
         data: { route: '/retrospectives/write?onboarding=true' },
     },
     {
         target: '.tour-ai-review-btn',
+        title: 'AI 코드 분석 (6/10)',
         content: (
             <div className="text-left">
                 <strong>✨ AI 코드 분석</strong>
@@ -77,6 +81,7 @@ const steps: Step[] = [
     // --- 4. Ranking ---
     {
         target: 'body',
+        title: '랭킹 시스템 (7/10)',
         content: '열심히 활동하여 랭킹을 올려보세요. 다른 개발자들과 함께 성장하는 재미가 있습니다.',
         placement: 'center',
         disableScrolling: false, // Step 4번만 스크롤 애니메이션 활성화
@@ -85,6 +90,7 @@ const steps: Step[] = [
     // --- 5. My Page (Profile) ---
     {
         target: '.tour-language-badge',
+        title: '주 언어 확인 (8/10)',
         content: (
             <div className="text-left">
                 <strong>주 언어 확인</strong>
@@ -100,6 +106,7 @@ const steps: Step[] = [
     },
     {
         target: '.tour-my-retros',
+        title: '나의 회고 관리 (9/10)',
         content: (
             <div className="text-left">
                 <strong>📝 나의 회고 관리</strong>
@@ -114,6 +121,7 @@ const steps: Step[] = [
     },
     {
         target: 'body',
+        title: '모든 준비 완료! (10/10)',
         content: (
             <div className="text-left">
                 <strong>모든 준비 완료! 🎉</strong>
@@ -388,7 +396,7 @@ export const AppTour: FC = () => {
             stepIndex={stepIndex}
             callback={handleCallback}
             continuous={true}
-            showProgress={true}
+            showProgress={false}
             showSkipButton={false}
             disableScrolling={false}
             disableOverlayClose={true}
@@ -414,6 +422,12 @@ export const AppTour: FC = () => {
                     borderRadius: '12px',
                     zIndex: 10001,
                     width: 400,
+                },
+                tooltipTitle: {
+                    textAlign: 'left',
+                    fontSize: '16px',
+                    fontWeight: 'bold',
+                    marginBottom: '10px',
                 },
                 tooltipContent: {
                     textAlign: 'left',
