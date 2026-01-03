@@ -4,7 +4,7 @@
 
 import { useMemo, useState } from 'react';
 import type { FC } from 'react';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Copy, Check } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { Spinner } from '../../../components/ui/Spinner';
@@ -12,6 +12,7 @@ import { useCreateNotice, useDeleteNotice, useNotices, useUpdateNotice } from '.
 import type { NoticeResponse } from '../../../types/api/notice.types';
 import { formatKST } from '../../../utils/dateUtils';
 import { getErrorMessage } from '../../../types/api/common.types';
+import { toast } from 'sonner';
 
 export const NoticeManagement: FC = () => {
     const [page, setPage] = useState(1);
@@ -29,6 +30,7 @@ export const NoticeManagement: FC = () => {
     const [editTitle, setEditTitle] = useState('');
     const [editContent, setEditContent] = useState('');
     const [editPinned, setEditPinned] = useState(false);
+    const [copiedId, setCopiedId] = useState<string | null>(null);
 
     const sortedContent = useMemo(() => {
         if (!data?.content) {
@@ -56,6 +58,24 @@ export const NoticeManagement: FC = () => {
     const confirmDelete = (notice: NoticeResponse): boolean => {
         const input = prompt(`삭제하려면 "${notice.id}"를 입력해주세요.`);
         return input === notice.id;
+    };
+
+    const handleCopyId = async (id: string) => {
+        try {
+            await navigator.clipboard.writeText(id);
+            setCopiedId(id);
+            toast.success('ID가 클립보드에 복사되었습니다.');
+            setTimeout(() => setCopiedId(null), 2000);
+        } catch (error) {
+            toast.error('ID 복사에 실패했습니다.');
+        }
+    };
+
+    const shortenId = (id: string): string => {
+        if (id.length <= 12) {
+            return id;
+        }
+        return `${id.slice(0, 8)}...${id.slice(-4)}`;
     };
 
     const handleCreate = async (e: React.FormEvent) => {
@@ -184,8 +204,8 @@ export const NoticeManagement: FC = () => {
                             <div key={notice.id} className="p-6">
                                 {!isEditing && (
                                     <div className="flex items-start justify-between gap-4">
-                                        <div className="min-w-0">
-                                            <div className="flex items-center gap-2">
+                                        <div className="min-w-0 flex-1">
+                                            <div className="flex items-center gap-2 mb-2">
                                                 {notice.isPinned && (
                                                     <span className="px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs font-semibold">
                                                         고정
@@ -194,6 +214,23 @@ export const NoticeManagement: FC = () => {
                                                 <h3 className="text-base font-semibold text-gray-900 dark:text-white break-words">
                                                     {notice.title}
                                                 </h3>
+                                            </div>
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <span className="text-xs text-gray-500 dark:text-gray-400 font-mono">
+                                                    ID: {shortenId(notice.id)}
+                                                </span>
+                                                <button
+                                                    onClick={() => handleCopyId(notice.id)}
+                                                    className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                                                    title="ID 복사"
+                                                    aria-label="ID 복사"
+                                                >
+                                                    {copiedId === notice.id ? (
+                                                        <Check className="w-3 h-3 text-green-600 dark:text-green-400" />
+                                                    ) : (
+                                                        <Copy className="w-3 h-3 text-gray-500 dark:text-gray-400" />
+                                                    )}
+                                                </button>
                                             </div>
                                             <p className="mt-2 text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-words">
                                                 {notice.content}
