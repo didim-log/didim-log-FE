@@ -1,13 +1,14 @@
 /**
- * 활동 히트맵 컴포넌트 (연도별 표시 기능 추가)
- * 연도별로 히트맵을 표시하고, 연도별 잔디 채우기 통계를 제공
+ * 활동 히트맵 컴포넌트 (GitHub 스타일 전체 연도 그리드)
+ * 항상 1월 1일부터 12월 31일까지 전체 연도를 표시하며, 빈 셀은 회색으로 표시
  */
 
 import { useState, useMemo } from 'react';
 import type { FC } from 'react';
-import { useStatistics } from '../../../hooks/api/useStatistics';
+import { useHeatmapByYear } from '../../../hooks/api/useHeatmap';
+import { useAuthStore } from '../../../stores/auth.store';
 import { Spinner } from '../../../components/ui/Spinner';
-import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, HelpCircle } from 'lucide-react';
 
 interface ActivityHeatmapProps {
     // Props 없음 - API에서 데이터 가져옴
@@ -20,33 +21,28 @@ interface HeatmapCell {
 }
 
 export const ActivityHeatmap: FC<ActivityHeatmapProps> = () => {
-    const { data: statistics, isLoading, error } = useStatistics();
     const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
     const [tooltip, setTooltip] = useState<{ x: number; y: number; text: string } | null>(null);
+    const { user } = useAuthStore();
+    
+    // 연도별 히트맵 데이터 조회
+    const { data: heatmapData, isLoading, error } = useHeatmapByYear(selectedYear);
 
-    // 사용 가능한 연도 목록 추출
-    const availableYears = useMemo(() => {
-        if (!statistics?.monthlyHeatmap || statistics.monthlyHeatmap.length === 0) {
-            return [new Date().getFullYear()];
-        }
-
-        const years = new Set<number>();
-        statistics.monthlyHeatmap.forEach((item) => {
-            const date = new Date(item.date);
-            if (!isNaN(date.getTime())) {
-                years.add(date.getFullYear());
-            }
-        });
-        return Array.from(years).sort((a, b) => b - a);
-    }, [statistics]);
-
-    // 선택된 연도가 사용 가능한지 확인
+    // 사용 가능한 연도 목록 (가입 연도부터 현재 연도까지)
     const currentYear = new Date().getFullYear();
-    if (!availableYears.includes(selectedYear)) {
-        setSelectedYear(availableYears[0] || currentYear);
-    }
+    const availableYears = useMemo(() => {
+        // TODO: User 타입에 createdAt 필드가 추가되면 아래 주석을 해제하고 사용
+        // const startYear = user?.createdAt ? new Date(user.createdAt).getFullYear() : currentYear - 5;
+        const startYear = currentYear - 5; // 임시: 가입일 정보가 없으므로 5년 전부터 시작
+        const years: number[] = [];
+        for (let i = currentYear; i >= startYear; i--) {
+            years.push(i);
+        }
+        return years;
+    }, [currentYear, user]);
 
     const getIntensityColor = (count: number) => {
+        // GitHub 스타일: 빈 셀은 항상 회색으로 표시
         if (count === 0) return 'bg-gray-100 dark:bg-gray-800';
         if (count === 1) return 'bg-green-200 dark:bg-green-900/50';
         if (count <= 3) return 'bg-green-400 dark:bg-green-700';
@@ -77,32 +73,33 @@ export const ActivityHeatmap: FC<ActivityHeatmapProps> = () => {
         return dateStr;
     };
 
-    // 선택된 연도의 히트맵 데이터 생성
+    // 선택된 연도의 히트맵 데이터 생성 (GitHub 스타일: 항상 전체 연도 표시)
     const generateYearHeatmap = (year: number): HeatmapCell[][] => {
-        if (!statistics?.monthlyHeatmap || statistics.monthlyHeatmap.length === 0) {
-            return [];
+        // 항상 1월 1일부터 12월 31일까지 전체 연도 그리드 생성 (데이터 유무와 관계없이)
+        const yearStart = new Date(year, 0, 1); // Jan 1st
+        const yearEnd = new Date(year, 11, 31); // Dec 31st
+        const today = new Date();
+        const currentYearValue = new Date().getFullYear();
+        
+        // 현재 연도인 경우 오늘까지만 표시, 과거 연도는 전체 표시
+        const endDate = year === currentYearValue && yearEnd > today ? today : yearEnd;
+
+        // 날짜별 데이터 맵 생성 (데이터가 없어도 빈 맵으로 시작)
+        const dataMap = new Map<string, number>();
+        if (heatmapData && heatmapData.length > 0) {
+            heatmapData.forEach((item) => {
+                const normalizedDate = normalizeDate(item.date);
+                if (normalizedDate) {
+                    const date = new Date(normalizedDate);
+                    if (date >= yearStart && date <= endDate) {
+                        const existingCount = dataMap.get(normalizedDate) || 0;
+                        dataMap.set(normalizedDate, existingCount + item.count);
+                    }
+                }
+            });
         }
 
-        // 선택된 연도의 시작일과 종료일 계산
-        const yearStart = new Date(year, 0, 1);
-        const yearEnd = new Date(year, 11, 31);
-        const today = new Date();
-        const endDate = yearEnd > today ? today : yearEnd;
-
-        // 날짜별 데이터 맵 생성
-        const dataMap = new Map<string, number>();
-        statistics.monthlyHeatmap.forEach((item) => {
-            const normalizedDate = normalizeDate(item.date);
-            if (normalizedDate) {
-                const date = new Date(normalizedDate);
-                if (date >= yearStart && date <= endDate) {
-                    const existingCount = dataMap.get(normalizedDate) || 0;
-                    dataMap.set(normalizedDate, existingCount + item.count);
-                }
-            }
-        });
-
-        // 연도 전체 날짜 데이터 생성
+        // 연도 전체 날짜 데이터 생성 (항상 1월 1일부터 시작)
         const allDays: HeatmapCell[] = [];
         const startDate = new Date(yearStart);
         const daysInYear = Math.ceil((endDate.getTime() - yearStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
@@ -116,7 +113,7 @@ export const ActivityHeatmap: FC<ActivityHeatmapProps> = () => {
             const dateStr = `${year}-${month}-${day}`;
             allDays.push({
                 date: dateStr,
-                count: dataMap.get(dateStr) || 0,
+                count: dataMap.get(dateStr) || 0, // 데이터가 없으면 0 (회색으로 표시됨)
                 dateObj: date,
             });
         }
@@ -160,12 +157,9 @@ export const ActivityHeatmap: FC<ActivityHeatmapProps> = () => {
 
     const weeks = generateYearHeatmap(selectedYear);
 
-    // 연도별 통계 계산
+    // 연도별 통계 계산 (GitHub 스타일: 항상 전체 연도 기준)
     const yearStats = useMemo(() => {
-        if (!statistics?.monthlyHeatmap) {
-            return { totalDays: 0, activeDays: 0, totalProblems: 0 };
-        }
-
+        // 항상 1월 1일부터 12월 31일까지 전체 연도 기준으로 계산
         const yearStart = new Date(selectedYear, 0, 1);
         const yearEnd = new Date(selectedYear, 11, 31);
         const today = new Date();
@@ -174,22 +168,25 @@ export const ActivityHeatmap: FC<ActivityHeatmapProps> = () => {
         let activeDays = 0;
         let totalProblems = 0;
 
-        statistics.monthlyHeatmap.forEach((item) => {
-            const normalizedDate = normalizeDate(item.date);
-            if (normalizedDate) {
-                const date = new Date(normalizedDate);
-                if (date >= yearStart && date <= endDate) {
-                    activeDays += 1;
-                    totalProblems += item.count;
+        // 데이터가 있어도 없어도 전체 연도 일수는 계산
+        if (heatmapData && heatmapData.length > 0) {
+            heatmapData.forEach((item) => {
+                const normalizedDate = normalizeDate(item.date);
+                if (normalizedDate) {
+                    const date = new Date(normalizedDate);
+                    if (date >= yearStart && date <= endDate) {
+                        activeDays += 1;
+                        totalProblems += item.count;
+                    }
                 }
-            }
-        });
+            });
+        }
 
         const totalDays = Math.ceil((endDate.getTime() - yearStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
         const completionRate = totalDays > 0 ? ((activeDays / totalDays) * 100).toFixed(1) : '0.0';
 
         return { totalDays, activeDays, totalProblems, completionRate };
-    }, [statistics, selectedYear]);
+    }, [heatmapData, selectedYear]);
 
     // 월 라벨 위치 계산
     const getMonthLabels = () => {
@@ -243,8 +240,10 @@ export const ActivityHeatmap: FC<ActivityHeatmapProps> = () => {
         }
     };
 
+    // 연도가 변경되면 자동으로 데이터 재조회 (useHeatmapByYear가 자동 처리)
+
     return (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-3 border border-gray-200 dark:border-gray-700 h-40 flex flex-col">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-3 border border-gray-200 dark:border-gray-700 h-40 flex flex-col tour-heatmap">
             <div className="flex items-center justify-between mb-2">
                 <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
                     <Calendar className="w-4 h-4" />
@@ -279,22 +278,35 @@ export const ActivityHeatmap: FC<ActivityHeatmapProps> = () => {
                 <span>•</span>
                 <span>풀이: {yearStats.totalProblems}개</span>
                 <span>•</span>
-                <span>완성도: {yearStats.completionRate}%</span>
+                <div className="flex items-center gap-1 group relative">
+                    <span>완성도: {yearStats.completionRate}%</span>
+                    <HelpCircle className="w-3 h-3 text-gray-400 dark:text-gray-500 cursor-help" />
+                    {/* 툴팁 */}
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1.5 bg-gray-900 dark:bg-gray-700 text-white text-[8px] rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                        <div className="text-center">
+                            <div className="font-semibold mb-0.5">완성도란?</div>
+                            <div className="text-gray-300">
+                                해당 연도 중<br />
+                                회고를 작성한 날짜의 비율
+                            </div>
+                        </div>
+                        {/* 툴팁 화살표 */}
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1">
+                            <div className="w-2 h-2 bg-gray-900 dark:bg-gray-700 rotate-45"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             {isLoading ? (
                 <div className="flex-1 flex items-center justify-center">
                     <Spinner />
                 </div>
-            ) : error || !statistics ? (
+            ) : error || !heatmapData ? (
                 <div className="flex-1 flex items-center justify-center">
                     <p className="text-xs text-gray-500 dark:text-gray-400">
                         활동 데이터를 불러올 수 없습니다.
                     </p>
-                </div>
-            ) : weeks.length === 0 ? (
-                <div className="flex-1 flex items-center justify-center">
-                    <p className="text-xs text-gray-500 dark:text-gray-400">활동 데이터가 없습니다.</p>
                 </div>
             ) : (
                 <div className="flex-1 min-h-0 flex flex-col">
@@ -351,10 +363,13 @@ export const ActivityHeatmap: FC<ActivityHeatmapProps> = () => {
                                                         className={`w-2 h-2 rounded ${getIntensityColor(day.count)} transition-colors hover:ring-1 hover:ring-blue-500 dark:hover:ring-blue-400 cursor-pointer`}
                                                         onMouseEnter={(e) => {
                                                             const rect = e.currentTarget.getBoundingClientRect();
+                                                            const tooltipText = day.count === 0
+                                                                ? `${formatDate(day.date)}: 활동 없음`
+                                                                : `${formatDate(day.date)}: ${day.count}개 해결`;
                                                             setTooltip({
                                                                 x: rect.left + rect.width / 2,
                                                                 y: rect.top - 10,
-                                                                text: `${formatDate(day.date)}: ${day.count}개 해결`,
+                                                                text: tooltipText,
                                                             });
                                                         }}
                                                         onMouseLeave={() => setTooltip(null)}
