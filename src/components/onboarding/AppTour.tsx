@@ -8,7 +8,7 @@
 import { useEffect, useCallback, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import type { FC } from 'react';
-import Joyride, { type Step, type CallBackProps, STATUS, EVENTS, ACTIONS } from 'react-joyride';
+import Joyride, { type Step, type CallBackProps, type TooltipRenderProps, STATUS, EVENTS, ACTIONS } from 'react-joyride';
 import { useDashboard } from '../../hooks/api/useDashboard';
 import { useAuthStore } from '../../stores/auth.store';
 import { useTourStore } from '../../stores/tour.store';
@@ -16,16 +16,71 @@ import { memberApi } from '../../api/endpoints/member.api';
 import { toast } from 'sonner';
 import { getErrorMessage } from '../../types/api/common.types';
 
+// 🎨 커스텀 툴팁 컴포넌트
+const CustomTooltip: FC<TooltipRenderProps> = ({
+    index,
+    step,
+    tooltipProps,
+    primaryProps,
+    backProps,
+    size,
+    isLastStep,
+}) => {
+    return (
+        <div
+            {...tooltipProps}
+            className="bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-5 max-w-md w-[400px] flex flex-col gap-4"
+        >
+            {/* Header (Title) */}
+            {step.title && (
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                    {step.title}
+                </h3>
+            )}
+
+            {/* Body (Content) */}
+            <div className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
+                {step.content}
+            </div>
+
+            {/* Footer (Counter & Buttons) */}
+            <div className="flex items-center justify-between mt-2 pt-3 border-t border-gray-200 dark:border-gray-700">
+                {/* Page Counter (Left) */}
+                <span className="text-xs font-mono text-gray-400 dark:text-gray-500">
+                    {index + 1} / {size}
+                </span>
+
+                {/* Buttons (Right) */}
+                <div className="flex gap-2">
+                    {index > 0 && (
+                        <button
+                            {...backProps}
+                            className="px-3 py-1.5 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                        >
+                            이전
+                        </button>
+                    )}
+
+                    <button
+                        {...primaryProps}
+                        className="px-4 py-1.5 text-sm font-bold text-white bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 rounded-lg shadow-sm transition-colors"
+                    >
+                        {isLastStep ? '완료하기' : '다음'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 // 전체 서비스 플로우를 관통하는 스텝 정의 (총 10단계)
 const steps: Step[] = [
     // --- 1. Dashboard ---
     {
         target: 'body',
-        title: '디딤로그 투어 (1/10)',
+        title: '환영합니다! 👋',
         content: (
             <div className="text-left">
-                <strong>환영합니다! 👋</strong>
-                <br />
                 디딤로그의 핵심 기능을 빠르게 훑어볼까요?
             </div>
         ),
@@ -35,7 +90,7 @@ const steps: Step[] = [
     },
     {
         target: '.tour-recommend-problems',
-        title: '맞춤 문제 추천 (2/10)',
+        title: '맞춤 문제 추천',
         content: '먼저 대시보드입니다. 내 실력에 딱 맞는 문제를 추천받을 수 있습니다.',
         placement: 'top',
         data: { route: '/dashboard' },
@@ -43,14 +98,14 @@ const steps: Step[] = [
     // --- 2. Problem Detail (Move to ID 1000) ---
     {
         target: 'body',
-        title: '문제 상세 페이지 (3/10)',
+        title: '문제 상세 페이지',
         content: '문제를 클릭하면 상세 페이지로 이동합니다. 여기서 지문을 읽고 풀이를 고민해보세요.',
         placement: 'center',
         data: { route: '/problems/1000' },
     },
     {
         target: '.tour-timer-btn',
-        title: '타이머 기능 (4/10)',
+        title: '타이머 기능',
         content: '실전 감각을 위해 타이머를 켜고 푸는 것을 추천합니다!',
         placement: 'left',
         data: { route: '/problems/1000' },
@@ -58,14 +113,14 @@ const steps: Step[] = [
     // --- 3. Retrospective Write (Auto-Open Mode) ---
     {
         target: 'body',
-        title: '회고 작성 (5/10)',
+        title: '회고 작성',
         content: '문제를 풀었다면 "회고 작성" 페이지로 이동합니다.',
         placement: 'center',
         data: { route: '/retrospectives/write?onboarding=true' },
     },
     {
         target: '.tour-ai-review-btn',
-        title: 'AI 코드 분석 (6/10)',
+        title: 'AI 코드 분석',
         content: (
             <div className="text-left">
                 <strong>✨ AI 코드 분석</strong>
@@ -81,7 +136,7 @@ const steps: Step[] = [
     // --- 4. Ranking ---
     {
         target: 'body',
-        title: '랭킹 시스템 (7/10)',
+        title: '랭킹 시스템',
         content: '열심히 활동하여 랭킹을 올려보세요. 다른 개발자들과 함께 성장하는 재미가 있습니다.',
         placement: 'center',
         disableScrolling: false, // Step 4번만 스크롤 애니메이션 활성화
@@ -90,7 +145,7 @@ const steps: Step[] = [
     // --- 5. My Page (Profile) ---
     {
         target: '.tour-language-badge',
-        title: '주 언어 확인 (8/10)',
+        title: '주 언어 확인',
         content: (
             <div className="text-left">
                 <strong>주 언어 확인</strong>
@@ -106,7 +161,7 @@ const steps: Step[] = [
     },
     {
         target: '.tour-my-retros',
-        title: '나의 회고 관리 (9/10)',
+        title: '나의 회고 관리',
         content: (
             <div className="text-left">
                 <strong>📝 나의 회고 관리</strong>
@@ -121,7 +176,7 @@ const steps: Step[] = [
     },
     {
         target: 'body',
-        title: '모든 준비 완료! (10/10)',
+        title: '모든 준비 완료!',
         content: (
             <div className="text-left">
                 <strong>모든 준비 완료! 🎉</strong>
@@ -396,7 +451,7 @@ export const AppTour: FC = () => {
             stepIndex={stepIndex}
             callback={handleCallback}
             continuous={true}
-            showProgress={false}
+            tooltipComponent={CustomTooltip}
             showSkipButton={false}
             disableScrolling={false}
             disableOverlayClose={true}
@@ -404,7 +459,7 @@ export const AppTour: FC = () => {
             hideCloseButton={true}
             spotlightClicks={true}
             floaterProps={{
-                disableAnimation: false,
+                disableAnimation: true,
                 disableFlip: false,
                 placement: 'auto',
             }}
@@ -412,46 +467,11 @@ export const AppTour: FC = () => {
                 options: {
                     zIndex: 10000,
                     primaryColor: '#3b82f6',
-                    width: 400,
                 },
                 overlay: {
                     backgroundColor: 'rgba(0, 0, 0, 0.5)',
                     zIndex: 9999,
                 },
-                tooltip: {
-                    borderRadius: '12px',
-                    zIndex: 10001,
-                    width: 400,
-                },
-                tooltipTitle: {
-                    textAlign: 'left',
-                    fontSize: '16px',
-                    fontWeight: 'bold',
-                    marginBottom: '10px',
-                },
-                tooltipContent: {
-                    textAlign: 'left',
-                    fontSize: '15px',
-                },
-                tooltipContainer: {
-                    zIndex: 10001,
-                },
-                buttonNext: {
-                    backgroundColor: '#3b82f6',
-                    borderRadius: '8px',
-                    padding: '8px 16px',
-                    cursor: 'pointer',
-                },
-                buttonBack: {
-                    color: '#6b7280',
-                    marginRight: '8px',
-                    cursor: 'pointer',
-                },
-            }}
-            locale={{
-                back: '이전',
-                last: '완료하기',
-                next: '다음',
             }}
         />
     );
