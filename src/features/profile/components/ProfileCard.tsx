@@ -50,9 +50,11 @@ export const ProfileCard: FC<ProfileCardProps> = ({ dashboard, primaryLanguage, 
                                 </span>
                                 
                                 {primaryLanguage && primaryLanguage !== 'TEXT' ? (
-                                    <LanguageBadge language={primaryLanguage} size="md" />
+                                    <div className="tour-language-badge">
+                                        <LanguageBadge language={primaryLanguage} size="md" />
+                                    </div>
                                 ) : (
-                                    <span className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg text-sm font-medium">
+                                    <span className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg text-sm font-medium tour-language-badge">
                                         언어 미설정
                                     </span>
                                 )}

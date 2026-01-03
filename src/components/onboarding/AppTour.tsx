@@ -27,7 +27,7 @@ const steps: Step[] = [
                 <br />
                 디딤로그의 핵심 기능을 빠르게 훑어볼까요?
                 <br />
-                총 9단계로 진행됩니다.
+                총 10단계로 진행됩니다.
             </div>
         ),
         placement: 'center',
@@ -53,26 +53,26 @@ const steps: Step[] = [
         placement: 'top',
         data: { route: '/problems/1000' },
     },
-    // --- 3. Retrospective Write (Targeting Problem 1000) ---
+    // --- 3. Retrospective Write (Auto-Open Mode) ---
     {
         target: 'body',
-        content: '문제를 풀었다면, 성장의 핵심인 "회고"를 작성할 차례입니다.',
+        content: '문제를 풀었다면 "회고 작성" 페이지로 이동합니다.',
         placement: 'center',
-        data: { route: '/retrospectives/write' },
+        data: { route: '/retrospectives/write?onboarding=true' },
     },
     {
         target: '.tour-ai-review-btn',
         content: (
             <div className="text-left">
-                <strong>✨ AI 인사이트</strong>
+                <strong>✨ AI 코드 분석</strong>
                 <br />
-                이 버튼을 누르면 AI가 내 코드를 분석해
+                성공/실패 여부를 선택하면 입력창이 뜹니다.
                 <br />
-                시간 복잡도와 개선점을 알려줍니다.
+                이 버튼을 눌러 AI에게 피드백을 받아보세요.
             </div>
         ),
         placement: 'top',
-        data: { route: '/retrospectives/write' },
+        data: { route: '/retrospectives/write?onboarding=true' },
     },
     // --- 4. Ranking ---
     {
@@ -81,16 +81,30 @@ const steps: Step[] = [
         placement: 'center',
         data: { route: '/ranking' },
     },
-    // --- 5. My Page ---
+    // --- 5. My Page (Profile) ---
+    {
+        target: '.tour-language-badge',
+        content: (
+            <div className="text-left">
+                <strong>내 주언어 설정</strong>
+                <br />
+                여기서 내가 주로 사용하는 언어(Java 등)를
+                <br />
+                확인하고 설정할 수 있습니다.
+            </div>
+        ),
+        placement: 'top',
+        data: { route: '/profile' },
+    },
     {
         target: '.tour-my-retros',
         content: (
             <div className="text-left">
                 <strong>📝 나의 회고 관리</strong>
                 <br />
-                내가 작성한 오답 노트와 회고들을
+                내가 작성한 모든 회고 기록을
                 <br />
-                여기서 모아보고 관리할 수 있습니다.
+                여기서 모아볼 수 있습니다.
             </div>
         ),
         placement: 'top',
@@ -100,11 +114,11 @@ const steps: Step[] = [
         target: 'body',
         content: (
             <div className="text-left">
-                <strong>준비 완료! 🚀</strong>
+                <strong>모든 준비 완료! 🎉</strong>
                 <br />
-                이제 디딤로그와 함께 알고리즘 실력을
+                이제 '완료하기'를 눌러 디딤로그를 시작하세요.
                 <br />
-                체계적으로 키워보세요.
+                (투어는 다시 뜨지 않습니다)
             </div>
         ),
         placement: 'center',
@@ -118,6 +132,11 @@ export const AppTour: FC = () => {
     const { data: dashboard } = useDashboard();
     const { user, setUser, completeOnboarding: completeOnboardingInStore } = useAuthStore();
     const { run, stepIndex, stopTour, setStepIndex, startTour } = useTourStore();
+
+    // 🛑 Safety Guard: Never render if already completed locally
+    if (localStorage.getItem('didim_onboarding_completed') === 'true') {
+        return null;
+    }
 
     // 대시보드에서 온보딩 완료 여부 확인
     useEffect(() => {
@@ -175,7 +194,8 @@ export const AppTour: FC = () => {
             const finishedStatuses: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
 
             if (finishedStatuses.includes(status)) {
-                // 1. Immediately stop tour UI to prevent lingering card
+                // ✅ Fix Zombie Bug: Set localStorage FIRST, then stop tour
+                localStorage.setItem('didim_onboarding_completed', 'true');
                 stopTour();
 
                 // 2. Update DB & Local State (async, but UI is already closed)
@@ -183,7 +203,6 @@ export const AppTour: FC = () => {
                     if (status === STATUS.FINISHED) {
                         await memberApi.completeOnboarding();
                         completeOnboardingInStore();
-                        localStorage.setItem('didim_onboarding_completed', 'true');
                         if (user) {
                             setUser({
                                 ...user,
@@ -191,7 +210,6 @@ export const AppTour: FC = () => {
                             });
                         }
                     } else if (status === STATUS.SKIPPED) {
-                        localStorage.setItem('didim_onboarding_completed', 'true');
                         completeOnboardingInStore();
                     }
                 } catch (error: unknown) {
@@ -207,7 +225,9 @@ export const AppTour: FC = () => {
                 const nextStepIndex = index + 1;
                 if (nextStepIndex < steps.length) {
                     const nextRoute = steps[nextStepIndex].data?.route;
-                    if (nextRoute && location.pathname !== nextRoute) {
+                    // Handle query params comparison carefully
+                    const currentPath = location.pathname + location.search;
+                    if (nextRoute && currentPath !== nextRoute) {
                         // 페이지 이동 전에 stepIndex 업데이트
                         setStepIndex(nextStepIndex);
                         // 페이지 이동
@@ -244,8 +264,12 @@ export const AppTour: FC = () => {
 
     // Prevent rendering if we are on the wrong page (wait for navigation)
     const currentStep = steps[stepIndex];
-    if (run && currentStep?.data?.route && location.pathname !== currentStep.data.route) {
-        return null; // Return null to avoid "Target not found" while loading new page
+    if (run && currentStep?.data?.route) {
+        // Simple path check (ignoring query params for safety)
+        const routePath = currentStep.data.route.split('?')[0];
+        if (!location.pathname.includes(routePath)) {
+            return null; // Return null to avoid "Target not found" while loading new page
+        }
     }
 
     // 타겟 요소가 존재하는지 확인 (body가 아닌 경우)

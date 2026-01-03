@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import type { FC } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useCreateRetrospective, useUpdateRetrospective, useStaticTemplate } from '../../../hooks/api/useRetrospective';
 import { useProblemDetail } from '../../../hooks/api/useProblem';
 import { RetrospectiveEditor } from '../components/RetrospectiveEditor';
@@ -23,10 +23,13 @@ import { AiReviewCard } from '../../../components/retrospective/AiReviewCard';
 export const RetrospectiveWritePage: FC = () => {
     const location = useLocation();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const createMutation = useCreateRetrospective();
     const updateMutation = useUpdateRetrospective();
     const staticTemplateMutation = useStaticTemplate();
     const { completePhase } = useOnboardingStore();
+
+    const isOnboarding = searchParams.get('onboarding') === 'true';
 
     const [retrospectiveId, setRetrospectiveId] = useState<string | null>(null);
     const [problemId, setProblemId] = useState<string>('');
@@ -69,6 +72,14 @@ export const RetrospectiveWritePage: FC = () => {
             setIsLoadingTemplate(false);
         }
     };
+
+    // 온보딩 모드: 자동으로 폼 열기 (AI 버튼이 보이도록)
+    useEffect(() => {
+        if (isOnboarding && !isSuccess && problemId) {
+            // 온보딩 모드이고 문제 ID가 있으면 자동으로 SUCCESS 상태로 설정
+            setIsSuccess(true);
+        }
+    }, [isOnboarding, problemId]);
 
     useEffect(() => {
         // location.state에서 전달된 데이터 확인
