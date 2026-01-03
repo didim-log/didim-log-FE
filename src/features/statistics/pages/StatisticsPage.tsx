@@ -1,6 +1,6 @@
 /**
  * 통계 페이지 (One-Page Dashboard)
- * 히트맵 제거, 차트 확대, Footer 하단 고정
+ * Activity Heatmap 제거: 렌더링 성능 및 레이아웃 안정성 개선
  */
 
 import { useMemo } from 'react';
@@ -11,7 +11,6 @@ import { StatCard } from '../components/StatCard';
 import { CategoryAnalysisCard } from '../components/CategoryAnalysisCard';
 import { AlgorithmChart } from '../components/AlgorithmChart';
 import { WeaknessAnalysisCard } from '../components/WeaknessAnalysisCard';
-import { ActivityHeatmap } from '../../dashboard/components/ActivityHeatmap';
 import { Spinner } from '../../../components/ui/Spinner';
 import { Layout } from '../../../components/layout/Layout';
 import { BookOpen, FileText, Clock, Target } from 'lucide-react';
@@ -95,11 +94,6 @@ export const StatisticsPage: FC = () => {
                     </div>
                     {/* CSS Grid 레이아웃: 12열 그리드 */}
                     <div className="grid grid-cols-12 gap-4">
-                        {/* Row 0: Activity Heatmap (Span 12) */}
-                        <div className="col-span-12">
-                            <ActivityHeatmap />
-                        </div>
-
                         {/* Row 1: KPI Cards (Span 12) */}
                         <div className="col-span-12 grid grid-cols-4 gap-3">
                             <StatCard
