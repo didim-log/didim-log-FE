@@ -152,14 +152,15 @@ export const AppTour: FC = () => {
     // ✅ 완료된 사용자의 run 상태 정리 (렌더링 중 상태 업데이트 방지)
     useEffect(() => {
         const isCompleted = localStorage.getItem('didim_onboarding_completed') === 'true';
-        const isUserCompleted = user?.isOnboardingFinished === true || dashboard?.studentProfile?.isOnboardingFinished === true;
         
-        // 완료된 사용자가 run=true로 남아있으면 강제로 중지
-        if ((isCompleted || isUserCompleted) && run) {
+        // Help 버튼으로 수동 시작한 경우(localStorage에 완료 기록이 없으면) 완료 상태를 무시
+        // 완료된 사용자가 run=true로 남아있고, localStorage에 완료 기록이 있으면 강제로 중지
+        if (isCompleted && run) {
             stopTour();
             setStepIndex(0);
         }
-    }, [run, user?.isOnboardingFinished, dashboard?.studentProfile?.isOnboardingFinished, stopTour, setStepIndex]);
+        // localStorage에 완료 기록이 없으면 user.isOnboardingFinished가 true여도 무시 (Help 버튼으로 재시작 가능)
+    }, [run, stopTour, setStepIndex]);
 
     // ✅ Auto-Start Logic (Only runs once on mount, for new users)
     useEffect(() => {
@@ -288,13 +289,15 @@ export const AppTour: FC = () => {
 
     // 🛡️ Final Guard 2: 완료된 사용자는 아예 렌더링하지 않음
     const isCompleted = localStorage.getItem('didim_onboarding_completed') === 'true';
-    const isUserCompleted = user?.isOnboardingFinished === true || dashboard?.studentProfile?.isOnboardingFinished === true;
     
     // 완료된 사용자는 어떤 경우에도 렌더링하지 않음
-    // (run 상태 정리는 위의 useEffect에서 처리)
-    if (isCompleted || isUserCompleted) {
+    // 단, Help 버튼으로 수동 시작한 경우(localStorage에 완료 기록이 없으면) 완료 상태를 무시
+    // localStorage에 완료 기록이 있으면 무조건 차단
+    // localStorage에 완료 기록이 없고 run=true이면 완료 상태를 무시하고 투어 시작 (Help 버튼 재시작)
+    if (isCompleted) {
         return null;
     }
+    // localStorage에 완료 기록이 없으면 user.isOnboardingFinished가 true여도 무시 (Help 버튼으로 재시작 가능)
 
     // ✅ stepIndex 범위 체크: 마지막 단계를 넘어서면 렌더링하지 않음
     if (stepIndex >= steps.length || stepIndex < 0) {

@@ -14,7 +14,7 @@ export const Header: FC = () => {
     const { logout, user } = useAuthStore();
     const { theme, toggleTheme } = useUIStore();
     const navigate = useNavigate();
-    const { startTour } = useTourStore();
+    const { startTour, stopTour, setStepIndex } = useTourStore();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     const handleLogout = () => {
@@ -25,14 +25,17 @@ export const Header: FC = () => {
 
     const handleHelpClick = () => {
         setIsMobileMenuOpen(false);
-        // Help 버튼으로 재시작 시 localStorage 초기화 (완료 상태 해제)
+        // Help 버튼으로 재시작 시 완전히 초기화
         localStorage.removeItem('didim_onboarding_completed');
-        // Force reset tour state and go to start page
+        // 투어 상태 완전히 리셋
+        stopTour();
+        setStepIndex(0);
+        // 대시보드로 이동
         navigate('/dashboard');
         // 페이지 마운트 후 투어 시작 (타겟 요소가 렌더링될 시간 확보)
         setTimeout(() => {
             startTour();
-        }, 100); // Slight delay to ensure navigation happens first
+        }, 300); // 충분한 시간 확보
     };
 
     const handleNavClick = () => {
