@@ -38,16 +38,6 @@ const dashboardSteps: Step[] = [
         placement: 'left',
     },
     {
-        target: '.tour-heatmap',
-        content: '매일매일 꾸준히 학습하여 잔디를 심어보세요! 연속 풀이 일수를 늘려가며 성취감을 느껴보세요.',
-        placement: 'top',
-    },
-    {
-        target: '.tour-write-btn',
-        content: '문제를 풀고 나서 여기서 회고를 작성하세요. AI 피드백을 받을 수 있습니다!',
-        placement: 'bottom',
-    },
-    {
         target: '.tour-recommend-problems',
         content: '내 실력에 딱 맞는 문제를 매일 추천해드립니다. 문제를 클릭하면 바로 풀 수 있어요!',
         placement: 'bottom',

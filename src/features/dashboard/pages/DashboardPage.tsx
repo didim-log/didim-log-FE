@@ -2,9 +2,8 @@
  * 대시보드 페이지
  */
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import type { FC } from 'react';
-import { OnboardingTour } from '../../auth/components/OnboardingTour';
 import { useDashboard } from '../../../hooks/api/useDashboard';
 import { NoticeWidget } from '../components/NoticeWidget';
 import { TierProgress } from '../components/TierProgress';
@@ -13,24 +12,57 @@ import { TodaySolvedList } from '../components/TodaySolvedList';
 import { StatisticsPreview } from '../components/StatisticsPreview';
 import { QuoteCard } from '../components/QuoteCard';
 import { Spinner } from '../../../components/ui/Spinner';
-import { useOnboardingStore } from '../../../stores/onboarding.store';
 import { useAuthStore } from '../../../stores/auth.store';
 import { Layout } from '../../../components/layout/Layout';
+import { useSyncBojProfile } from '../../../hooks/api/useStudent';
+import { GlobalOnboardingTour } from '../../../components/onboarding/GlobalOnboardingTour';
+
+const LAST_SYNC_KEY = 'boj_last_sync_time';
+const SYNC_INTERVAL_MS = 60 * 60 * 1000; // 1시간
 
 export const DashboardPage: FC = () => {
     const { data: dashboard, isLoading, error } = useDashboard();
-    const { isNewUser, hasCompletedOnboarding } = useOnboardingStore();
     const { setUser, user } = useAuthStore();
+    const syncMutation = useSyncBojProfile();
+    const hasAutoSynced = useRef(false);
 
     // 대시보드 데이터를 받아올 때 primaryLanguage를 전역 상태에 업데이트
     useEffect(() => {
-        if (dashboard?.studentProfile?.primaryLanguage !== undefined && user) {
+        if (
+            dashboard?.studentProfile?.primaryLanguage !== undefined &&
+            user &&
+            user.primaryLanguage !== dashboard.studentProfile.primaryLanguage
+        ) {
             setUser({
                 ...user,
                 primaryLanguage: dashboard.studentProfile.primaryLanguage,
             });
         }
-    }, [dashboard?.studentProfile?.primaryLanguage, user, setUser]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [dashboard?.studentProfile?.primaryLanguage]);
+
+    // 자동 동기화: 마지막 동기화 시간이 1시간 이상 지났으면 자동으로 동기화
+    useEffect(() => {
+        if (isLoading || error || !dashboard || hasAutoSynced.current) {
+            return;
+        }
+
+        const lastSyncTime = localStorage.getItem(LAST_SYNC_KEY);
+        const now = Date.now();
+
+        if (!lastSyncTime || now - parseInt(lastSyncTime, 10) > SYNC_INTERVAL_MS) {
+            hasAutoSynced.current = true;
+            syncMutation.mutate(undefined, {
+                onSuccess: () => {
+                    localStorage.setItem(LAST_SYNC_KEY, now.toString());
+                },
+                onError: () => {
+                    // 자동 동기화 실패는 조용히 처리 (사용자에게 알리지 않음)
+                },
+            });
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isLoading, error, dashboard]);
 
     if (isLoading) {
         return (
@@ -84,9 +116,6 @@ export const DashboardPage: FC = () => {
         <Layout>
             <div className="bg-gray-50 dark:bg-gray-900 py-4 px-4">
                 <div className="max-w-7xl mx-auto space-y-4">
-                    {/* 온보딩 투어 (신규 유저 + 미완료 시에만) */}
-                    {isNewUser && !hasCompletedOnboarding && <OnboardingTour />}
-
                     {/* 메인 컨텐츠 그리드 - 2:1 비율 레이아웃 */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                         {/* 좌측 컬럼 (메인 콘텐츠) - lg:col-span-2 */}
@@ -131,6 +160,8 @@ export const DashboardPage: FC = () => {
                     </div>
                 </div>
             </div>
+            {/* 전역 온보딩 투어 - DashboardPage에 통합 */}
+            <GlobalOnboardingTour />
         </Layout>
     );
 };
