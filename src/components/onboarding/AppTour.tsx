@@ -135,8 +135,15 @@ export const AppTour: FC = () => {
     const { user, setUser, completeOnboarding: completeOnboardingInStore } = useAuthStore();
     const { run, stepIndex, stopTour, setStepIndex, startTour } = useTourStore();
 
-    // ⚡️ KILL SWITCH: Local state to force-kill the component immediately
+    // ⚡️ KILL SWITCH: Local state to force-remove the component from DOM
     const [forceHide, setForceHide] = useState(false);
+
+    // 1. Reset Kill Switch when 'run' changes (e.g. User clicks Help button)
+    useEffect(() => {
+        if (run) {
+            setForceHide(false);
+        }
+    }, [run]);
 
     // 대시보드에서 온보딩 완료 여부 확인
     useEffect(() => {
@@ -154,13 +161,11 @@ export const AppTour: FC = () => {
     useEffect(() => {
         const isCompleted = localStorage.getItem('didim_onboarding_completed') === 'true';
         
-        // Help 버튼으로 수동 시작한 경우(localStorage에 완료 기록이 없으면) 완료 상태를 무시
         // 완료된 사용자가 run=true로 남아있고, localStorage에 완료 기록이 있으면 강제로 중지
         if (isCompleted && run) {
             stopTour();
             setStepIndex(0);
         }
-        // localStorage에 완료 기록이 없으면 user.isOnboardingFinished가 true여도 무시 (Help 버튼으로 재시작 가능)
     }, [run, stopTour, setStepIndex]);
 
     // ✅ Auto-Start Logic (Only runs once on mount, for new users)
@@ -206,20 +211,15 @@ export const AppTour: FC = () => {
             const finishedStatuses: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
 
             if (finishedStatuses.includes(status)) {
-                // ⚡️ EXECUTE KILL SWITCH: 즉시 모든 상태 초기화 (순서 중요!)
-                setForceHide(true); // 1. 즉시 컴포넌트 숨김 (가장 먼저!)
-                localStorage.setItem('didim_onboarding_completed', 'true'); // 2. 완료 상태 저장
-                setStepIndex(0); // 3. stepIndex 초기화
-                stopTour(); // 4. 투어 중지
+                // ⚡️ IMMEDIATE KILL: Remove UI instantly before async operations
+                setForceHide(true);
                 
-                // 추가 안전장치: 다음 렌더링 사이클에서도 확실히 숨김
-                requestAnimationFrame(() => {
-                    setForceHide(true);
-                    stopTour();
-                    setStepIndex(0);
-                });
+                // Cleanup Global State
+                stopTour();
+                localStorage.setItem('didim_onboarding_completed', 'true');
+                setStepIndex(0);
 
-                // Update DB & Local State (async, but UI is already closed)
+                // Async API Call (UI is already closed)
                 try {
                     if (status === STATUS.FINISHED) {
                         await memberApi.completeOnboarding();
@@ -246,29 +246,21 @@ export const AppTour: FC = () => {
                 const nextStepIndex = index + 1;
                 if (nextStepIndex < steps.length) {
                     const nextRoute = steps[nextStepIndex].data?.route;
-                    // Handle query params comparison carefully
-                    const currentPath = location.pathname + location.search;
-                    if (nextRoute && currentPath !== nextRoute) {
-                        // 페이지 이동 전에 stepIndex 업데이트
-                        setStepIndex(nextStepIndex);
-                        // 페이지 이동
+                    // Clean route checking (ignore query params)
+                    if (nextRoute && !location.pathname.includes(nextRoute.split('?')[0])) {
                         navigate(nextRoute);
-                    } else {
-                        // 같은 페이지 내에서 다음 스텝
-                        setStepIndex(nextStepIndex);
                     }
+                    setStepIndex(nextStepIndex);
                 }
             } else if (type === EVENTS.STEP_AFTER && action === ACTIONS.PREV) {
                 // 이전 스텝으로 이동
                 const prevIndex = index - 1;
                 if (prevIndex >= 0) {
                     const prevRoute = steps[prevIndex].data?.route;
-                    if (prevRoute && location.pathname !== prevRoute) {
-                        setStepIndex(prevIndex);
+                    if (prevRoute && !location.pathname.includes(prevRoute.split('?')[0])) {
                         navigate(prevRoute);
-                    } else {
-                        setStepIndex(prevIndex);
                     }
+                    setStepIndex(prevIndex);
                 }
             }
 
@@ -283,7 +275,7 @@ export const AppTour: FC = () => {
         [location.pathname, navigate, completeOnboardingInStore, stopTour, setStepIndex, user, setUser]
     );
 
-    // 🛡️ Final Guard 1: If forced hidden, render NOTHING.
+    // 🛡️ Final Guard: If forced hidden, render NOTHING.
     if (forceHide) {
         return null;
     }
@@ -302,21 +294,16 @@ export const AppTour: FC = () => {
     if (location.pathname === '/profile' && isUserCompleted) {
         return null;
     }
-    // localStorage에 완료 기록이 없으면 user.isOnboardingFinished가 true여도 무시 (Help 버튼으로 재시작 가능)
 
     // ✅ stepIndex 범위 체크: 마지막 단계를 넘어서면 렌더링하지 않음
     if (stepIndex >= steps.length || stepIndex < 0) {
         return null;
     }
 
-    // Prevent rendering if we are on the wrong page (wait for navigation)
+    // Navigation Guard: Don't render if we are moving between pages
     const currentStep = steps[stepIndex];
-    if (run && currentStep?.data?.route) {
-        // Simple path check (ignoring query params for safety)
-        const routePath = currentStep.data.route.split('?')[0];
-        if (!location.pathname.includes(routePath)) {
-            return null; // Return null to avoid "Target not found" while loading new page
-        }
+    if (run && currentStep?.data?.route && !location.pathname.includes(currentStep.data.route.split('?')[0])) {
+        return null; // Return null to avoid "Target not found" while loading new page
     }
 
     // 타겟 요소가 존재하는지 확인 (body가 아닌 경우)
