@@ -53,7 +53,7 @@ export const ProblemDetailPage: FC = () => {
                     </div>
 
                     <div className="mt-6 flex justify-end">
-                        <Button onClick={handleGoToStudy} variant="primary" size="lg" className="tour-problem-start-btn">
+                        <Button onClick={handleGoToStudy} variant="primary" size="lg" className="tour-problem-timer tour-problem-start-btn">
                             문제 풀기 시작 →
                         </Button>
                     </div>

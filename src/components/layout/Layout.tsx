@@ -7,6 +7,7 @@ import { useLocation } from 'react-router-dom';
 import type { FC, ReactNode } from 'react';
 import { Header } from './Header';
 import { Footer } from './Footer';
+import { AppTour } from '../onboarding/AppTour';
 
 interface LayoutProps {
     children: ReactNode;
@@ -25,6 +26,8 @@ export const Layout: FC<LayoutProps> = ({ children }) => {
             <Header />
             <main className="flex-1 w-full">{children}</main>
             <Footer />
+            {/* 전역 멀티 페이지 온보딩 투어 */}
+            <AppTour />
         </div>
     );
 };

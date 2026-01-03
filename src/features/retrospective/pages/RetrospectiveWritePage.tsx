@@ -290,7 +290,7 @@ export const RetrospectiveWritePage: FC = () => {
                     </div>
 
                     {/* AI 한 줄 인사이트 (회고 작성 헤더 아래, 한 줄 요약 위) */}
-                    <div className="mb-6 tour-ai-review">
+                    <div className="mb-6 tour-ai-review-btn">
                         <AiReviewCard 
                             logId={logId} 
                             code={code}

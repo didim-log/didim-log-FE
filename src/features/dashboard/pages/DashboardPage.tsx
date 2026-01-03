@@ -15,7 +15,6 @@ import { Spinner } from '../../../components/ui/Spinner';
 import { useAuthStore } from '../../../stores/auth.store';
 import { Layout } from '../../../components/layout/Layout';
 import { useSyncBojProfile } from '../../../hooks/api/useStudent';
-import { GlobalOnboardingTour } from '../../../components/onboarding/GlobalOnboardingTour';
 
 const LAST_SYNC_KEY = 'boj_last_sync_time';
 const SYNC_INTERVAL_MS = 60 * 60 * 1000; // 1시간
@@ -160,8 +159,6 @@ export const DashboardPage: FC = () => {
                     </div>
                 </div>
             </div>
-            {/* 전역 온보딩 투어 - DashboardPage에 통합 */}
-            <GlobalOnboardingTour />
         </Layout>
     );
 };
