@@ -50,73 +50,126 @@ export const ActivityHeatmap: FC<ActivityHeatmapProps> = () => {
         return 'bg-green-800 dark:bg-green-500';
     };
 
-    // 날짜를 YYYY-MM-DD 형식으로 정규화
-    const normalizeDate = (dateStr: string): string => {
-        if (!dateStr) return '';
-        if (dateStr.includes('T')) {
-            return dateStr.split('T')[0];
+    /**
+     * 연도 전체 날짜 데이터를 생성하는 유틸리티 함수
+     * 타임존 오류를 방지하기 위해 로컬 날짜 문자열(YYYY-MM-DD)만 사용
+     * 
+     * @param year 연도
+     * @returns { date: string, count: number }[] 형태의 배열 (365 또는 366일)
+     */
+    const generateYearData = (year: number): Array<{ date: string; count: number }> => {
+        const yearData: Array<{ date: string; count: number }> = [];
+        
+        // 1월 1일부터 시작
+        const startDate = new Date(year, 0, 1);
+        const endDate = new Date(year, 11, 31);
+        
+        // 로컬 날짜 문자열만 사용하여 타임존 오류 방지
+        const currentDate = new Date(startDate);
+        while (currentDate <= endDate) {
+            const yearStr = String(currentDate.getFullYear()).padStart(4, '0');
+            const monthStr = String(currentDate.getMonth() + 1).padStart(2, '0');
+            const dayStr = String(currentDate.getDate()).padStart(2, '0');
+            const dateStr = `${yearStr}-${monthStr}-${dayStr}`;
+            
+            yearData.push({
+                date: dateStr,
+                count: 0, // 초기값은 0
+            });
+            
+            // 다음 날로 이동
+            currentDate.setDate(currentDate.getDate() + 1);
         }
-        if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-            return dateStr;
-        }
-        try {
-            const date = new Date(dateStr);
-            if (!isNaN(date.getTime())) {
-                const year = date.getFullYear();
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-                const day = String(date.getDate()).padStart(2, '0');
-                return `${year}-${month}-${day}`;
+        
+        return yearData;
+    };
+
+    /**
+     * API 데이터를 날짜별로 매핑하는 유틸리티
+     * 
+     * @param apiData API에서 받은 히트맵 데이터
+     * @returns Map<date: string, count: number>
+     */
+    const createDataMap = (apiData: Array<{ date: string; count: number }>): Map<string, number> => {
+        const dataMap = new Map<string, number>();
+        
+        apiData.forEach((item) => {
+            // 날짜 정규화: ISO 형식이면 날짜 부분만 추출
+            let normalizedDate = item.date;
+            if (normalizedDate.includes('T')) {
+                normalizedDate = normalizedDate.split('T')[0];
             }
-        } catch {
-            // 파싱 실패
-        }
-        return dateStr;
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(normalizedDate)) {
+                // 유효하지 않은 형식은 건너뛰기
+                return;
+            }
+            
+            // 기존 count가 있으면 합산
+            const existingCount = dataMap.get(normalizedDate) || 0;
+            dataMap.set(normalizedDate, existingCount + item.count);
+        });
+        
+        return dataMap;
+    };
+
+    /**
+     * 전체 연도 데이터와 API 데이터를 병합
+     * 
+     * @param yearData 전체 연도 데이터 (365 또는 366일, 모두 count: 0)
+     * @param apiDataMap API 데이터 맵
+     * @returns 병합된 데이터 배열
+     */
+    const mergeYearData = (
+        yearData: Array<{ date: string; count: number }>,
+        apiDataMap: Map<string, number>
+    ): Array<{ date: string; count: number }> => {
+        return yearData.map((day) => {
+            const apiCount = apiDataMap.get(day.date);
+            return {
+                date: day.date,
+                count: apiCount !== undefined ? apiCount : 0, // API 데이터가 있으면 사용, 없으면 0
+            };
+        });
     };
 
     // 선택된 연도의 히트맵 데이터 생성 (GitHub 스타일: 항상 전체 연도 표시)
     const generateYearHeatmap = (year: number): HeatmapCell[][] => {
-        // 항상 1월 1일부터 12월 31일까지 전체 연도 그리드 생성 (데이터 유무와 관계없이)
-        const yearStart = new Date(year, 0, 1); // Jan 1st
-        const yearEnd = new Date(year, 11, 31); // Dec 31st
-        const today = new Date();
         const currentYearValue = new Date().getFullYear();
+        const today = new Date();
+        const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
         
-        // 현재 연도인 경우 오늘까지만 표시, 과거 연도는 전체 표시
-        const endDate = year === currentYearValue && yearEnd > today ? today : yearEnd;
-
-        // 날짜별 데이터 맵 생성 (데이터가 없어도 빈 맵으로 시작)
-        const dataMap = new Map<string, number>();
-        if (heatmapData && heatmapData.length > 0) {
-            heatmapData.forEach((item) => {
-                const normalizedDate = normalizeDate(item.date);
-                if (normalizedDate) {
-                    const date = new Date(normalizedDate);
-                    if (date >= yearStart && date <= endDate) {
-                        const existingCount = dataMap.get(normalizedDate) || 0;
-                        dataMap.set(normalizedDate, existingCount + item.count);
-                    }
-                }
-            });
-        }
-
-        // 연도 전체 날짜 데이터 생성 (항상 1월 1일부터 시작)
-        const allDays: HeatmapCell[] = [];
-        const startDate = new Date(yearStart);
-        const daysInYear = Math.ceil((endDate.getTime() - yearStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-
-        for (let i = 0; i < daysInYear; i++) {
-            const date = new Date(startDate);
-            date.setDate(date.getDate() + i);
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            const dateStr = `${year}-${month}-${day}`;
-            allDays.push({
-                date: dateStr,
-                count: dataMap.get(dateStr) || 0, // 데이터가 없으면 0 (회색으로 표시됨)
-                dateObj: date,
-            });
-        }
+        // 1. 전체 연도 데이터 생성 (365 또는 366일, 모두 count: 0)
+        const fullYearData = generateYearData(year);
+        
+        // 2. 현재 연도인 경우 오늘 이후 날짜 필터링
+        const filteredYearData = year === currentYearValue
+            ? fullYearData.filter((day) => day.date <= todayStr)
+            : fullYearData;
+        
+        // 3. API 데이터를 Map으로 변환
+        const apiDataMap = heatmapData && heatmapData.length > 0
+            ? createDataMap(heatmapData)
+            : new Map<string, number>();
+        
+        // 4. 전체 연도 데이터와 API 데이터 병합
+        const mergedData = mergeYearData(filteredYearData, apiDataMap);
+        
+        // 5. HeatmapCell 형식으로 변환 (dateObj 추가)
+        const allDays: HeatmapCell[] = mergedData.map((day) => {
+            // 날짜 문자열을 Date 객체로 변환 (로컬 시간대)
+            const [yearStr, monthStr, dayStr] = day.date.split('-');
+            const dateObj = new Date(
+                parseInt(yearStr, 10),
+                parseInt(monthStr, 10) - 1,
+                parseInt(dayStr, 10)
+            );
+            
+            return {
+                date: day.date,
+                count: day.count,
+                dateObj,
+            };
+        });
 
         // 주 단위로 그룹화 (일요일부터 시작)
         const weeks: HeatmapCell[][] = [];
@@ -159,30 +212,36 @@ export const ActivityHeatmap: FC<ActivityHeatmapProps> = () => {
 
     // 연도별 통계 계산 (GitHub 스타일: 항상 전체 연도 기준)
     const yearStats = useMemo(() => {
-        // 항상 1월 1일부터 12월 31일까지 전체 연도 기준으로 계산
-        const yearStart = new Date(selectedYear, 0, 1);
-        const yearEnd = new Date(selectedYear, 11, 31);
+        const currentYearValue = new Date().getFullYear();
         const today = new Date();
-        const endDate = yearEnd > today ? today : yearEnd;
-
+        const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+        
+        // 전체 연도 데이터 생성
+        const fullYearData = generateYearData(selectedYear);
+        
+        // 현재 연도인 경우 오늘 이후 날짜 필터링
+        const filteredYearData = selectedYear === currentYearValue
+            ? fullYearData.filter((day) => day.date <= todayStr)
+            : fullYearData;
+        
+        const totalDays = filteredYearData.length;
+        
+        // API 데이터에서 통계 계산
         let activeDays = 0;
         let totalProblems = 0;
-
-        // 데이터가 있어도 없어도 전체 연도 일수는 계산
+        
         if (heatmapData && heatmapData.length > 0) {
-            heatmapData.forEach((item) => {
-                const normalizedDate = normalizeDate(item.date);
-                if (normalizedDate) {
-                    const date = new Date(normalizedDate);
-                    if (date >= yearStart && date <= endDate) {
-                        activeDays += 1;
-                        totalProblems += item.count;
-                    }
+            const apiDataMap = createDataMap(heatmapData);
+            
+            filteredYearData.forEach((day) => {
+                const apiCount = apiDataMap.get(day.date);
+                if (apiCount !== undefined && apiCount > 0) {
+                    activeDays += 1;
+                    totalProblems += apiCount;
                 }
             });
         }
-
-        const totalDays = Math.ceil((endDate.getTime() - yearStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+        
         const completionRate = totalDays > 0 ? ((activeDays / totalDays) * 100).toFixed(1) : '0.0';
 
         return { totalDays, activeDays, totalProblems, completionRate };
