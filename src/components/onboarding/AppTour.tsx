@@ -133,11 +133,6 @@ export const AppTour: FC = () => {
     const { user, setUser, completeOnboarding: completeOnboardingInStore } = useAuthStore();
     const { run, stepIndex, stopTour, setStepIndex, startTour } = useTourStore();
 
-    // 🛑 Safety Guard: Never render if already completed locally
-    if (localStorage.getItem('didim_onboarding_completed') === 'true') {
-        return null;
-    }
-
     // 대시보드에서 온보딩 완료 여부 확인
     useEffect(() => {
         if (dashboard?.studentProfile?.isOnboardingFinished !== undefined) {
@@ -150,42 +145,36 @@ export const AppTour: FC = () => {
         }
     }, [dashboard?.studentProfile?.isOnboardingFinished, user, setUser]);
 
-    // 온보딩 자동 시작 조건 확인
+    // ✅ Auto-Start Logic (Only runs once on mount, for new users)
     useEffect(() => {
-        // 자동 시작: 온보딩이 완료되었으면 실행하지 않음
-        const isLocalCompleted = localStorage.getItem('didim_onboarding_completed') === 'true';
-        if (
-            isLocalCompleted ||
-            dashboard?.studentProfile?.isOnboardingFinished ||
-            user?.isOnboardingFinished ||
-            run
-        ) {
-            return;
-        }
-
-        // 대시보드 데이터가 로드되지 않았으면 대기
-        if (!dashboard || location.pathname !== '/dashboard') {
-            return;
-        }
-
-        // DOM이 완전히 렌더링된 후 시작
-        const timer = setTimeout(() => {
-            // 대시보드의 첫 번째 스텝 타겟 요소 확인
-            const dashboardSteps = steps.filter((step) => step.data?.route === '/dashboard');
-            const allTargetsExist = dashboardSteps.every((step) => {
-                if (step.target === 'body') {
-                    return true;
-                }
-                const targetElement = document.querySelector(step.target as string);
-                return !!targetElement;
-            });
-
-            if (allTargetsExist) {
-                startTour();
+        const isCompleted = localStorage.getItem('didim_onboarding_completed') === 'true';
+        
+        // If NOT completed and NOT running, start it automatically
+        if (!isCompleted && !run) {
+            // 대시보드 데이터가 로드되지 않았으면 대기
+            if (!dashboard || location.pathname !== '/dashboard') {
+                return;
             }
-        }, 1000);
-        return () => clearTimeout(timer);
-    }, [dashboard, user, location.pathname, run, startTour]);
+
+            // DOM이 완전히 렌더링된 후 시작
+            const timer = setTimeout(() => {
+                // 대시보드의 첫 번째 스텝 타겟 요소 확인
+                const dashboardSteps = steps.filter((step) => step.data?.route === '/dashboard');
+                const allTargetsExist = dashboardSteps.every((step) => {
+                    if (step.target === 'body') {
+                        return true;
+                    }
+                    const targetElement = document.querySelector(step.target as string);
+                    return !!targetElement;
+                });
+
+                if (allTargetsExist && !run) {
+                    startTour();
+                }
+            }, 1000);
+            return () => clearTimeout(timer);
+        }
+    }, [dashboard, location.pathname, run, startTour]);
 
     // Smart Navigation Logic
     const handleCallback = useCallback(
@@ -281,7 +270,8 @@ export const AppTour: FC = () => {
         }
     }
 
-    // 투어가 실행되지 않으면 렌더링하지 않음
+    // ✅ Prevent render ONLY if not running (Standard Joyride behavior)
+    // Manual start (Help button) will set run=true, so component will render
     if (!run) {
         return null;
     }

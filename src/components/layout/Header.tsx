@@ -4,7 +4,7 @@
 
 import { useState } from 'react';
 import type { FC } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/auth.store';
 import { useUIStore } from '../../stores/ui.store';
 import { useTourStore } from '../../stores/tour.store';
@@ -14,7 +14,6 @@ export const Header: FC = () => {
     const { logout, user } = useAuthStore();
     const { theme, toggleTheme } = useUIStore();
     const navigate = useNavigate();
-    const location = useLocation();
     const { startTour } = useTourStore();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -26,17 +25,12 @@ export const Header: FC = () => {
 
     const handleHelpClick = () => {
         setIsMobileMenuOpen(false);
-        // Dashboard가 아니면 먼저 이동
-        if (location.pathname !== '/dashboard') {
-            navigate('/dashboard');
-            // 페이지 마운트 후 투어 시작 (타겟 요소가 렌더링될 시간 확보)
-            setTimeout(() => {
-                startTour();
-            }, 300);
-        } else {
-            // 이미 Dashboard에 있으면 즉시 시작
+        // Force reset tour state and go to start page
+        navigate('/dashboard');
+        // 페이지 마운트 후 투어 시작 (타겟 요소가 렌더링될 시간 확보)
+        setTimeout(() => {
             startTour();
-        }
+        }, 100); // Slight delay to ensure navigation happens first
     };
 
     const handleNavClick = () => {
