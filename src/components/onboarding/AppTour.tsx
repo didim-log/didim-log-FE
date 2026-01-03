@@ -93,7 +93,7 @@ const steps: Step[] = [
         title: '맞춤 문제 추천',
         content: '먼저 대시보드입니다. 내 실력에 딱 맞는 문제를 추천받을 수 있습니다.',
         placement: 'bottom',
-        spotlightPadding: 10,
+        spotlightPadding: 8,
         data: { route: '/dashboard' },
     },
     // --- 2. Problem Detail (Move to ID 1000) ---
@@ -108,7 +108,8 @@ const steps: Step[] = [
         target: '.tour-timer-btn',
         title: '타이머 기능',
         content: '실전 감각을 위해 타이머를 켜고 푸는 것을 추천합니다!',
-        placement: 'auto',
+        placement: 'left',
+        spotlightPadding: 8,
         data: { route: '/problems/1000' },
     },
     // --- 3. Retrospective Write (Auto-Open Mode) ---
@@ -132,6 +133,7 @@ const steps: Step[] = [
             </div>
         ),
         placement: 'top',
+        spotlightPadding: 8,
         data: { route: '/retrospectives/write?onboarding=true' },
     },
     // --- 4. Ranking ---
@@ -157,7 +159,8 @@ const steps: Step[] = [
             </div>
         ),
         placement: 'bottom',
-        disableScrolling: true, // 스크롤 애니메이션 없이 바로 표시
+        spotlightPadding: 8,
+        disableScrolling: true,
         data: { route: '/profile' },
     },
     {
@@ -173,6 +176,7 @@ const steps: Step[] = [
             </div>
         ),
         placement: 'top',
+        spotlightPadding: 8,
         data: { route: '/profile' },
     },
     {
@@ -460,9 +464,16 @@ export const AppTour: FC = () => {
             hideCloseButton={true}
             spotlightClicks={true}
             floaterProps={{
-                disableAnimation: true,
+                disableAnimation: false,
                 hideArrow: false,
-                offset: 20,
+                offset: 10,
+                placement: 'auto',
+                styles: {
+                    arrow: {
+                        length: 8,
+                        spread: 8,
+                    },
+                },
             }}
             styles={{
                 options: {
