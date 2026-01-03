@@ -35,12 +35,22 @@ export const FindIdPage: FC = () => {
         setError(null);
 
         try {
-            await authApi.findId({ email: email.trim() });
+            const response = await authApi.findId({ email: email.trim() });
             setIsSuccess(true);
-            toast.success('이메일로 아이디가 전송되었습니다.');
+            toast.success(response.message || '이메일로 아이디가 전송되었습니다.');
         } catch (err: unknown) {
             const errorMessage = getErrorMessage(err);
-            setError(errorMessage);
+            // 404 에러인 경우 특정 메시지 표시
+            if (err && typeof err === 'object' && 'response' in err) {
+                const apiError = err as { response?: { status?: number } };
+                if (apiError.response?.status === 404) {
+                    setError('일치하는 정보가 없습니다.');
+                } else {
+                    setError(errorMessage);
+                }
+            } else {
+                setError(errorMessage || '일치하는 정보가 없습니다.');
+            }
         } finally {
             setIsSubmitting(false);
         }

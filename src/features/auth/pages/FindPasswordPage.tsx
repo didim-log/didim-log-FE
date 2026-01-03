@@ -42,12 +42,22 @@ export const FindPasswordPage: FC = () => {
         setError(null);
 
         try {
-            await authApi.findPassword({ email: email.trim(), bojId: bojId.trim() });
+            const response = await authApi.findPassword({ email: email.trim(), bojId: bojId.trim() });
             setIsSuccess(true);
-            toast.success('이메일로 비밀번호 재설정 코드가 전송되었습니다.');
+            toast.success(response.message || '이메일로 비밀번호 재설정 코드가 전송되었습니다.');
         } catch (err: unknown) {
             const errorMessage = getErrorMessage(err);
-            setError(errorMessage);
+            // 404 에러인 경우 특정 메시지 표시
+            if (err && typeof err === 'object' && 'response' in err) {
+                const apiError = err as { response?: { status?: number } };
+                if (apiError.response?.status === 404) {
+                    setError('정보를 찾을 수 없습니다.');
+                } else {
+                    setError(errorMessage);
+                }
+            } else {
+                setError(errorMessage || '정보를 찾을 수 없습니다.');
+            }
         } finally {
             setIsSubmitting(false);
         }
