@@ -11,24 +11,24 @@ import { formatTierFromDifficulty, getTierColor } from '../../../utils/tier';
 import type { ProblemResponse } from '../../../types/api/problem.types';
 
 /**
- * 추천 문제 태그 필터 목록 (축약형 태그 우선순위)
+ * 추천 문제 태그 필터 목록 (대기업 코딩 테스트 출제 빈도 순)
  * 백엔드 TagUtils가 자동으로 공식 전체 이름으로 변환하므로 축약형을 그대로 전송
  */
 const RECOMMENDED_TAGS = [
-    'DP',              // 1. Dynamic Programming
-    'BFS',             // 2. Breadth-first Search
-    'DFS',             // 3. Depth-first Search
-    'Implementation',  // 4. Implementation
-    'Graph',           // 5. Graph
-    'Greedy',          // 6. Greedy
-    'String',          // 7. String
-    'DataStructures',  // 8. Data Structures
-    'BruteForce',      // 9. Brute Force
-    'Tree',            // 10. Tree
-    'Simulation',      // 11. Simulation
-    'BinarySearch',    // 12. Binary Search
-    'TwoPointer',      // 13. Two Pointer
-    'Dijkstra',        // 14. Dijkstra
+    'Implementation',  // 1. 구현 (가장 많이 출제)
+    'Greedy',          // 2. 그리디
+    'BFS',             // 3. 너비 우선 탐색
+    'DFS',             // 4. 깊이 우선 탐색
+    'DP',              // 5. 동적 프로그래밍
+    'String',          // 6. 문자열 처리
+    'TwoPointer',      // 7. 투 포인터
+    'BinarySearch',    // 8. 이진 탐색
+    'Simulation',      // 9. 시뮬레이션
+    'Graph',           // 10. 그래프
+    'Tree',            // 11. 트리
+    'DataStructures',  // 12. 자료구조
+    'BruteForce',      // 13. 완전 탐색
+    'Dijkstra',        // 14. 다익스트라
 ] as const;
 
 interface RecommendedProblemsProps {
