@@ -3,18 +3,36 @@
  */
 
 import type { FC } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../stores/auth.store';
 import { useUIStore } from '../../stores/ui.store';
+import { useTourStore } from '../../stores/tour.store';
+import { HelpCircle } from 'lucide-react';
 
 export const Header: FC = () => {
     const { logout, user } = useAuthStore();
     const { theme, toggleTheme } = useUIStore();
     const navigate = useNavigate();
+    const location = useLocation();
+    const { startTour } = useTourStore();
 
     const handleLogout = () => {
         logout();
         navigate('/login');
+    };
+
+    const handleHelpClick = () => {
+        // Dashboard가 아니면 먼저 이동
+        if (location.pathname !== '/dashboard') {
+            navigate('/dashboard');
+            // 페이지 마운트 후 투어 시작 (타겟 요소가 렌더링될 시간 확보)
+            setTimeout(() => {
+                startTour();
+            }, 300);
+        } else {
+            // 이미 Dashboard에 있으면 즉시 시작
+            startTour();
+        }
     };
 
     return (
@@ -49,6 +67,16 @@ export const Header: FC = () => {
                                 관리자
                             </Link>
                         )}
+
+                        {/* 가이드 버튼 (온보딩 투어 재시작) */}
+                        <button
+                            onClick={handleHelpClick}
+                            className="p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                            aria-label="가이드 보기"
+                            title="가이드 보기"
+                        >
+                            <HelpCircle className="w-5 h-5" />
+                        </button>
 
                         {/* 다크 모드 토글 */}
                         <button
