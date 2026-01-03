@@ -159,21 +159,21 @@ export const AppTour: FC = () => {
 
     // ✅ 완료된 사용자의 run 상태 정리 (렌더링 중 상태 업데이트 방지)
     useEffect(() => {
-        const isCompleted = localStorage.getItem('didim_onboarding_completed') === 'true';
+        const isUserCompleted = user?.isOnboardingFinished === true || dashboard?.studentProfile?.isOnboardingFinished === true;
         
-        // 완료된 사용자가 run=true로 남아있고, localStorage에 완료 기록이 있으면 강제로 중지
-        if (isCompleted && run) {
+        // 백엔드에서 완료된 사용자가 run=true로 남아있으면 강제로 중지
+        if (isUserCompleted && run) {
             stopTour();
             setStepIndex(0);
         }
-    }, [run, stopTour, setStepIndex]);
+    }, [run, user?.isOnboardingFinished, dashboard?.studentProfile?.isOnboardingFinished, stopTour, setStepIndex]);
 
     // ✅ Auto-Start Logic (Only runs once on mount, for new users)
     useEffect(() => {
-        const isCompleted = localStorage.getItem('didim_onboarding_completed') === 'true';
+        const isUserCompleted = user?.isOnboardingFinished === true || dashboard?.studentProfile?.isOnboardingFinished === true;
         
-        // 완료된 사용자는 자동 실행하지 않음
-        if (isCompleted) {
+        // 백엔드에서 완료된 사용자는 자동 실행하지 않음
+        if (isUserCompleted) {
             return;
         }
         
@@ -202,7 +202,7 @@ export const AppTour: FC = () => {
             }, 1000);
             return () => clearTimeout(timer);
         }
-    }, [dashboard, location.pathname, run, startTour, forceHide]);
+    }, [dashboard, location.pathname, run, startTour, forceHide, user?.isOnboardingFinished, dashboard?.studentProfile?.isOnboardingFinished]);
 
     // Smart Navigation Logic
     const handleCallback = useCallback(
@@ -216,7 +216,6 @@ export const AppTour: FC = () => {
                 
                 // Cleanup Global State
                 stopTour();
-                localStorage.setItem('didim_onboarding_completed', 'true');
                 setStepIndex(0);
 
                 // Async API Call (UI is already closed)
@@ -280,18 +279,11 @@ export const AppTour: FC = () => {
         return null;
     }
 
-    // 🛡️ Final Guard 2: 완료된 사용자는 아예 렌더링하지 않음
-    const isCompleted = localStorage.getItem('didim_onboarding_completed') === 'true';
+    // 🛡️ Final Guard 2: 백엔드에서 온보딩 완료된 사용자는 아예 렌더링하지 않음
+    // isOnboardingFinished가 true면 투어를 보여주지 않음 (Help 버튼으로 재시작하려면 resetOnboarding API 호출 필요)
     const isUserCompleted = user?.isOnboardingFinished === true || dashboard?.studentProfile?.isOnboardingFinished === true;
     
-    // localStorage에 완료 기록이 있으면 무조건 차단
-    // Help 버튼으로 수동 시작한 경우(localStorage에 완료 기록이 없으면) 완료 상태를 무시하고 진행 가능
-    if (isCompleted) {
-        return null;
-    }
-    
-    // 프로필 페이지에서 완료된 사용자는 투어를 표시하지 않음 (마지막 스텝이 보이지 않도록)
-    if (location.pathname === '/profile' && isUserCompleted) {
+    if (isUserCompleted) {
         return null;
     }
 
