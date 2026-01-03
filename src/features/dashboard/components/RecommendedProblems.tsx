@@ -10,24 +10,25 @@ import { useProblemRecommend } from '../../../hooks/api/useProblem';
 import { formatTierFromDifficulty, getTierColor } from '../../../utils/tier';
 import type { ProblemResponse } from '../../../types/api/problem.types';
 
-const ALGORITHM_CATEGORIES = [
-    'Implementation',
-    'DP',
-    'Graph',
-    'DataStructures',
-    'Greedy',
-    'String',
-    'BruteForce',
-    'Tree',
-    'Search',
-    'BFS',
-    'DFS',
-    'Dijkstra',
-    'Backtracking',
-    'Bitmask',
-    'Simulation',
-    'TwoPointer',
-    'NumberTheory',
+/**
+ * 추천 문제 태그 필터 목록 (축약형 태그 우선순위)
+ * 백엔드 TagUtils가 자동으로 공식 전체 이름으로 변환하므로 축약형을 그대로 전송
+ */
+const RECOMMENDED_TAGS = [
+    'DP',              // 1. Dynamic Programming
+    'BFS',             // 2. Breadth-first Search
+    'DFS',             // 3. Depth-first Search
+    'Implementation',  // 4. Implementation
+    'Graph',           // 5. Graph
+    'Greedy',          // 6. Greedy
+    'String',          // 7. String
+    'DataStructures',  // 8. Data Structures
+    'BruteForce',      // 9. Brute Force
+    'Tree',            // 10. Tree
+    'Simulation',      // 11. Simulation
+    'BinarySearch',    // 12. Binary Search
+    'TwoPointer',      // 13. Two Pointer
+    'Dijkstra',        // 14. Dijkstra
 ] as const;
 
 interface RecommendedProblemsProps {
@@ -203,7 +204,7 @@ export const RecommendedProblems: FC<RecommendedProblemsProps> = ({ count = 4, c
                     </button>
 
                     {/* 카테고리 칩 버튼들 */}
-                    {ALGORITHM_CATEGORIES.map((category) => (
+                    {RECOMMENDED_TAGS.map((category) => (
                         <button
                             key={category}
                             ref={(el) => { buttonRefs.current[category] = el; }}
