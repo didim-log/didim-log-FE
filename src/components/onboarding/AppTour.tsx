@@ -290,10 +290,16 @@ export const AppTour: FC = () => {
 
     // 🛡️ Final Guard 2: 완료된 사용자는 아예 렌더링하지 않음
     const isCompleted = localStorage.getItem('didim_onboarding_completed') === 'true';
+    const isUserCompleted = user?.isOnboardingFinished === true || dashboard?.studentProfile?.isOnboardingFinished === true;
     
     // localStorage에 완료 기록이 있으면 무조건 차단
     // Help 버튼으로 수동 시작한 경우(localStorage에 완료 기록이 없으면) 완료 상태를 무시하고 진행 가능
     if (isCompleted) {
+        return null;
+    }
+    
+    // 프로필 페이지에서 완료된 사용자는 투어를 표시하지 않음 (마지막 스텝이 보이지 않도록)
+    if (location.pathname === '/profile' && isUserCompleted) {
         return null;
     }
     // localStorage에 완료 기록이 없으면 user.isOnboardingFinished가 true여도 무시 (Help 버튼으로 재시작 가능)
