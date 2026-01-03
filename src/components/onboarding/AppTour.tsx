@@ -37,7 +37,7 @@ const steps: Step[] = [
     {
         target: '.tour-recommend-problems',
         content: '먼저 대시보드입니다. 내 실력에 딱 맞는 문제를 추천받을 수 있습니다.',
-        placement: 'bottom',
+        placement: 'top',
         data: { route: '/dashboard' },
     },
     // --- 2. Problem Detail (Move to ID 1000) ---
@@ -94,7 +94,7 @@ const steps: Step[] = [
                 문제 추천과 분석의 기준이 됩니다.
             </div>
         ),
-        placement: 'bottom', // 상단 배너에 가려지지 않도록 bottom으로 변경
+        placement: 'right', // 언어 배지 옆에 표시
         disableScrolling: true, // 스크롤 애니메이션 없이 바로 표시
         data: { route: '/profile' },
     },
