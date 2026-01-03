@@ -389,16 +389,22 @@ export const AppTour: FC = () => {
             callback={handleCallback}
             continuous={true}
             showProgress={true}
-            showSkipButton={true}
+            showSkipButton={false}
             disableScrolling={false}
             disableOverlayClose={true}
-            disableCloseOnEsc={false}
+            disableCloseOnEsc={true}
+            hideCloseButton={true}
             spotlightClicks={true}
+            floaterProps={{
+                disableAnimation: false,
+                disableFlip: false,
+                placement: 'auto',
+            }}
             styles={{
                 options: {
                     zIndex: 10000,
                     primaryColor: '#3b82f6',
-                    width: 400, // Wider tooltip for better readability
+                    width: 400,
                 },
                 overlay: {
                     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -407,10 +413,10 @@ export const AppTour: FC = () => {
                 tooltip: {
                     borderRadius: '12px',
                     zIndex: 10001,
-                    width: 400, // Ensure tooltip width matches options
+                    width: 400,
                 },
                 tooltipContent: {
-                    textAlign: 'left', // Better text alignment
+                    textAlign: 'left',
                     fontSize: '15px',
                 },
                 tooltipContainer: {
@@ -427,17 +433,11 @@ export const AppTour: FC = () => {
                     marginRight: '8px',
                     cursor: 'pointer',
                 },
-                buttonSkip: {
-                    color: '#6b7280',
-                    cursor: 'pointer',
-                },
             }}
             locale={{
                 back: '이전',
-                close: '닫기',
                 last: '완료하기',
                 next: '다음',
-                skip: '건너뛰기',
             }}
         />
     );
