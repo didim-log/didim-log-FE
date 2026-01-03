@@ -2,17 +2,36 @@
  * 푸터 컴포넌트 (개발자 정보 및 저작권 포함)
  */
 
+import { useState, useRef, useEffect } from 'react';
 import type { FC } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Github, BookOpen, Mail } from 'lucide-react';
+import { Github, BookOpen, Mail, User, ChevronDown, ChevronUp } from 'lucide-react';
 
 export const Footer: FC = () => {
     const navigate = useNavigate();
+    const [isDeveloperMenuOpen, setIsDeveloperMenuOpen] = useState(false);
+    const menuRef = useRef<HTMLDivElement>(null);
 
     const handleFeedbackClick = () => {
-        // 피드백은 관리자 페이지에서 관리하므로, 로그인한 사용자는 관리자 페이지로 이동
         navigate('/admin/dashboard');
     };
+
+    // 외부 클릭 시 메뉴 닫기
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                setIsDeveloperMenuOpen(false);
+            }
+        };
+
+        if (isDeveloperMenuOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isDeveloperMenuOpen]);
 
     return (
         <footer className="w-full border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 py-8 mt-auto">
@@ -30,42 +49,67 @@ export const Footer: FC = () => {
                         </p>
                     </div>
 
-                    {/* 오른쪽: 개발자 정보 및 링크 */}
-                    <div className="flex items-center gap-6">
-                        <div className="flex items-center gap-4">
-                            <a
-                                href="https://github.com/stdiodh"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
-                                aria-label="GitHub"
-                                title="GitHub"
+                    {/* 오른쪽: 개발자 정보 버튼 및 문의하기 */}
+                    <div className="flex items-center gap-4">
+                        {/* 개발자 정보 드롭다운 */}
+                        <div className="relative" ref={menuRef}>
+                            <button
+                                onClick={() => setIsDeveloperMenuOpen(!isDeveloperMenuOpen)}
+                                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                             >
-                                <Github className="w-5 h-5" />
-                            </a>
-                            <a
-                                href="https://velog.io/@stdiodh/posts"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-gray-400 dark:text-gray-500 hover:text-green-500 dark:hover:text-green-400 transition-colors"
-                                aria-label="Velog Blog"
-                                title="Velog Blog"
-                            >
-                                <BookOpen className="w-5 h-5" />
-                            </a>
-                            <a
-                                href="mailto:playlistdh@gmail.com"
-                                className="text-gray-400 dark:text-gray-500 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
-                                aria-label="Email"
-                                title="Email"
-                            >
-                                <Mail className="w-5 h-5" />
-                            </a>
+                                <User className="w-4 h-4" />
+                                <span>개발자 정보</span>
+                                {isDeveloperMenuOpen ? (
+                                    <ChevronUp className="w-4 h-4" />
+                                ) : (
+                                    <ChevronDown className="w-4 h-4" />
+                                )}
+                            </button>
+
+                            {/* 드롭다운 메뉴 */}
+                            {isDeveloperMenuOpen && (
+                                <div className="absolute bottom-full right-0 mb-2 w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-2 z-50">
+                                    <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+                                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Developer</p>
+                                    </div>
+                                    <div className="py-2">
+                                        <a
+                                            href="https://github.com/stdiodh"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                                            onClick={() => setIsDeveloperMenuOpen(false)}
+                                        >
+                                            <Github className="w-4 h-4" />
+                                            <span>GitHub</span>
+                                        </a>
+                                        <a
+                                            href="https://velog.io/@stdiodh/posts"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                                            onClick={() => setIsDeveloperMenuOpen(false)}
+                                        >
+                                            <BookOpen className="w-4 h-4" />
+                                            <span>Velog Blog</span>
+                                        </a>
+                                        <a
+                                            href="mailto:playlistdh@gmail.com"
+                                            className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                                            onClick={() => setIsDeveloperMenuOpen(false)}
+                                        >
+                                            <Mail className="w-4 h-4" />
+                                            <span>Email</span>
+                                        </a>
+                                    </div>
+                                </div>
+                            )}
                         </div>
-                        <div className="h-6 w-px bg-gray-300 dark:bg-gray-700" />
+
+                        {/* 문의하기 버튼 */}
                         <button
                             onClick={handleFeedbackClick}
-                            className="text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+                            className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                         >
                             문의하기
                         </button>
