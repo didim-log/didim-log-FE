@@ -1,5 +1,5 @@
 /**
- * 푸터 컴포넌트
+ * 푸터 컴포넌트 (저작권 및 면책 조항 포함)
  */
 
 import type { FC } from 'react';
@@ -15,19 +15,27 @@ export const Footer: FC = () => {
     };
 
     return (
-        <footer className="w-full border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 py-4">
+        <footer className="w-full border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 py-6 mt-auto">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                    {/* 좌측: 저작권 정보 */}
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
-                        © 2025 DidimLog. All rights reserved.
+                <div className="flex flex-col gap-4">
+                    {/* 저작권 및 면책 조항 */}
+                    <div className="text-center space-y-2">
+                        <p className="text-xs text-gray-400 dark:text-gray-500">
+                            © 2026 DidimLog. All rights reserved.
+                        </p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500">
+                            DidimLog is a personal study tool not affiliated with Baekjoon Online Judge (BOJ) or solved.ac.
+                        </p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500">
+                            Problem data powered by BOJ. Tier data provided by solved.ac.
+                        </p>
                     </div>
 
-                    {/* 우측: 문의하기 버튼 */}
-                    <div className="flex flex-wrap gap-6 text-sm">
+                    {/* 문의하기 버튼 (선택적) */}
+                    <div className="flex justify-center">
                         <button
                             onClick={handleFeedbackClick}
-                            className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+                            className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
                         >
                             문의하기
                         </button>
