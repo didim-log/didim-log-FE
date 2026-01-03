@@ -4,53 +4,39 @@
 
 import { useState } from 'react';
 import type { FC } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuthStore } from '../../stores/auth.store';
 import { useUIStore } from '../../stores/ui.store';
-import { useTourStore } from '../../stores/tour.store';
 import { memberApi } from '../../api/endpoints/member.api';
 import { HelpCircle, Menu, X } from 'lucide-react';
 
 export const Header: FC = () => {
-    const { logout, user, setUser } = useAuthStore();
+    const { logout, user } = useAuthStore();
     const { theme, toggleTheme } = useUIStore();
-    const navigate = useNavigate();
-    const { startTour, stopTour, setStepIndex } = useTourStore();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     const handleLogout = () => {
         logout();
-        navigate('/login');
+        window.location.href = '/login';
         setIsMobileMenuOpen(false);
     };
 
     const handleHelpClick = async () => {
         setIsMobileMenuOpen(false);
-        // Help 버튼으로 재시작 시 완전히 초기화
-        localStorage.removeItem('didim_onboarding_completed');
-        // 백엔드에서 온보딩 완료 상태 리셋
         try {
+            // 1. Reset Backend State
             await memberApi.resetOnboarding();
-            // 백엔드 상태 업데이트 후 프론트엔드 상태도 업데이트
-            if (user) {
-                setUser({
-                    ...user,
-                    isOnboardingFinished: false,
-                });
-            }
+            
+            // 2. Clear Local Flags
+            localStorage.removeItem('didim_onboarding_completed');
+            
+            // 3. Force Refresh & Go to Dashboard (Solves async sync issues)
+            window.location.href = '/dashboard';
         } catch (error) {
             console.error('온보딩 리셋 실패:', error);
-            // 에러가 발생해도 프론트엔드에서는 계속 진행
+            // Fallback if API fails
+            window.location.href = '/dashboard';
         }
-        // 투어 상태 완전히 리셋
-        stopTour();
-        setStepIndex(0);
-        // 대시보드로 이동
-        navigate('/dashboard');
-        // 페이지 마운트 후 투어 시작 (타겟 요소가 렌더링될 시간 확보)
-        setTimeout(() => {
-            startTour();
-        }, 300); // 충분한 시간 확보
     };
 
     const handleNavClick = () => {
