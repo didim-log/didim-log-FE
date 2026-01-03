@@ -25,6 +25,8 @@ export const Header: FC = () => {
 
     const handleHelpClick = () => {
         setIsMobileMenuOpen(false);
+        // Help 버튼으로 재시작 시 localStorage 초기화 (완료 상태 해제)
+        localStorage.removeItem('didim_onboarding_completed');
         // Force reset tour state and go to start page
         navigate('/dashboard');
         // 페이지 마운트 후 투어 시작 (타겟 요소가 렌더링될 시간 확보)

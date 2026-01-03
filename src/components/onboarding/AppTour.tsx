@@ -93,7 +93,7 @@ const steps: Step[] = [
                 문제 추천과 분석의 기준이 됩니다.
             </div>
         ),
-        placement: 'top',
+        placement: 'bottom', // 상단 배너에 가려지지 않도록 bottom으로 변경
         data: { route: '/profile' },
     },
     {
@@ -152,8 +152,13 @@ export const AppTour: FC = () => {
     useEffect(() => {
         const isCompleted = localStorage.getItem('didim_onboarding_completed') === 'true';
         
+        // 완료된 사용자는 자동 실행하지 않음
+        if (isCompleted) {
+            return;
+        }
+        
         // If NOT completed and NOT running, start it automatically
-        if (!isCompleted && !run) {
+        if (!run) {
             // 대시보드 데이터가 로드되지 않았으면 대기
             if (!dashboard || location.pathname !== '/dashboard') {
                 return;
@@ -171,13 +176,13 @@ export const AppTour: FC = () => {
                     return !!targetElement;
                 });
 
-                if (allTargetsExist && !run) {
+                if (allTargetsExist && !run && !forceHide) {
                     startTour();
                 }
             }, 1000);
             return () => clearTimeout(timer);
         }
-    }, [dashboard, location.pathname, run, startTour]);
+    }, [dashboard, location.pathname, run, startTour, forceHide]);
 
     // Smart Navigation Logic
     const handleCallback = useCallback(
@@ -189,9 +194,10 @@ export const AppTour: FC = () => {
                 // ⚡️ EXECUTE KILL SWITCH: Immediate re-render to null
                 setForceHide(true);
 
-                // Cleanup Logic
-                stopTour();
+                // Cleanup Logic: 모든 상태를 초기화 (순서 중요!)
                 localStorage.setItem('didim_onboarding_completed', 'true');
+                setStepIndex(0); // stepIndex도 초기화하여 다음 실행 시 첫 단계부터 시작
+                stopTour(); // 마지막에 stopTour 호출
 
                 // Update DB & Local State (async, but UI is already closed)
                 try {
@@ -259,6 +265,18 @@ export const AppTour: FC = () => {
 
     // 🛡️ Final Guard: If forced hidden, render NOTHING.
     if (forceHide) {
+        return null;
+    }
+
+    // ✅ 완료 상태 체크: localStorage가 true이고 run이 false이면 렌더링하지 않음
+    const isCompleted = localStorage.getItem('didim_onboarding_completed') === 'true';
+    if (isCompleted && !run) {
+        // 완료되었고 수동 실행이 아니면 렌더링하지 않음
+        return null;
+    }
+
+    // ✅ stepIndex 범위 체크: 마지막 단계를 넘어서면 렌더링하지 않음
+    if (stepIndex >= steps.length || stepIndex < 0) {
         return null;
     }
 
