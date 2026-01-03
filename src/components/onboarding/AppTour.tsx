@@ -50,7 +50,7 @@ const steps: Step[] = [
     {
         target: '.tour-timer-btn',
         content: '실전 감각을 위해 타이머를 켜고 푸는 것을 추천합니다!',
-        placement: 'top',
+        placement: 'left',
         data: { route: '/problems/1000' },
     },
     // --- 3. Retrospective Write (Auto-Open Mode) ---
@@ -71,7 +71,7 @@ const steps: Step[] = [
                 그 후 이 버튼을 눌러 AI 피드백을 받아보세요.
             </div>
         ),
-        placement: 'top',
+        placement: 'bottom',
         data: { route: '/retrospectives/write?onboarding=true' },
     },
     // --- 4. Ranking ---
