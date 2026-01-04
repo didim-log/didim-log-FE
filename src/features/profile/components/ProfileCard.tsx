@@ -22,7 +22,7 @@ export const ProfileCard: FC<ProfileCardProps> = ({ dashboard, primaryLanguage, 
     const tierLevel = studentProfile.currentTierLevel || 1;
 
     return (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 border border-gray-200 dark:border-gray-700 tour-heatmap">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 border border-gray-200 dark:border-gray-700">
             <div className="flex items-start gap-6">
                 {/* 좌측: 티어 이미지 */}
                 <div className="flex-shrink-0">
@@ -48,16 +48,17 @@ export const ProfileCard: FC<ProfileCardProps> = ({ dashboard, primaryLanguage, 
                                 <span className={`px-3 py-1 rounded-lg text-sm font-medium ${getTierColor(currentTierTitle?.split(' ')[0] || 'UNRATED')}`}>
                                     {currentTierTitle}
                                 </span>
-                                
-                                {primaryLanguage && primaryLanguage !== 'TEXT' ? (
-                                    <div className="tour-language-badge">
+
+                                {/* 온보딩 투어 타겟은 로딩/미설정 상황에서도 항상 DOM에 존재해야 합니다. */}
+                                <div className="tour-language-badge">
+                                    {primaryLanguage && primaryLanguage !== 'TEXT' ? (
                                         <LanguageBadge language={primaryLanguage} size="md" />
-                                    </div>
-                                ) : (
-                                    <span className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg text-sm font-medium tour-language-badge">
-                                        언어 미설정
-                                    </span>
-                                )}
+                                    ) : (
+                                        <span className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg text-sm font-medium">
+                                            언어 미설정
+                                        </span>
+                                    )}
+                                </div>
                             </div>
                         </div>
 

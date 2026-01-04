@@ -58,16 +58,6 @@ export const ProfilePage: FC = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [isDangerZoneOpen, setIsDangerZoneOpen] = useState(false);
 
-    if (isLoading) {
-        return (
-            <Layout>
-                <div className="flex items-center justify-center min-h-screen">
-                    <Spinner />
-                </div>
-            </Layout>
-        );
-    }
-
     if (!dashboard || !user) {
         return (
             <Layout>
@@ -115,7 +105,19 @@ export const ProfilePage: FC = () => {
             <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4">
                 <div className="max-w-4xl mx-auto space-y-8">
                     {/* 메인 프로필 카드 */}
-                    {!isEditing ? (
+                    {isLoading ? (
+                        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 border border-gray-200 dark:border-gray-700">
+                            <div className="flex items-center justify-center py-8">
+                                <Spinner />
+                            </div>
+                            {/* 투어 타겟이 로딩 중에도 존재하도록 앵커 유지 */}
+                            <div className="mt-4 tour-language-badge">
+                                <span className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg text-sm font-medium">
+                                    언어 로딩 중...
+                                </span>
+                            </div>
+                        </div>
+                    ) : !isEditing ? (
                         <ProfileCard
                             dashboard={dashboard}
                             primaryLanguage={user.primaryLanguage}

@@ -15,6 +15,7 @@ import { useAuthStore } from '../../../stores/auth.store';
 import type { RetrospectiveListRequest } from '../../../types/api/retrospective.types';
 import { toast } from 'sonner';
 import { getErrorMessage, isApiError } from '../../../types/api/common.types';
+import { Info } from 'lucide-react';
 
 export const RetrospectiveListPage: FC = () => {
     const navigate = useNavigate();
@@ -119,7 +120,16 @@ export const RetrospectiveListPage: FC = () => {
                 <div className="max-w-6xl mx-auto space-y-6">
                     {/* 헤더 */}
                     <div className="flex items-center justify-between">
-                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">회고 목록</h1>
+                        <div className="flex items-center gap-3 flex-wrap">
+                            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">회고 목록</h1>
+                            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs border border-gray-200 dark:border-gray-700">
+                                <Info className="w-3.5 h-3.5" />
+                                <span>
+                                    작성한 회고는 서버 저장 공간 최적화를 위해 <strong>작성일로부터 60일 뒤 자동으로 삭제</strong>
+                                    됩니다.
+                                </span>
+                            </div>
+                        </div>
                         <button
                             onClick={() => navigate(-1)}
                             className="text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors"

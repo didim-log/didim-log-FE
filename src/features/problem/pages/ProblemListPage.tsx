@@ -10,6 +10,7 @@ import { Spinner } from '../../../components/ui/Spinner';
 import { Layout } from '../../../components/layout/Layout';
 import { Input } from '../../../components/ui/Input';
 import { CategorySelect } from '../../../components/ui/CategorySelect';
+import { OnlyKoreanToggle } from '../../../components/common/OnlyKoreanToggle';
 import { formatTierFromDifficulty, getTierColor } from '../../../utils/tier';
 import type { ProblemResponse } from '../../../types/api/problem.types';
 import { Search } from 'lucide-react';
@@ -23,14 +24,17 @@ export const ProblemListPage: FC = () => {
     const validCounts = [10, 20, 30];
     const initialCount = validCounts.includes(initialCountParam) ? initialCountParam : 10;
     const initialCategory = searchParams.get('category') || '';
+    const initialLanguage = searchParams.get('language') || '';
     
     const [count, setCount] = useState(initialCount);
     const [category, setCategory] = useState(initialCategory);
     const [searchQuery, setSearchQuery] = useState('');
+    const [onlyKorean, setOnlyKorean] = useState<boolean>(initialLanguage === 'ko');
     
     const { data: problems, isLoading, error } = useProblemRecommend({ 
         count, 
-        category: category || undefined 
+        category: category || undefined,
+        language: onlyKorean ? 'ko' : undefined,
     });
 
     // 상태 변경 시 URL 파라미터 업데이트
@@ -42,8 +46,11 @@ export const ProblemListPage: FC = () => {
         if (category) {
             params.set('category', category);
         }
+        if (onlyKorean) {
+            params.set('language', 'ko');
+        }
         setSearchParams(params, { replace: true });
-    }, [count, category, setSearchParams]);
+    }, [count, category, onlyKorean, setSearchParams]);
 
     // 문제 번호 검색 핸들러
     const handleSearch = (e: React.FormEvent) => {
@@ -144,6 +151,12 @@ export const ProblemListPage: FC = () => {
                                     onChange={(value) => setCategory(value || '')}
                                     placeholder="카테고리를 선택하세요"
                                     variant="select"
+                                />
+                            </div>
+                            <div className="flex items-center justify-end min-w-[140px] pb-2">
+                                <OnlyKoreanToggle
+                                    value={onlyKorean}
+                                    onChange={(value) => setOnlyKorean(value)}
                                 />
                             </div>
                         </div>

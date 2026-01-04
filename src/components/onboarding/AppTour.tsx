@@ -252,7 +252,7 @@ const AppTour = () => {
       if (intervalId) clearInterval(intervalId);
       if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [stepIndex, run, forceHide, isNavigating, steps, location.pathname, navigate]);
+  }, [stepIndex, run, forceHide, isNavigating, steps, location.pathname]);
 
 
   // 🎮 5. Event Handler
@@ -278,7 +278,7 @@ const AppTour = () => {
       try {
         // 2. 서버에 완료 요청 전송
         await memberApi.completeOnboarding();
-      } catch {
+      } catch (error) {
         // 온보딩 완료 API 실패 시에도 대시보드로 이동
       } finally {
         // 3. [이동 및 새로고침] 대시보드로 이동하면서 페이지를 새로 로드합니다.
@@ -374,6 +374,19 @@ const AppTour = () => {
   );
 };
 
+export const resetAndStartTour = async (): Promise<void> => {
+  try {
+    await memberApi.resetOnboarding();
+    localStorage.removeItem('didim_onboarding_completed');
+    window.location.reload();
+  } catch (error) {
+    // 온보딩 리셋 API 실패 시에도 로컬 상태 초기화 후 새로고침
+    localStorage.removeItem('didim_onboarding_completed');
+    window.location.reload();
+  }
+};
+
+export { AppTour };
 export default AppTour;
 
 

@@ -1,13 +1,13 @@
 import { useState } from 'react'
+import type { MouseEvent } from 'react'
 import { Calendar, ExternalLink, Trash2, Star } from 'lucide-react'
 import Card from '../common/Card'
 import { Button } from '../ui/Button'
-import { toggleBookmark } from '../../apis/retrospectiveApi'
+import { retrospectiveApi } from '../../api/endpoints/retrospective.api'
 import { toast } from 'sonner'
-import type { AxiosError } from 'axios'
-import type { ApiErrorResponse } from '../../types/api/error'
-import type { RetrospectiveResponse } from '../../types/api/dtos'
-import { formatDateTimeToKorea } from '../../utils/dateUtils'
+import { getErrorMessage } from '../../types/api/common.types'
+import type { RetrospectiveResponse } from '../../types/api/retrospective.types'
+import { formatKST } from '../../utils/dateUtils'
 
 interface RetrospectiveCardProps {
     retrospective: RetrospectiveResponse
@@ -25,24 +25,19 @@ export default function RetrospectiveCard({
     const [isBookmarked, setIsBookmarked] = useState(retrospective.isBookmarked)
     const [isToggling, setIsToggling] = useState(false)
 
-    const handleToggleBookmark = async (e: React.MouseEvent) => {
+    const handleToggleBookmark = async (e: MouseEvent<HTMLButtonElement>) => {
         e.stopPropagation()
 
         setIsToggling(true)
         try {
-            const response = await toggleBookmark(retrospective.id)
+            const response = await retrospectiveApi.toggleBookmark(retrospective.id)
             setIsBookmarked(response.isBookmarked)
-            if (onBookmarkChange) {
-                onBookmarkChange(retrospective.id, response.isBookmarked)
-            }
+            onBookmarkChange?.(retrospective.id, response.isBookmarked)
             toast.success(
                 response.isBookmarked ? '북마크에 추가되었습니다.' : '북마크에서 제거되었습니다.'
             )
         } catch (err) {
-            const error = err as AxiosError<ApiErrorResponse>
-            const errorMessage =
-                error.response?.data?.message || '북마크 토글에 실패했습니다.'
-            toast.error(errorMessage)
+            toast.error(getErrorMessage(err) || '북마크 토글에 실패했습니다.')
         } finally {
             setIsToggling(false)
         }
@@ -92,7 +87,7 @@ export default function RetrospectiveCard({
                     )}
                     <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                         <Calendar className="w-4 h-4" />
-                        <span>{formatDateTimeToKorea(retrospective.createdAt)}</span>
+                        <span>{formatKST(retrospective.createdAt)}</span>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
