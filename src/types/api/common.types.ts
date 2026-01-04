@@ -7,6 +7,8 @@ export interface ErrorResponse {
     error: string;
     code: string;
     message: string;
+    remainingAttempts?: number; // Rate Limit 남은 시도 횟수 (로그인 실패 시)
+    unlockTime?: string; // Rate Limit 잠금 해제 시간 (ISO 8601 형식, 한국시간)
 }
 
 /**
@@ -17,6 +19,7 @@ export interface ApiError {
     response?: {
         data?: ErrorResponse;
         status?: number;
+        headers?: Record<string, string>;
     };
     message?: string;
     code?: string;

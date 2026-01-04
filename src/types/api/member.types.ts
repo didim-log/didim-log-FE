@@ -10,3 +10,11 @@ export interface UpdateMyNicknameRequest {
 
 
 
+
+
+
+
+
+
+
+

@@ -83,6 +83,7 @@ export interface BojVerifyRequest {
 
 export interface BojVerifyResponse {
     verified: boolean;
+    verifiedBojId: string;
 }
 
 export interface BojIdDuplicateCheckResponse {
