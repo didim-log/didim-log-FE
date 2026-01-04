@@ -12,6 +12,8 @@ import type { AuthResponse } from '../../types/api/auth.types';
 interface LoginError extends Error {
     code?: string;
     status?: number;
+    remainingAttempts?: number; // Rate Limit 남은 시도 횟수
+    unlockTime?: string; // Rate Limit 잠금 해제 시간 (ISO 8601 형식)
 }
 
 interface UseLoginReturn {
@@ -89,9 +91,18 @@ export const useLogin = (): UseLoginReturn => {
             const code = errorData?.code || 'UNKNOWN_ERROR';
             const message = errorData?.message || '로그인 중 오류가 발생했습니다.';
 
+            // Rate Limit 정보 추출 (바디 또는 헤더에서)
+            const remainingAttempts = errorData?.remainingAttempts ?? 
+                (response.headers?.['x-rate-limit-remaining'] 
+                    ? parseInt(response.headers['x-rate-limit-remaining'], 10) 
+                    : undefined);
+            const unlockTime = errorData?.unlockTime;
+
             const loginError: LoginError = new Error(message) as LoginError;
             loginError.code = code;
             loginError.status = status;
+            loginError.remainingAttempts = remainingAttempts;
+            loginError.unlockTime = unlockTime;
             return loginError;
         }
 

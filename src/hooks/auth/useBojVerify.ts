@@ -8,7 +8,7 @@ import { authApi } from '../../api/endpoints/auth.api';
 
 interface UseBojVerifyReturn {
     issueCode: () => Promise<void>;
-    verify: (bojId: string) => Promise<boolean>;
+    verify: (bojId: string) => Promise<{ verified: boolean; verifiedBojId: string | null }>;
     sessionId: string | null;
     code: string | null;
     isLoading: boolean;
@@ -40,9 +40,12 @@ export const useBojVerify = (): UseBojVerifyReturn => {
         await issueCodeMutation.mutateAsync();
     };
 
-    const verify = async (bojId: string): Promise<boolean> => {
+    const verify = async (bojId: string): Promise<{ verified: boolean; verifiedBojId: string | null }> => {
         const result = await verifyMutation.mutateAsync(bojId);
-        return result.verified;
+        return {
+            verified: result.verified,
+            verifiedBojId: result.verifiedBojId || null,
+        };
     };
 
     return {
@@ -54,6 +57,14 @@ export const useBojVerify = (): UseBojVerifyReturn => {
         error: issueCodeMutation.error || verifyMutation.error || null,
     };
 };
+
+
+
+
+
+
+
+
 
 
 
