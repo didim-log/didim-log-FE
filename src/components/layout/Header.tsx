@@ -4,15 +4,19 @@
 
 import { useState } from 'react';
 import type { FC } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/auth.store';
+import { useTourStore } from '../../stores/tour.store';
 import { useUIStore } from '../../stores/ui.store';
 import { memberApi } from '../../api/endpoints/member.api';
+import { dashboardApi } from '../../api/endpoints/dashboard.api';
 import { HelpCircle, Menu, X } from 'lucide-react';
 
 export const Header: FC = () => {
     const { logout, user } = useAuthStore();
+    const { startTour, resetTour } = useTourStore();
     const { theme, toggleTheme } = useUIStore();
+    const navigate = useNavigate();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     const handleLogout = () => {
@@ -23,19 +27,65 @@ export const Header: FC = () => {
 
     const handleHelpClick = async () => {
         setIsMobileMenuOpen(false);
+        
         try {
-            // 1. Reset Backend State
-            await memberApi.resetOnboarding();
-            
-            // 2. Clear Local Flags
+            // 1. Clear Local Flag
             localStorage.removeItem('didim_onboarding_completed');
             
-            // 3. Force Refresh & Go to Dashboard (Solves async sync issues)
-            window.location.href = '/dashboard';
-        } catch (error) {
-            console.error('온보딩 리셋 실패:', error);
-            // Fallback if API fails
-            window.location.href = '/dashboard';
+            // 2. Reset Backend State
+            await memberApi.resetOnboarding();
+            
+            // 3. 대시보드 API 호출하여 최신 사용자 정보 가져오기
+            try {
+                const dashboardData = await dashboardApi.getDashboard();
+                if (dashboardData.studentProfile) {
+                    useAuthStore.setState({
+                        user: {
+                            ...user!,
+                            isOnboardingFinished: dashboardData.studentProfile.isOnboardingFinished ?? false,
+                        },
+                    });
+                }
+            } catch {
+                // 대시보드 API 실패해도 로컬 상태는 업데이트
+                if (user) {
+                    useAuthStore.setState({
+                        user: {
+                            ...user,
+                            isOnboardingFinished: false,
+                        },
+                    });
+                }
+            }
+            
+            // 4. ⚡️ 즉시 Zustand Store 상태 업데이트 (Optimistic UI)
+            resetTour();
+            if (user) {
+                useAuthStore.setState({
+                    user: {
+                        ...user,
+                        isOnboardingFinished: false,
+                    },
+                });
+            }
+            
+            // 5. 투어 시작 및 대시보드로 이동
+            startTour();
+            navigate('/dashboard');
+        } catch {
+            // API 실패해도 로컬 상태는 업데이트
+            localStorage.removeItem('didim_onboarding_completed');
+            resetTour();
+            if (user) {
+                useAuthStore.setState({
+                    user: {
+                        ...user,
+                        isOnboardingFinished: false,
+                    },
+                });
+            }
+            startTour();
+            navigate('/dashboard');
         }
     };
 

@@ -196,7 +196,7 @@ export const RetrospectiveEditor: FC<RetrospectiveEditorProps> = ({
                 <button
                     type="submit"
                     disabled={isLoading || content.trim().length < 10 || content.trim().length > 2000 || !summary.trim()}
-                    className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors tour-save-button"
+                    className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors"
                 >
                     {isLoading ? '저장 중...' : '저장'}
                 </button>

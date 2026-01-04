@@ -51,19 +51,20 @@ export const DashboardStats: FC<DashboardStatsProps> = () => {
 
     // 핵심 지표 계산
     const calculateMetrics = () => {
-        if (statistics) {
-            // 총 회고 수는 totalRetrospectives 사용
-            const totalRetrospectives = statistics.totalRetrospectives || mockMetrics.totalRetrospectives;
-            
-            // 평균 풀이 시간과 성공률은 현재 API에 없으므로 mock 데이터 사용
-            // TODO: 백엔드 API에 추가 필요
-            return {
-                totalRetrospectives,
-                averageSolveTime: mockMetrics.averageSolveTime,
-                successRate: mockMetrics.successRate,
-            };
+        if (!statistics) {
+            return mockMetrics;
         }
-        return mockMetrics;
+
+        // 총 회고 수는 totalRetrospectives 사용
+        const totalRetrospectives = statistics.totalRetrospectives || mockMetrics.totalRetrospectives;
+
+        // 평균 풀이 시간과 성공률은 현재 API 응답에 포함되지 않아 임시값을 사용합니다.
+        // (백엔드에서 제공되면 statistics 값을 사용하도록 변경)
+        return {
+            totalRetrospectives,
+            averageSolveTime: mockMetrics.averageSolveTime,
+            successRate: mockMetrics.successRate,
+        };
     };
 
     const metrics = calculateMetrics();

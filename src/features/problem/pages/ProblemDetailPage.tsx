@@ -48,12 +48,10 @@ export const ProblemDetailPage: FC = () => {
         <Layout>
             <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-4 sm:py-8 px-4">
                 <div className="max-w-4xl mx-auto space-y-4">
-                    <div className="tour-problem-detail">
-                        <ProblemDetail problem={problem} isBlurred={false} />
-                    </div>
+                    <ProblemDetail problem={problem} isBlurred={false} />
 
                     <div className="mt-6 flex justify-end">
-                        <Button onClick={handleGoToStudy} variant="primary" size="lg" className="tour-problem-timer tour-timer-btn tour-problem-start-btn">
+                        <Button onClick={handleGoToStudy} variant="primary" size="lg">
                             문제 풀기 시작 →
                         </Button>
                     </div>

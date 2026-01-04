@@ -59,7 +59,7 @@ export const LanguageBadge: FC<LanguageBadgeProps> = ({
     `.trim().replace(/\s+/g, ' ');
 
     return (
-        <span className={badgeClasses}>
+        <span className={`tour-language-badge ${badgeClasses}`}>
             {label}
         </span>
     );

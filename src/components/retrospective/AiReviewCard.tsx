@@ -305,7 +305,7 @@ export const AiReviewCard: FC<AiReviewCardProps> = ({
                             disabled={loading || isGenerating || (aiUsage && (aiUsage.usage >= aiUsage.limit || !aiUsage.isServiceEnabled))}
                             variant="primary"
                             size="sm"
-                            className="mt-3"
+                            className="tour-ai-review-btn mt-3"
                             isLoading={loading || isGenerating}
                         >
                             {loading || isGenerating ? 'AI 리뷰 생성 중...' : 'AI 리뷰 받기'}

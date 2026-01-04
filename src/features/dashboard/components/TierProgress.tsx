@@ -30,7 +30,17 @@ export const TierProgress: FC<TierProgressProps> = ({ dashboard }) => {
     }
 
     const { currentTierTitle, nextTierTitle, currentRating, requiredRatingForNextTier, progressPercentage } = dashboard;
-    const { nickname, currentTierLevel, consecutiveSolveDays } = dashboard.studentProfile;
+    const { nickname, currentTierLevel, consecutiveSolveDays, currentTier } = dashboard.studentProfile;
+    
+    // UNRATED 처리: tierLevel이 0이거나 undefined이거나, currentTier가 UNRATED인 경우
+    const isUnrated = !currentTierLevel || currentTierLevel <= 0 || currentTier === 'UNRATED';
+    
+    // UNRATED일 때 다음 목표 티어 정보 (Bronze V = 30점)
+    const UNRATED_NEXT_TIER_TITLE = 'Bronze V';
+    const UNRATED_NEXT_TIER_RATING = 30; // Solved.ac 기준 Bronze V 시작 점수
+    const unratedCurrentRating = currentRating ?? 0;
+    const unratedRequiredRating = UNRATED_NEXT_TIER_RATING;
+    const unratedProgressPercentage = Math.min(100, Math.max(0, (unratedCurrentRating / unratedRequiredRating) * 100));
 
     const handleSync = async () => {
         setIsSyncing(true);
@@ -48,7 +58,7 @@ export const TierProgress: FC<TierProgressProps> = ({ dashboard }) => {
     };
 
     return (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-5 border border-gray-200 dark:border-gray-700 tour-profile-card">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-5 border border-gray-200 dark:border-gray-700">
             <div className="space-y-4">
                 {/* 사용자 정보 */}
                 <div className="flex items-center justify-between">
@@ -75,45 +85,70 @@ export const TierProgress: FC<TierProgressProps> = ({ dashboard }) => {
 
                 {/* 티어 정보 */}
                 <div className="flex items-center gap-3">
-                    <TierBadge tierLevel={currentTierLevel} size="lg" />
+                    <TierBadge tierLevel={currentTierLevel ?? 0} size="lg" />
                     <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                            <span className="text-lg font-bold text-gray-900 dark:text-white">{currentTierTitle || 'Unknown'}</span>
+                            <span className="text-lg font-bold text-gray-900 dark:text-white">
+                                {isUnrated ? 'Unrated' : currentTierTitle || 'Unknown'}
+                            </span>
                             <span className="text-sm text-gray-600 dark:text-gray-400">{currentRating ?? 0}pt</span>
                         </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">다음 목표: {nextTierTitle || 'Unknown'}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                            {isUnrated ? `다음 목표: ${UNRATED_NEXT_TIER_TITLE}` : `다음 목표: ${nextTierTitle || 'Unknown'}`}
+                        </p>
                     </div>
                 </div>
 
-                {/* 진행률 바 - 세련된 멀티 컬러 그라데이션 */}
+                {/* 진행률 바 - 모든 사용자에게 표시 */}
                 <div className="space-y-2">
                     <div className="flex justify-between items-center text-sm">
                         <span className="text-gray-700 dark:text-gray-300 font-medium">
-                            {currentRating ?? 0} / {requiredRatingForNextTier ?? 0} pt
+                            {isUnrated 
+                                ? `${unratedCurrentRating} / ${unratedRequiredRating} pt`
+                                : `${currentRating ?? 0} / ${requiredRatingForNextTier ?? 0} pt`
+                            }
                         </span>
                         <span className="text-gray-700 dark:text-gray-300 font-bold">
-                            {progressPercentage ?? 0}%
+                            {isUnrated 
+                                ? `${Math.round(unratedProgressPercentage)}%`
+                                : `${progressPercentage ?? 0}%`
+                            }
                         </span>
                     </div>
                     <div className="relative w-full bg-gray-200 dark:bg-gray-700 rounded-full h-6 overflow-hidden shadow-inner">
                         {/* Blue → Purple → Pink 그라데이션 */}
                         <div
                             className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 transition-all duration-1000 ease-out shadow-lg"
-                            style={{ width: `${progressPercentage ?? 0}%` }}
+                            style={{ 
+                                width: `${isUnrated ? unratedProgressPercentage : (progressPercentage ?? 0)}%` 
+                            }}
                         >
                             {/* Shimmer 애니메이션 효과 */}
                             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
                         </div>
                         
                         {/* 다음 티어까지 남은 포인트 텍스트 오버레이 */}
-                        {progressPercentage !== undefined && progressPercentage < 100 && (
-                            <div className="absolute inset-0 flex items-center justify-center">
-                                <span className="text-xs font-bold text-white drop-shadow-md">
-                                    다음 티어까지 {requiredRatingForNextTier - currentRating}pt 남음
-                                </span>
-                            </div>
-                        )}
+                        {(() => {
+                            const displayProgress = isUnrated ? unratedProgressPercentage : (progressPercentage ?? 0);
+                            const remainingPoints = isUnrated 
+                                ? unratedRequiredRating - unratedCurrentRating
+                                : (requiredRatingForNextTier ?? 0) - (currentRating ?? 0);
+                            
+                            return displayProgress < 100 && remainingPoints > 0 ? (
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <span className="text-xs font-bold text-white drop-shadow-md">
+                                        다음 티어까지 {remainingPoints}pt 남음
+                                    </span>
+                                </div>
+                            ) : null;
+                        })()}
                     </div>
+                    {/* UNRATED 사용자를 위한 안내 메시지 */}
+                    {isUnrated && (
+                        <p className="text-xs text-center text-gray-600 dark:text-gray-400 italic">
+                            첫 문제를 풀어 티어를 획득하세요!
+                        </p>
+                    )}
                 </div>
 
                 {/* 연속 풀이 일수 */}

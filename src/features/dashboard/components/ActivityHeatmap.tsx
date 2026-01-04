@@ -6,7 +6,6 @@
 import { useState, useMemo } from 'react';
 import type { FC } from 'react';
 import { useHeatmapByYear } from '../../../hooks/api/useHeatmap';
-import { useAuthStore } from '../../../stores/auth.store';
 import { Spinner } from '../../../components/ui/Spinner';
 import { ChevronLeft, ChevronRight, Calendar, HelpCircle } from 'lucide-react';
 
@@ -23,7 +22,6 @@ interface HeatmapCell {
 export const ActivityHeatmap: FC<ActivityHeatmapProps> = () => {
     const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
     const [tooltip, setTooltip] = useState<{ x: number; y: number; text: string } | null>(null);
-    const { user } = useAuthStore();
     
     // 연도별 히트맵 데이터 조회
     const { data: heatmapData, isLoading, error } = useHeatmapByYear(selectedYear);
@@ -31,15 +29,15 @@ export const ActivityHeatmap: FC<ActivityHeatmapProps> = () => {
     // 사용 가능한 연도 목록 (가입 연도부터 현재 연도까지)
     const currentYear = new Date().getFullYear();
     const availableYears = useMemo(() => {
-        // TODO: User 타입에 createdAt 필드가 추가되면 아래 주석을 해제하고 사용
-        // const startYear = user?.createdAt ? new Date(user.createdAt).getFullYear() : currentYear - 5;
-        const startYear = currentYear - 5; // 임시: 가입일 정보가 없으므로 5년 전부터 시작
+        // 가입일 정보가 없으므로 최근 5년만 표시합니다.
+        // (추후 user.createdAt 제공 시: startYear를 가입 연도로 계산하도록 변경)
+        const startYear = currentYear - 5;
         const years: number[] = [];
         for (let i = currentYear; i >= startYear; i--) {
             years.push(i);
         }
         return years;
-    }, [currentYear, user]);
+    }, [currentYear]);
 
     const getIntensityColor = (count: number) => {
         // GitHub 스타일: 빈 셀은 항상 회색으로 표시
@@ -302,7 +300,7 @@ export const ActivityHeatmap: FC<ActivityHeatmapProps> = () => {
     // 연도가 변경되면 자동으로 데이터 재조회 (useHeatmapByYear가 자동 처리)
 
     return (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-3 border border-gray-200 dark:border-gray-700 h-40 flex flex-col tour-heatmap">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-3 border border-gray-200 dark:border-gray-700 h-40 flex flex-col">
             <div className="flex items-center justify-between mb-2">
                 <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
                     <Calendar className="w-4 h-4" />

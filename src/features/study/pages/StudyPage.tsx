@@ -306,7 +306,7 @@ export const StudyPage: FC = () => {
                                 </a>
                             )}
                             {/* 타이머 (Badge 스타일) */}
-                            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 tour-timer">
+                            <div className="tour-timer-btn flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
                                 <Clock className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                                 <Timer 
                                     isRunning={isTimerRunning} 
@@ -352,12 +352,12 @@ export const StudyPage: FC = () => {
                         </div>
 
                         {/* Body Section - 코드 에디터 */}
-                        <div className="p-4 tour-code-editor">
+                        <div className="p-4">
                             <CodeEditor value={code} onChange={setCode} language={language} />
                         </div>
 
                         {/* Footer Section - 액션 버튼 */}
-                        <div className="p-4 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3 tour-submit-buttons">
+                        <div className="tour-submit-buttons p-4 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3">
                             {/* 실패 제출 (Outline/Ghost) */}
                             <Button
                                 onClick={() => handleSubmit(false)}

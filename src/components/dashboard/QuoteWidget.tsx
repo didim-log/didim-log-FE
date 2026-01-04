@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { RefreshCw, Quote as QuoteIcon } from 'lucide-react'
 import Card from '../common/Card'
 import { Button } from '../ui/Button'
-import type { QuoteResponse } from '../../types/api/dtos'
+import type { QuoteResponse } from '../../types/api/quote.types'
 
 interface QuoteWidgetProps {
     quote: QuoteResponse | null
@@ -39,9 +39,7 @@ const MOCK_QUOTES: QuoteResponse[] = [
 ]
 
 export default function QuoteWidget({ quote, onRefresh }: QuoteWidgetProps) {
-    const [mockQuote, setMockQuote] = useState<QuoteResponse>(
-        quote || MOCK_QUOTES[Math.floor(Math.random() * MOCK_QUOTES.length)]
-    )
+    const [mockQuote, setMockQuote] = useState<QuoteResponse>(() => quote || MOCK_QUOTES[0])
 
     const handleRefresh = () => {
         if (onRefresh) {

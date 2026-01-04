@@ -3,7 +3,7 @@
  * AI 서비스의 상태를 모니터링하고 제어할 수 있는 관리자 위젯
  */
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAiStatus, useUpdateAiStatus, useUpdateAiLimits } from '../../../hooks/api/useAdmin';
 import { Spinner } from '../../../components/ui/Spinner';
 import { Button } from '../../../components/ui/Button';
@@ -18,14 +18,6 @@ export const AiServiceControl: React.FC = () => {
     const [globalLimit, setGlobalLimit] = useState<number>(1000);
     const [userLimit, setUserLimit] = useState<number>(5);
     const [isEditingLimits, setIsEditingLimits] = useState<boolean>(false);
-
-    // 상태가 로드되면 초기값 설정
-    useEffect(() => {
-        if (status && !isEditingLimits) {
-            setGlobalLimit(status.globalLimit);
-            setUserLimit(status.userLimit);
-        }
-    }, [status, isEditingLimits]);
 
     const handleToggleService = async () => {
         if (!status) {
@@ -62,11 +54,16 @@ export const AiServiceControl: React.FC = () => {
     };
 
     const handleCancelEdit = () => {
-        if (status) {
-            setGlobalLimit(status.globalLimit);
-            setUserLimit(status.userLimit);
-        }
         setIsEditingLimits(false);
+    };
+
+    const handleStartEdit = () => {
+        if (!status) {
+            return;
+        }
+        setGlobalLimit(status.globalLimit);
+        setUserLimit(status.userLimit);
+        setIsEditingLimits(true);
     };
 
     if (isLoading) {
@@ -167,15 +164,14 @@ export const AiServiceControl: React.FC = () => {
                         <Input
                             type="number"
                             min="1"
-                            value={globalLimit}
+                            value={isEditingLimits ? globalLimit : status.globalLimit}
                             onChange={(e) => {
                                 const value = parseInt(e.target.value, 10);
                                 if (!isNaN(value) && value > 0) {
                                     setGlobalLimit(value);
-                                    setIsEditingLimits(true);
                                 }
                             }}
-                            disabled={!isEditingLimits && !updateLimitsMutation.isPending}
+                            disabled={!isEditingLimits || updateLimitsMutation.isPending}
                             className="w-full"
                         />
                     </div>
@@ -186,15 +182,14 @@ export const AiServiceControl: React.FC = () => {
                         <Input
                             type="number"
                             min="1"
-                            value={userLimit}
+                            value={isEditingLimits ? userLimit : status.userLimit}
                             onChange={(e) => {
                                 const value = parseInt(e.target.value, 10);
                                 if (!isNaN(value) && value > 0) {
                                     setUserLimit(value);
-                                    setIsEditingLimits(true);
                                 }
                             }}
-                            disabled={updateLimitsMutation.isPending}
+                            disabled={!isEditingLimits || updateLimitsMutation.isPending}
                             className="w-full"
                         />
                     </div>
@@ -221,7 +216,7 @@ export const AiServiceControl: React.FC = () => {
                         </>
                     ) : (
                         <Button
-                            onClick={() => setIsEditingLimits(true)}
+                            onClick={handleStartEdit}
                             variant="secondary"
                             size="sm"
                         >

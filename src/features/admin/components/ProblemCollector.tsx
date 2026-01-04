@@ -2,7 +2,7 @@
  * 문제 크롤링 제어 컴포넌트
  */
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import type { FC } from 'react';
 import { useCollectMetadata, useCollectDetails, useProblemStats } from '../../../hooks/api/useAdmin';
 import { Button } from '../../../components/ui/Button';
@@ -17,22 +17,17 @@ export const ProblemCollector: FC = () => {
     const collectMetadataMutation = useCollectMetadata();
     const collectDetailsMutation = useCollectDetails();
     const { data: stats, isLoading: isStatsLoading, refetch: refetchStats } = useProblemStats();
-
-    // 최대 문제 ID가 있으면 시작 ID를 자동으로 채움
-    useEffect(() => {
-        if (stats?.maxProblemId && !start) {
-            setStart((stats.maxProblemId + 1).toString());
-        }
-    }, [stats?.maxProblemId, start]);
+    const suggestedStart = stats?.maxProblemId ? String(stats.maxProblemId + 1) : '';
 
     const handleCollectMetadata = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!start || !end) {
+        const resolvedStart = start || suggestedStart;
+        if (!resolvedStart || !end) {
             alert('시작 문제 ID와 종료 문제 ID를 입력해주세요.');
             return;
         }
 
-        const startNum = Number(start);
+        const startNum = Number(resolvedStart);
         const endNum = Number(end);
 
         if (isNaN(startNum) || isNaN(endNum) || startNum < 1 || endNum < 1 || startNum > endNum) {
@@ -126,7 +121,7 @@ export const ProblemCollector: FC = () => {
                             type="number"
                             value={start}
                             onChange={(e) => setStart(e.target.value)}
-                            placeholder="예: 1000"
+                            placeholder={suggestedStart || '예: 1000'}
                             min={1}
                             required
                         />

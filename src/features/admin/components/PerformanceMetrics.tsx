@@ -11,33 +11,36 @@ import { formatKST } from '../../../utils/dateUtils';
 
 const RPM_THRESHOLD = 100; // RPM 위험 임계값
 const LATENCY_THRESHOLD = 500; // 응답 시간 위험 임계값 (ms)
+const EMPTY_TIME_SERIES: ReadonlyArray<{ timestamp: number; value: number }> = [];
 
 export const PerformanceMetrics: FC = () => {
     const [minutes, setMinutes] = useState<number>(30);
     const { data, isLoading, error } = useAdminDashboardMetrics(minutes);
+    const rpmTimeSeries = data?.rpmTimeSeries ?? EMPTY_TIME_SERIES;
+    const latencyTimeSeries = data?.latencyTimeSeries ?? EMPTY_TIME_SERIES;
 
     // Time Series 데이터 포맷팅
     const rpmChartData = useMemo(() => {
-        if (!data?.rpmTimeSeries || data.rpmTimeSeries.length === 0) {
+        if (rpmTimeSeries.length === 0) {
             return [];
         }
-        return data.rpmTimeSeries.map((point) => ({
+        return rpmTimeSeries.map((point) => ({
             time: formatKST(new Date(point.timestamp * 1000).toISOString(), 'timeOnly'),
             rpm: point.value,
             isOverThreshold: point.value > RPM_THRESHOLD,
         }));
-    }, [data?.rpmTimeSeries]);
+    }, [rpmTimeSeries]);
 
     const latencyChartData = useMemo(() => {
-        if (!data?.latencyTimeSeries || data.latencyTimeSeries.length === 0) {
+        if (latencyTimeSeries.length === 0) {
             return [];
         }
-        return data.latencyTimeSeries.map((point) => ({
+        return latencyTimeSeries.map((point) => ({
             time: formatKST(new Date(point.timestamp * 1000).toISOString(), 'timeOnly'),
             latency: point.value,
             isOverThreshold: point.value > LATENCY_THRESHOLD,
         }));
-    }, [data?.latencyTimeSeries]);
+    }, [latencyTimeSeries]);
 
     if (isLoading) {
         return <Spinner />;

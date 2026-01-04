@@ -7,7 +7,7 @@ import { useLocation } from 'react-router-dom';
 import type { FC, ReactNode } from 'react';
 import { Header } from './Header';
 import { Footer } from './Footer';
-import { AppTour } from '../onboarding/AppTour';
+import AppTour from '../onboarding/AppTour';
 
 interface LayoutProps {
     children: ReactNode;

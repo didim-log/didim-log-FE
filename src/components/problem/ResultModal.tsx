@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '../ui/Button'
 import { CheckCircle, XCircle, X } from 'lucide-react'
@@ -20,7 +20,6 @@ export default function ResultModal({
     problemId,
 }: ResultModalProps) {
     const navigate = useNavigate()
-    const [shouldShake, setShouldShake] = useState(false)
 
     useEffect(() => {
         if (!isOpen) {
@@ -29,12 +28,6 @@ export default function ResultModal({
 
         if (isSuccess) {
             fireConfetti()
-        } else {
-            setShouldShake(true)
-            const timer = setTimeout(() => {
-                setShouldShake(false)
-            }, 500)
-            return () => clearTimeout(timer)
         }
     }, [isOpen, isSuccess])
 
@@ -73,7 +66,7 @@ export default function ResultModal({
             {/* Modal */}
             <div
                 className={`relative z-50 w-full max-w-md mx-4 bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 ${
-                    shouldShake ? 'animate-shake' : ''
+                    !isSuccess ? 'animate-shake' : ''
                 }`}
             >
                 {/* Header */}

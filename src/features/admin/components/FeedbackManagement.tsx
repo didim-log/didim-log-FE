@@ -20,7 +20,7 @@ export const FeedbackManagement: FC = () => {
     const handleStatusChange = async (feedbackId: string, status: FeedbackStatus) => {
         try {
             await updateStatusMutation.mutateAsync({ feedbackId, data: { status } });
-        } catch (error) {
+        } catch {
             // Error is handled by React Query mutation
         }
     };
@@ -29,7 +29,7 @@ export const FeedbackManagement: FC = () => {
         if (confirm('정말 이 피드백을 삭제하시겠습니까?')) {
             try {
                 await deleteMutation.mutateAsync(feedbackId);
-            } catch (error) {
+            } catch {
                 // Error is handled by React Query mutation
             }
         }

@@ -123,7 +123,7 @@ export default function RecommendedProblems({
     }
 
     return (
-        <Card>
+        <Card className="tour-recommendations">
             <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
                     추천 문제

@@ -301,7 +301,7 @@ export const RetrospectiveWritePage: FC = () => {
                     </div>
 
                     {/* AI 한 줄 인사이트 (회고 작성 헤더 아래, 한 줄 요약 위) */}
-                    <div className="mb-6 tour-ai-review-btn">
+                    <div className="mb-6 tour-ai-section">
                         <AiReviewCard 
                             logId={logId} 
                             code={code}
@@ -322,7 +322,7 @@ export const RetrospectiveWritePage: FC = () => {
 
                     {/* 회고 에디터 */}
                     {!isLoadingTemplate && (
-                        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 border border-gray-200 dark:border-gray-700 tour-retrospective-editor">
+                        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 border border-gray-200 dark:border-gray-700">
                             <RetrospectiveEditor
                                 initialContent={content || template}
                                 initialSummary={summary}

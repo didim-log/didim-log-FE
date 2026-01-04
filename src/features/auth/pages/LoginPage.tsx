@@ -24,7 +24,7 @@ export const LoginPage: FC = () => {
     const [maintenanceStatus, setMaintenanceStatus] = useState<SystemStatusResponse | null>(null);
     const [isCheckingMaintenance, setIsCheckingMaintenance] = useState(true);
 
-    const { loginAsync, error } = useLogin();
+    const { loginAsync, error: loginErrorObj } = useLogin();
 
     // 유지보수 상태 확인
     useEffect(() => {
@@ -58,10 +58,10 @@ export const LoginPage: FC = () => {
 
     // 에러가 변경될 때 처리
     useEffect(() => {
-        if (error) {
+        if (loginErrorObj) {
             // LoginError는 이미 변환된 에러이므로 직접 접근
-            const errorCode = error.code;
-            const errorStatus = error.status;
+            const errorCode = loginErrorObj.code;
+            const errorStatus = loginErrorObj.status;
 
             if (errorStatus === 404 && errorCode === 'STUDENT_NOT_FOUND') {
                 // 계정이 없는 경우: 필드 에러로만 표시 (빨간 박스 숨김)
@@ -77,12 +77,12 @@ export const LoginPage: FC = () => {
             } else {
                 // 기타 서버 에러 (500 등): 빨간 박스로 표시
                 setErrors({});
-                setLoginError(error.message || '로그인 중 오류가 발생했습니다.');
+                setLoginError(loginErrorObj.message || '로그인 중 오류가 발생했습니다.');
             }
         } else {
             setLoginError(null);
         }
-    }, [error]);
+    }, [loginErrorObj]);
 
     // 비밀번호 입력창 포커스 이동 (입력창이 enabled 된 이후에만)
     useEffect(() => {
@@ -189,6 +189,7 @@ export const LoginPage: FC = () => {
             await loginAsync({ bojId: bojId.trim(), password });
         } catch {
             // 에러 메시지는 useLogin의 error를 통해 표시됨
+            // Rate Limit 정보는 error 객체에서 가져옴
         } finally {
             setIsSubmitting(false);
         }
@@ -371,9 +372,9 @@ export const LoginPage: FC = () => {
                         </div>
                     </div>
 
-                    {/* 서버 에러(500 등)만 빨간 박스로 표시 */}
-                    {loginError && (
-                        <div className="p-4 bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 dark:border-red-500 rounded-lg">
+                    {/* 로그인 에러 표시 */}
+                    {(loginError || loginErrorObj) && (
+                        <div className="p-4 bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 dark:border-red-500 rounded-lg space-y-2">
                             <div className="flex items-start gap-2">
                                 <svg className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                                     <path
@@ -384,8 +385,33 @@ export const LoginPage: FC = () => {
                                 </svg>
                                 <div className="flex-1">
                                     <p className="text-sm text-red-600 dark:text-red-400 font-medium">
-                                        {loginError}
+                                        {loginError || loginErrorObj?.message || '로그인 중 오류가 발생했습니다.'}
                                     </p>
+                                    {/* Rate Limit 정보 표시 */}
+                                    {loginErrorObj?.remainingAttempts !== undefined && loginErrorObj.remainingAttempts > 0 && (
+                                        <p className="mt-2 text-xs text-red-600 dark:text-red-400">
+                                            남은 시도 횟수: {loginErrorObj.remainingAttempts}회
+                                        </p>
+                                    )}
+                                    {loginErrorObj?.status === 429 && loginErrorObj?.unlockTime && (
+                                        <p className="mt-2 text-xs text-red-600 dark:text-red-400">
+                                            {(() => {
+                                                try {
+                                                    const unlockDate = new Date(loginErrorObj.unlockTime);
+                                                    const formattedTime = unlockDate.toLocaleString('ko-KR', {
+                                                        year: 'numeric',
+                                                        month: 'long',
+                                                        day: 'numeric',
+                                                        hour: '2-digit',
+                                                        minute: '2-digit',
+                                                    });
+                                                    return `${formattedTime}에 다시 시도 가능합니다.`;
+                                                } catch {
+                                                    return '1시간 후 다시 시도해주세요.';
+                                                }
+                                            })()}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         </div>

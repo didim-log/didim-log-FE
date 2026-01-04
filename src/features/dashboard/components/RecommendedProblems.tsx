@@ -10,6 +10,7 @@ import { useProblemRecommend } from '../../../hooks/api/useProblem';
 import { formatTierFromDifficulty, getTierColor, formatTier } from '../../../utils/tier';
 import { useAuthStore } from '../../../stores/auth.store';
 import type { ProblemResponse } from '../../../types/api/problem.types';
+import { OnlyKoreanToggle } from '../../../components/common/OnlyKoreanToggle';
 
 /**
  * 추천 문제 태그 필터 목록 (대기업 코딩 테스트 출제 빈도 순)
@@ -86,20 +87,6 @@ export const RecommendedProblems: FC<RecommendedProblemsProps> = ({ count = 4, c
         };
     }, [user]);
 
-    // 디버그 로그 (개발 환경에서만)
-    useEffect(() => {
-        if (import.meta.env.DEV) {
-            console.log('Recommended Problems Data:', { problems, isLoading, error, count, category: selectedCategory });
-            if (error) {
-                console.error('Recommended Problems API Error:', error);
-                // Axios 에러인 경우 상세 정보 출력
-                if (error && typeof error === 'object' && 'response' in error) {
-                    console.error('API Error Response:', (error as any).response?.data);
-                    console.error('API Error Status:', (error as any).response?.status);
-                }
-            }
-        }
-    }, [problems, isLoading, error, count, selectedCategory]);
 
     // 스크롤 위치에 따라 화살표 버튼 표시/숨김
     const updateArrowVisibility = () => {
@@ -170,20 +157,11 @@ export const RecommendedProblems: FC<RecommendedProblemsProps> = ({ count = 4, c
 
     // 최외곽 컨테이너에 타겟 클래스 추가 (항상 렌더링됨)
     return (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 border border-gray-200 dark:border-gray-700 tour-recommend-problems">
+        <div className="tour-recommendations bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between mb-3">
                 <h3 className="text-base font-semibold text-gray-900 dark:text-white">추천 문제</h3>
                 <div className="flex items-center gap-3">
-                    {/* 한국어만 보기 토글 */}
-                    <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                            type="checkbox"
-                            checked={onlyKorean}
-                            onChange={(e) => setOnlyKorean(e.target.checked)}
-                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                        />
-                        <span className="text-xs text-gray-700 dark:text-gray-300">한국어 문제만</span>
-                    </label>
+                    <OnlyKoreanToggle value={onlyKorean} onChange={setOnlyKorean} />
                     <Link
                         to="/problems"
                         className="text-sm text-blue-600 dark:text-blue-400 hover:underline"

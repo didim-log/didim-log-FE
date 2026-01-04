@@ -1,490 +1,379 @@
-/**
- * 전체 서비스 관통형 멀티 페이지 온보딩 투어
- * 
- * 사용자를 여러 페이지로 자동 이동시키며 핵심 사이클을 안내합니다:
- * Dashboard -> Problem Detail -> Write Retrospective -> Ranking -> My Page
- */
-
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useState, useMemo, type ComponentPropsWithoutRef } from 'react';
+import Joyride, { type Step, type CallBackProps, STATUS, ACTIONS, EVENTS, type TooltipRenderProps } from 'react-joyride';
 import { useLocation, useNavigate } from 'react-router-dom';
-import type { FC } from 'react';
-import Joyride, { type Step, type CallBackProps, type TooltipRenderProps, STATUS, EVENTS, ACTIONS } from 'react-joyride';
-import { useDashboard } from '../../hooks/api/useDashboard';
-import { useAuthStore } from '../../stores/auth.store';
 import { useTourStore } from '../../stores/tour.store';
+import { useAuthStore } from '../../stores/auth.store';
 import { memberApi } from '../../api/endpoints/member.api';
-import { toast } from 'sonner';
-import { getErrorMessage } from '../../types/api/common.types';
 
-// 🎨 커스텀 툴팁 컴포넌트
-const CustomTooltip: FC<TooltipRenderProps> = ({
-    index,
-    step,
-    tooltipProps,
-    primaryProps,
-    backProps,
-    size,
-    isLastStep,
-}) => {
-    return (
-        <div
-            {...tooltipProps}
-            className="bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-5 max-w-md w-[400px] flex flex-col gap-4"
-        >
-            {/* Header (Title) */}
-            {step.title && (
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                    {step.title}
-                </h3>
-            )}
+// 🎨 Custom Tooltip Component
+type CustomTooltipProps = TooltipRenderProps & {
+  skipProps?: ComponentPropsWithoutRef<'button'>;
+};
 
-            {/* Body (Content) */}
-            <div className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
-                {step.content}
-            </div>
-
-            {/* Footer (Counter & Buttons) */}
-            <div className="flex items-center justify-between mt-2 pt-3 border-t border-gray-200 dark:border-gray-700">
-                {/* Page Counter (Left) */}
-                <span className="text-xs font-mono text-gray-400 dark:text-gray-500">
-                    {index + 1} / {size}
-                </span>
-
-                {/* Buttons (Right) */}
-                <div className="flex gap-2">
-                    {index > 0 && (
-                        <button
-                            {...backProps}
-                            className="px-3 py-1.5 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                        >
-                            이전
-                        </button>
-                    )}
-
-                    <button
-                        {...primaryProps}
-                        className="px-4 py-1.5 text-sm font-bold text-white bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 rounded-lg shadow-sm transition-colors"
-                    >
-                        {isLastStep ? '완료하기' : '다음'}
-                    </button>
-                </div>
-            </div>
+const CustomTooltip = ({
+  index,
+  step,
+  tooltipProps,
+  primaryProps,
+  backProps,
+  skipProps,
+  size,
+  isLastStep,
+}: CustomTooltipProps) => {
+  return (
+    <div {...tooltipProps} className="bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 p-5 w-[400px] flex flex-col gap-4">
+      {step.title && <h3 className="text-lg font-bold text-gray-900 dark:text-white">{step.title}</h3>}
+      <div className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed whitespace-pre-line">
+        {step.content}
+      </div>
+      <div className="flex items-center justify-between mt-2 pt-3 border-t border-gray-100">
+        <span className="text-xs font-mono text-gray-400">{index + 1} / {size}</span>
+        <div className="flex gap-2">
+          {skipProps && (
+            <button
+              {...skipProps}
+              className="px-3 py-1.5 text-sm font-medium text-gray-500 hover:bg-gray-100 rounded-lg"
+            >
+              스킵하기
+            </button>
+          )}
+          {index > 0 && (
+            <button {...backProps} className="px-3 py-1.5 text-sm font-medium text-gray-500 hover:bg-gray-100 rounded-lg">이전</button>
+          )}
+          <button {...primaryProps} className="px-4 py-1.5 text-sm font-bold text-white bg-blue-500 hover:bg-blue-600 rounded-lg">
+            {isLastStep ? '완료하기' : '다음'}
+          </button>
         </div>
-    );
+      </div>
+    </div>
+  );
 };
 
-// 전체 서비스 플로우를 관통하는 스텝 정의 (총 10단계)
-const steps: Step[] = [
-    // --- 1. Dashboard ---
-    {
-        target: 'body',
-        title: '환영합니다! 👋',
-        content: (
-            <div className="text-left">
-                디딤로그의 핵심 기능을 빠르게 훑어볼까요?
-            </div>
-        ),
-        placement: 'center',
-        disableBeacon: true,
-        data: { route: '/dashboard' },
-    },
-    {
-        target: '.tour-recommend-problems',
-        title: '맞춤 문제 추천',
-        content: '먼저 대시보드입니다. 내 실력에 딱 맞는 문제를 추천받을 수 있습니다.',
-        placement: 'bottom',
-        spotlightPadding: 8,
-        data: { route: '/dashboard' },
-    },
-    // --- 2. Problem Detail (Move to ID 1000) ---
-    {
-        target: 'body',
-        title: '문제 상세 페이지',
-        content: '문제를 클릭하면 상세 페이지로 이동합니다. 여기서 지문을 읽고 풀이를 고민해보세요.',
-        placement: 'center',
-        data: { route: '/problems/1000' },
-    },
-    {
-        target: '.tour-timer-btn',
-        title: '타이머 기능',
-        content: '실전 감각을 위해 타이머를 켜고 푸는 것을 추천합니다!',
-        placement: 'left',
-        spotlightPadding: 8,
-        data: { route: '/problems/1000' },
-    },
-    // --- 3. Retrospective Write (Auto-Open Mode) ---
-    {
-        target: 'body',
-        title: '회고 작성',
-        content: '문제를 풀었다면 "회고 작성" 페이지로 이동합니다.',
-        placement: 'center',
-        data: { route: '/retrospectives/write?onboarding=true' },
-    },
-    {
-        target: '.tour-ai-review-btn',
-        title: 'AI 코드 분석',
-        content: (
-            <div className="text-left">
-                <strong>✨ AI 코드 분석</strong>
-                <br />
-                성공/실패 여부를 선택하면 입력창이 열립니다.
-                <br />
-                그 후 이 버튼을 눌러 AI 피드백을 받아보세요.
-            </div>
-        ),
-        placement: 'top',
-        spotlightPadding: 8,
-        data: { route: '/retrospectives/write?onboarding=true' },
-    },
-    // --- 4. Ranking ---
-    {
-        target: 'body',
-        title: '랭킹 시스템',
-        content: '열심히 활동하여 랭킹을 올려보세요. 다른 개발자들과 함께 성장하는 재미가 있습니다.',
-        placement: 'center',
-        disableScrolling: false, // Step 4번만 스크롤 애니메이션 활성화
-        data: { route: '/ranking' },
-    },
-    // --- 5. My Page (Profile) ---
-    {
-        target: '.tour-language-badge',
-        title: '주 언어 확인',
-        content: (
-            <div className="text-left">
-                <strong>주 언어 확인</strong>
-                <br />
-                내가 설정한 주 언어가 맞는지 확인하세요.
-                <br />
-                문제 추천과 분석의 기준이 됩니다.
-            </div>
-        ),
-        placement: 'bottom',
-        spotlightPadding: 8,
-        disableScrolling: true,
-        data: { route: '/profile' },
-    },
-    {
-        target: '.tour-my-retros',
-        title: '나의 회고 관리',
-        content: (
-            <div className="text-left">
-                <strong>📝 나의 회고 관리</strong>
-                <br />
-                내가 작성한 모든 회고 기록을
-                <br />
-                여기서 모아볼 수 있습니다.
-            </div>
-        ),
-        placement: 'top',
-        spotlightPadding: 8,
-        data: { route: '/profile' },
-    },
-    {
-        target: 'body',
-        title: '모든 준비 완료!',
-        content: (
-            <div className="text-left">
-                <strong>모든 준비 완료! 🎉</strong>
-                <br />
-                이제 '완료하기'를 눌러 디딤로그를 시작하세요.
-                <br />
-                (투어는 다시 뜨지 않습니다)
-            </div>
-        ),
-        placement: 'center',
-        data: { route: '/profile' },
-    },
-];
+const AppTour = () => {
+  const { run, stepIndex, setStepIndex, stopTour, startTour } = useTourStore(); // startTour 추가
+  const { user, completeOnboarding } = useAuthStore();
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  // 🛡️ Safety Flags
+  const [forceHide, setForceHide] = useState(false); 
+  const [isNavigating, setIsNavigating] = useState(false); 
+  const [isTargetReady, setIsTargetReady] = useState(false); 
 
-export const AppTour: FC = () => {
-    const location = useLocation();
-    const navigate = useNavigate();
-    const { data: dashboard } = useDashboard();
-    const { user, setUser, completeOnboarding: completeOnboardingInStore } = useAuthStore();
-    const { run, stepIndex, stopTour, setStepIndex, startTour } = useTourStore();
+  // 1. Reset & Restart Logic
+  useEffect(() => {
+    if (run) setForceHide(false);
+  }, [run]);
 
-    // ⚡️ KILL SWITCH: Local state to force-remove the component from DOM
-    const [forceHide, setForceHide] = useState(false);
-
-    // 1. Reset Kill Switch when 'run' changes (e.g. User clicks Help button)
-    useEffect(() => {
-        if (run) {
-            setForceHide(false);
-        }
-    }, [run]);
-
-    // 대시보드에서 온보딩 완료 여부 확인
-    useEffect(() => {
-        if (dashboard?.studentProfile?.isOnboardingFinished !== undefined) {
-            if (user && user.isOnboardingFinished !== dashboard.studentProfile.isOnboardingFinished) {
-                setUser({
-                    ...user,
-                    isOnboardingFinished: dashboard.studentProfile.isOnboardingFinished,
-                });
-            }
-        }
-    }, [dashboard?.studentProfile?.isOnboardingFinished, user, setUser]);
-
-    // ✅ 완료된 사용자의 run 상태 정리 (렌더링 중 상태 업데이트 방지)
-    useEffect(() => {
-        const isUserCompleted = user?.isOnboardingFinished === true || dashboard?.studentProfile?.isOnboardingFinished === true;
-        
-        // 백엔드에서 완료된 사용자가 run=true로 남아있으면 강제로 중지
-        if (isUserCompleted && run) {
-            stopTour();
-            setStepIndex(0);
-        }
-    }, [run, user?.isOnboardingFinished, dashboard?.studentProfile?.isOnboardingFinished, stopTour, setStepIndex]);
-
-    // ✅ Auto-Start Logic (Only runs once on mount, for new users)
-    useEffect(() => {
-        const isUserCompleted = user?.isOnboardingFinished === true || dashboard?.studentProfile?.isOnboardingFinished === true;
-        
-        // 백엔드에서 완료된 사용자는 자동 실행하지 않음
-        if (isUserCompleted) {
-            return;
-        }
-        
-        // If NOT completed and NOT running, start it automatically
-        if (!run) {
-            // 대시보드 데이터가 로드되지 않았으면 대기
-            if (!dashboard || location.pathname !== '/dashboard') {
-                return;
-            }
-
-            // DOM이 완전히 렌더링된 후 시작
-            const timer = setTimeout(() => {
-                // 대시보드의 첫 번째 스텝 타겟 요소 확인
-                const dashboardSteps = steps.filter((step) => step.data?.route === '/dashboard');
-                const allTargetsExist = dashboardSteps.every((step) => {
-                    if (step.target === 'body') {
-                        return true;
-                    }
-                    const targetElement = document.querySelector(step.target as string);
-                    return !!targetElement;
-                });
-
-                if (allTargetsExist && !run && !forceHide) {
-                    startTour();
-                }
-            }, 1000);
-            return () => clearTimeout(timer);
-        }
-    }, [dashboard, location.pathname, run, startTour, forceHide, user?.isOnboardingFinished, dashboard?.studentProfile?.isOnboardingFinished]);
-
-    // Enter 키로 다음 단계로 이동하는 핸들러 (모든 hooks는 early return 이전에 호출되어야 함)
-    // handleCallback을 사용하지 않고 직접 로직 구현 (순서 문제 해결)
-    useEffect(() => {
-        if (!run || forceHide) {
-            return;
-        }
-
-        const handleKeyDown = async (event: KeyboardEvent) => {
-            // Enter 키가 눌렸을 때
-            if (event.key === 'Enter' && !event.shiftKey && !event.ctrlKey && !event.metaKey) {
-                // 입력 필드에 포커스가 있으면 무시 (사용자가 입력 중일 수 있음)
-                const activeElement = document.activeElement;
-                if (
-                    activeElement &&
-                    (activeElement.tagName === 'INPUT' ||
-                        activeElement.tagName === 'TEXTAREA' ||
-                        (activeElement instanceof HTMLElement && activeElement.isContentEditable))
-                ) {
-                    return;
-                }
-
-                event.preventDefault();
-                event.stopPropagation();
-
-                // 현재 스텝이 마지막이면 완료 처리
-                if (stepIndex === steps.length - 1) {
-                    // 완료 처리 로직 직접 구현
-                    setForceHide(true);
-                    stopTour();
-                    setStepIndex(0);
-
-                    try {
-                        await memberApi.completeOnboarding();
-                        completeOnboardingInStore();
-                        if (user) {
-                            setUser({
-                                ...user,
-                                isOnboardingFinished: true,
-                            });
-                        }
-                        window.location.reload();
-                    } catch (error: unknown) {
-                        if (import.meta.env.DEV) {
-                            console.error('Onboarding sync failed', error);
-                        }
-                        const errorMessage = getErrorMessage(error);
-                        toast.error(`온보딩 완료 처리에 실패했습니다: ${errorMessage}`);
-                    }
-                } else {
-                    // 다음 스텝으로 이동
-                    const nextStepIndex = stepIndex + 1;
-                    const nextRoute = steps[nextStepIndex]?.data?.route;
-                    if (nextRoute && !location.pathname.includes(nextRoute.split('?')[0])) {
-                        navigate(nextRoute);
-                    }
-                    setStepIndex(nextStepIndex);
-                }
-            }
-        };
-
-        window.addEventListener('keydown', handleKeyDown);
-        return () => {
-            window.removeEventListener('keydown', handleKeyDown);
-        };
-    }, [run, forceHide, stepIndex, steps, location.pathname, navigate, setStepIndex, stopTour, completeOnboardingInStore, user, setUser]);
-
-    // Smart Navigation Logic
-    const handleCallback = useCallback(
-        async (data: CallBackProps) => {
-            const { status, type, index, action } = data;
-            const finishedStatuses: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
-
-            if (finishedStatuses.includes(status)) {
-                // ⚡️ IMMEDIATE KILL: Remove UI instantly before async operations
-                setForceHide(true);
-                
-                // Cleanup Global State
-                stopTour();
-                setStepIndex(0);
-
-                // Async API Call (UI is already closed)
-                try {
-                    if (status === STATUS.FINISHED) {
-                        await memberApi.completeOnboarding();
-                        completeOnboardingInStore();
-                        if (user) {
-                            setUser({
-                                ...user,
-                                isOnboardingFinished: true,
-                            });
-                        }
-                        // 상태 업데이트 후 새로고침하여 배너가 남아있는 버그 해결
-                        window.location.reload();
-                    } else if (status === STATUS.SKIPPED) {
-                        completeOnboardingInStore();
-                    }
-                } catch (error: unknown) {
-                    if (import.meta.env.DEV) {
-                        console.error('Onboarding sync failed', error);
-                    }
-                    const errorMessage = getErrorMessage(error);
-                    toast.error(`온보딩 완료 처리에 실패했습니다: ${errorMessage}`);
-                }
-                return; // Early return to prevent further processing
-            } else if (type === EVENTS.STEP_AFTER && action === ACTIONS.NEXT) {
-                // Logic for moving to next step
-                const nextStepIndex = index + 1;
-                if (nextStepIndex < steps.length) {
-                    const nextRoute = steps[nextStepIndex].data?.route;
-                    // Clean route checking (ignore query params)
-                    if (nextRoute && !location.pathname.includes(nextRoute.split('?')[0])) {
-                        navigate(nextRoute);
-                    }
-                    setStepIndex(nextStepIndex);
-                }
-            } else if (type === EVENTS.STEP_AFTER && action === ACTIONS.PREV) {
-                // 이전 스텝으로 이동
-                const prevIndex = index - 1;
-                if (prevIndex >= 0) {
-                    const prevRoute = steps[prevIndex].data?.route;
-                    if (prevRoute && !location.pathname.includes(prevRoute.split('?')[0])) {
-                        navigate(prevRoute);
-                    }
-                    setStepIndex(prevIndex);
-                }
-            }
-
-            // 에러 발생 시
-            if (status === STATUS.ERROR) {
-                if (import.meta.env.DEV) {
-                    console.error('Joyride error:', type);
-                }
-                stopTour();
-            }
-        },
-        [location.pathname, navigate, completeOnboardingInStore, stopTour, setStepIndex, user, setUser]
-    );
-
-    // 🛡️ Final Guard: If forced hidden, render NOTHING.
-    if (forceHide) {
-        return null;
-    }
-
-    // 🛡️ Final Guard 2: 백엔드에서 온보딩 완료된 사용자는 아예 렌더링하지 않음
-    // isOnboardingFinished가 true면 투어를 보여주지 않음 (Help 버튼으로 재시작하려면 resetOnboarding API 호출 필요)
-    const isUserCompleted = user?.isOnboardingFinished === true || dashboard?.studentProfile?.isOnboardingFinished === true;
+  // 2. Auto-Start Logic (신규 사용자 자동 시작 및 좀비 투어 방지)
+  useEffect(() => {
+    const isLocalCompleted = localStorage.getItem('didim_onboarding_completed') === 'true';
     
-    if (isUserCompleted) {
-        return null;
+    // 🛡️ [FIX] 로컬에서 완료되었다면 스토어 상태와 상관없이 즉시 종료 처리
+    if (isLocalCompleted) {
+      if (run) {
+        stopTour(); // 이미 실행 중인 상태라면 강제 중지
+      }
+      return;
+    }
+    
+    const isServerCompleted = user?.isOnboardingFinished;
+    
+    // 신규 사용자 자동 시작
+    if (user && !isServerCompleted && !run && !forceHide) {
+        const timeoutId = setTimeout(() => {
+            if (location.pathname === '/dashboard') {
+                startTour();
+            }
+        }, 1000);
+        
+        return () => clearTimeout(timeoutId);
+    }
+  }, [user?.isOnboardingFinished, run, location.pathname, forceHide, stopTour, startTour, user]);
+
+  // 📝 3. Step Definitions
+  const steps: (Step & { scrollOffset?: number; spotlightPadding?: number })[] = useMemo(() => [
+    { 
+      target: '.tour-recommendations', 
+      title: '추천 문제로 시작해요', 
+      content: '지금 내 수준에 맞는 문제를 추천해드려요.\n마음에 드는 문제를 눌러 시작해보세요.', 
+      placement: 'bottom', 
+      disableBeacon: true, 
+      spotlightPadding: 5,
+      scrollOffset: 150,
+      data: { route: '/dashboard' } 
+    },
+    { 
+      target: 'body', 
+      title: '문제 읽기', 
+      content: '문제 설명을 먼저 읽어보세요.\n어떤 접근이 좋을지 간단히 정리해보세요.', 
+      placement: 'center', 
+      disableBeacon: true, 
+      data: { route: '/problems/1000' } 
+    },
+    { 
+      target: '.tour-timer-btn', 
+      title: '타이머 설정', 
+      content: '타이머를 켜고 풀이를 시작해보세요.\n풀이 시간을 기록하면 실전 감각이 좋아집니다.', 
+      placement: 'left', 
+      disableBeacon: true, 
+      spotlightPadding: 5,
+      scrollOffset: 300,
+      data: { route: '/study/1000' } 
+    },
+    { 
+      target: '.tour-submit-buttons', 
+      title: '풀이 결과 기록', 
+      content: '풀이가 끝나면 \'성공\' 또는 \'실패\'를 눌러주세요.\n결과를 기록하고 다음 단계로 넘어갈 수 있어요.', 
+      placement: 'top', 
+      disableBeacon: true, 
+      spotlightPadding: 5,
+      scrollOffset: 150,
+      data: { route: '/study/1000' } 
+    },
+    { 
+      target: '.tour-ai-section', 
+      title: '회고 작성 & AI 분석', 
+      content:
+        '먼저 \'성공\' 또는 \'실패\'를 눌러 회고를 생성해보세요.\n회고 페이지로 이동하면 AI 분석 카드가 나타납니다.\n카드에서 제출한 코드를 리뷰받을 수 있어요.',
+      placement: 'top', 
+      disableBeacon: true, 
+      spotlightPadding: 5,
+      scrollOffset: 150,
+      data: { route: '/retrospectives/write?onboarding=true' } 
+    },
+    { 
+      target: 'body', 
+      title: '랭킹', 
+      content: '회고 작성 수로 랭킹이 집계돼요.\n다른 사람들과 함께 동기부여를 받아보세요.', 
+      placement: 'center', 
+      disableBeacon: true, 
+      data: { route: '/ranking' } 
+    },
+    { 
+      target: '.tour-language-badge', 
+      title: '내 언어 설정', 
+      content: '주로 사용하는 언어를 확인하고 설정해보세요.\n맞춤 추천과 기록에 도움이 됩니다.', 
+      placement: 'top', 
+      disableBeacon: true, 
+      spotlightPadding: 5,
+      scrollOffset: 300,
+      data: { route: '/profile' } 
+    },
+    { 
+      target: '.tour-my-retros', 
+      title: '회고 모아보기', 
+      content: '작성한 회고를 모아보고 복습해보세요.\n꾸준히 기록하면 성장 흐름이 보입니다.', 
+      placement: 'top', 
+      disableBeacon: true, 
+      spotlightPadding: 5,
+      scrollOffset: 150,
+      data: { route: '/profile' } 
+    },
+  ], []);
+
+  // 🕵️ 4. Target Watcher
+  useEffect(() => {
+    // [FIX] 완료 여부를 여기서도 체크하여, 완료된 상태라면 절대 DOM 탐색이나 네비게이션을 수행하지 않음
+    const isLocalCompleted = localStorage.getItem('didim_onboarding_completed') === 'true';
+
+    if (!run || forceHide || isNavigating || isLocalCompleted) {
+      setIsTargetReady(false);
+      return;
     }
 
-    // ✅ stepIndex 범위 체크: 마지막 단계를 넘어서면 렌더링하지 않음
-    if (stepIndex >= steps.length || stepIndex < 0) {
-        return null;
-    }
-
-    // Navigation Guard: Don't render if we are moving between pages
     const currentStep = steps[stepIndex];
-    if (run && currentStep?.data?.route && !location.pathname.includes(currentStep.data.route.split('?')[0])) {
-        return null; // Return null to avoid "Target not found" while loading new page
+    if (!currentStep) {
+      setIsTargetReady(false);
+      return;
     }
 
-    // 타겟 요소가 존재하는지 확인 (body가 아닌 경우)
-    if (run && currentStep && currentStep.target !== 'body') {
-        const element = document.querySelector(currentStep.target as string);
-        if (!element) {
-            // 타겟 요소가 아직 렌더링되지 않았으면 잠시 대기
-            return null;
+    const stepRoute = currentStep.data?.route;
+    if (stepRoute) {
+      const targetPath = stepRoute.split('?')[0];
+      const currentPath = location.pathname;
+      
+      if (!currentPath.includes(targetPath)) {
+        setIsNavigating(true);
+        setIsTargetReady(false);
+        navigate(stepRoute);
+        setTimeout(() => setIsNavigating(false), 500);
+        return;
+      }
+    }
+
+    let intervalId: ReturnType<typeof setInterval> | undefined;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    let attemptCount = 0;
+    const MAX_ATTEMPTS = 50;
+
+    const checkTarget = () => {
+      attemptCount++;
+      
+      if (stepRoute) {
+        const targetPath = stepRoute.split('?')[0];
+        const currentPath = location.pathname;
+        if (!currentPath.includes(targetPath)) {
+          setIsTargetReady(false);
+          return false;
         }
+      }
+      
+      if (currentStep.target === 'body') {
+        setIsTargetReady(true);
+        return true;
+      }
+      
+      const element = document.querySelector(currentStep.target as string);
+      if (element) {
+        setIsTargetReady(true);
+        return true;
+      }
+      
+      setIsTargetReady(false);
+      
+      if (attemptCount >= MAX_ATTEMPTS) {
+        clearInterval(intervalId);
+      }
+      
+      return false;
+    };
+
+    if (!checkTarget()) {
+      intervalId = setInterval(checkTarget, 100);
+      timeoutId = setTimeout(() => {
+        if (intervalId) {
+          clearInterval(intervalId);
+        }
+      }, 5000);
     }
 
-    // ✅ Prevent render ONLY if not running (Standard Joyride behavior)
-    // Manual start (Help button) will set run=true, so component will render
-    if (!run) {
-        return null;
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [stepIndex, run, forceHide, isNavigating, steps, location.pathname, navigate]);
+
+
+  // 🎮 5. Event Handler
+  const handleCallback = async (data: CallBackProps) => {
+    const { status, type, index, action } = data;
+
+    const isFinishedStatus = status === STATUS.FINISHED;
+    const isTourEndEvent = type === EVENTS.TOUR_END;
+    const isLastStepNext =
+      type === EVENTS.STEP_AFTER && action === ACTIONS.NEXT && index === steps.length - 1;
+
+    // ✅ COMPLETION: 완료 시 대시보드로 이동하며 새로고침(하드 로드)
+    // - Joyride가 종료를 알리는 방식이 케이스에 따라 달라서(TOUR_END / FINISHED / 마지막 STEP_AFTER),
+    //   어떤 경로로 끝나더라도 확실히 완료 처리되도록 보강합니다.
+    if (isFinishedStatus || isTourEndEvent || isLastStepNext) {
+      // 1. [안전 장치] 즉시 로컬 스토리지 저장 (사용자 이탈 방지)
+      localStorage.setItem('didim_onboarding_completed', 'true');
+      completeOnboarding(); 
+      setForceHide(true);   // UI 숨김
+      stopTour();           // 기능 정지
+      setStepIndex(0);
+
+      try {
+        // 2. 서버에 완료 요청 전송
+        await memberApi.completeOnboarding();
+      } catch {
+        // 온보딩 완료 API 실패 시에도 대시보드로 이동
+      } finally {
+        // 3. [이동 및 새로고침] 대시보드로 이동하면서 페이지를 새로 로드합니다.
+        // - `href`는 "이동 + 하드 로드"라서 새로고침을 따로 할 필요가 없습니다.
+        // - `replace`로 히스토리를 덮어써서 뒤로가기로 투어 화면에 돌아오지 않게 합니다.
+        window.location.replace('/dashboard');
+      }
+      return;
     }
 
-    return (
-        <Joyride
-            steps={steps}
-            run={run}
-            stepIndex={stepIndex}
-            callback={handleCallback}
-            continuous={true}
-            tooltipComponent={CustomTooltip}
-            showSkipButton={false}
-            disableScrolling={false}
-            disableOverlayClose={true}
-            disableCloseOnEsc={true}
-            hideCloseButton={true}
-            spotlightClicks={true}
-            floaterProps={{
-                disableAnimation: false,
-                hideArrow: false,
-                offset: 10,
-                styles: {
-                    arrow: {
-                        length: 8,
-                        spread: 8,
-                    },
-                },
-            }}
-            styles={{
-                options: {
-                    zIndex: 10000,
-                    primaryColor: '#3b82f6',
-                },
-                overlay: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                    zIndex: 9999,
-                },
-            }}
-        />
-    );
+    // ✅ SKIPPED: 건너뛰기
+    if (status === STATUS.SKIPPED) {
+      setForceHide(true);
+      stopTour();
+      setStepIndex(0);
+      return;
+    }
+
+    // ✅ NEXT NAVIGATION (기존 로직 유지)
+    if (type === EVENTS.STEP_AFTER && action === ACTIONS.NEXT) {
+      const nextIndex = index + 1;
+      
+      if (nextIndex < steps.length) {
+        const nextStep = steps[nextIndex];
+        const nextRoute = nextStep.data?.route;
+        const currentPath = location.pathname;
+        const targetPath = nextRoute?.split('?')[0];
+        
+        setStepIndex(nextIndex);
+
+        if (targetPath && !currentPath.includes(targetPath)) {
+            setIsNavigating(true);
+            setIsTargetReady(false);
+            navigate(nextRoute);
+            setTimeout(() => {
+                setIsNavigating(false);
+            }, 500); 
+        } else {
+            setIsTargetReady(false);
+        }
+      }
+    }
+    
+    // ✅ PREVIOUS (기존 로직 유지)
+    if (type === EVENTS.STEP_AFTER && action === ACTIONS.PREV) {
+       const prevIndex = index - 1;
+       if (prevIndex >= 0) {
+         setStepIndex(prevIndex);
+         const prevStep = steps[prevIndex];
+         const prevRoute = prevStep.data?.route;
+         
+         if (prevRoute && !location.pathname.includes(prevRoute.split('?')[0])) {
+             setIsNavigating(true);
+             navigate(prevRoute);
+             setTimeout(() => setIsNavigating(false), 500);
+         }
+       }
+    }
+  };
+
+  if (forceHide) return null;
+  if (isNavigating) return null;
+  
+  // [FIX] 여기서도 한 번 더 안전 장치
+  if (localStorage.getItem('didim_onboarding_completed') === 'true') return null;
+
+  return (
+    <Joyride
+      steps={steps}
+      run={run && isTargetReady}
+      stepIndex={stepIndex}
+      callback={handleCallback}
+      continuous={true}
+      tooltipComponent={CustomTooltip}
+      showSkipButton={true}
+      disableOverlayClose={true}
+      disableCloseOnEsc={true}
+      hideCloseButton={true}
+      spotlightClicks={true}
+      floaterProps={{
+        disableAnimation: true,
+        hideArrow: true,
+        disableFlip: true,
+        offset: 15,
+      }}
+      spotlightPadding={5}
+      styles={{
+        options: { zIndex: 10000, primaryColor: '#3b82f6' },
+        overlay: { backgroundColor: 'rgba(0, 0, 0, 0.5)', zIndex: 9999 },
+        spotlight: { borderRadius: 8 }
+      }}
+    />
+  );
 };
+
+export default AppTour;
+
 

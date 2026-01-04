@@ -32,14 +32,15 @@ export const NoticeManagement: FC = () => {
     const [editPinned, setEditPinned] = useState(false);
     const [copiedId, setCopiedId] = useState<string | null>(null);
 
+    const notices = data?.content ?? [];
     const sortedContent = useMemo(() => {
-        if (!data?.content) {
+        if (notices.length === 0) {
             return [];
         }
         // 서버가 이미 pinned 우선 정렬을 보장한다고 가정하되,
         // 프론트에서도 pinned를 상단으로 한번 더 안정화합니다.
-        return [...data.content].sort((a, b) => Number(b.isPinned) - Number(a.isPinned));
-    }, [data?.content]);
+        return [...notices].sort((a, b) => Number(b.isPinned) - Number(a.isPinned));
+    }, [notices]);
 
     const beginEdit = (notice: NoticeResponse) => {
         setEditingId(notice.id);
@@ -66,7 +67,7 @@ export const NoticeManagement: FC = () => {
             setCopiedId(id);
             toast.success('ID가 클립보드에 복사되었습니다.');
             setTimeout(() => setCopiedId(null), 2000);
-        } catch (error) {
+        } catch {
             toast.error('ID 복사에 실패했습니다.');
         }
     };
