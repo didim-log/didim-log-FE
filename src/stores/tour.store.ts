@@ -13,16 +13,13 @@ interface TourState {
     stopTour: () => void;
     setStepIndex: (index: number) => void;
     resetTour: () => void;
-    nextStep: () => void; // Helper to increment step index
 }
 
 export const useTourStore = create<TourState>((set) => ({
     run: false,
     stepIndex: 0,
-    startTour: () => set({ run: true, stepIndex: 0 }), // Always reset to 0 when starting
+    startTour: () => set({ run: true, stepIndex: 0 }),
     stopTour: () => set({ run: false }),
     setStepIndex: (index: number) => set({ stepIndex: index }),
     resetTour: () => set({ run: false, stepIndex: 0 }),
-    nextStep: () => set((state) => ({ stepIndex: state.stepIndex + 1 })),
 }));
-
