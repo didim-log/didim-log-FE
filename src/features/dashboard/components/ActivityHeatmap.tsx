@@ -9,17 +9,13 @@ import { useHeatmapByYear } from '../../../hooks/api/useHeatmap';
 import { Spinner } from '../../../components/ui/Spinner';
 import { ChevronLeft, ChevronRight, Calendar, HelpCircle } from 'lucide-react';
 
-interface ActivityHeatmapProps {
-    // Props 없음 - API에서 데이터 가져옴
-}
-
 interface HeatmapCell {
     date: string;
     count: number;
     dateObj: Date;
 }
 
-export const ActivityHeatmap: FC<ActivityHeatmapProps> = () => {
+export const ActivityHeatmap: FC = () => {
     const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
     const [tooltip, setTooltip] = useState<{ x: number; y: number; text: string } | null>(null);
     

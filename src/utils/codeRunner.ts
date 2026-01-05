@@ -120,19 +120,27 @@ function executeJavaScript(code: string, input: string): string {
     }
 }
 
-function executeJava(_code: string, _input: string): string {
+function executeJava(code: string, input: string): string {
+    void code
+    void input
     return 'Java 실행은 서버에서 처리해야 합니다.'
 }
 
-function executeKotlin(_code: string, _input: string): string {
+function executeKotlin(code: string, input: string): string {
+    void code
+    void input
     return 'Kotlin 실행은 서버에서 처리해야 합니다.'
 }
 
-function executeCpp(_code: string, _input: string): string {
+function executeCpp(code: string, input: string): string {
+    void code
+    void input
     return 'C++ 실행은 서버에서 처리해야 합니다.'
 }
 
-function executeSwift(_code: string, _input: string): string {
+function executeSwift(code: string, input: string): string {
+    void code
+    void input
     return 'Swift 실행은 서버에서 처리해야 합니다.'
 }
 

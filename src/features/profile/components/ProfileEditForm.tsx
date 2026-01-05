@@ -2,7 +2,7 @@
  * 프로필 수정 폼 컴포넌트
  */
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import type { FC } from 'react';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
@@ -39,24 +39,6 @@ export const ProfileEditForm: FC<ProfileEditFormProps> = ({
     const [primaryLanguage, setPrimaryLanguage] = useState<string>(
         initialPrimaryLanguage ? initialPrimaryLanguage.toUpperCase() : ''
     );
-
-    // 초기값이 변경되면 상태 업데이트
-    useEffect(() => {
-        setNickname(initialNickname);
-        // primaryLanguage는 대문자로 정규화하여 저장
-        setPrimaryLanguage(initialPrimaryLanguage ? initialPrimaryLanguage.toUpperCase() : '');
-        // 닉네임이 초기값으로 돌아가면 중복 검사 상태 초기화
-        if (nickname === initialNickname) {
-            setNicknameChecked(null);
-        }
-    }, [initialNickname, initialPrimaryLanguage]);
-    
-    // 닉네임이 변경되면 중복 검사 상태 초기화
-    useEffect(() => {
-        if (nickname !== initialNickname) {
-            setNicknameChecked(null);
-        }
-    }, [nickname, initialNickname]);
     const [errors, setErrors] = useState<{
         nickname?: string;
         currentPassword?: string;
@@ -64,6 +46,11 @@ export const ProfileEditForm: FC<ProfileEditFormProps> = ({
     }>({});
     const [nicknameChecked, setNicknameChecked] = useState<boolean | null>(null); // null: 미확인, true: 사용 가능, false: 중복
     const checkNicknameMutation = useCheckNickname();
+
+    const handleNicknameChange = (nextNickname: string) => {
+        setNickname(nextNickname);
+        setNicknameChecked(null);
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -197,7 +184,7 @@ export const ProfileEditForm: FC<ProfileEditFormProps> = ({
                             <Input
                                 type="text"
                                 value={nickname}
-                                onChange={(e) => setNickname(e.target.value)}
+                                onChange={(e) => handleNicknameChange(e.target.value)}
                                 error={undefined} // 에러는 하단에서 수동으로 표시
                                 placeholder="닉네임을 입력하세요 (한글, 영문, 숫자만 가능)"
                                 label="" // label은 상위 div에서 처리

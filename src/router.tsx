@@ -2,6 +2,8 @@
  * React Router 설정
  */
 
+/* eslint-disable react-refresh/only-export-components */
+
 import { createBrowserRouter, useRouteError, Link, useNavigate } from 'react-router-dom';
 import { PublicRoute } from './routes/PublicRoute';
 import { PrivateRoute } from './routes/PrivateRoute';

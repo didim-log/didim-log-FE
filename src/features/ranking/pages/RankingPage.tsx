@@ -2,7 +2,7 @@
  * 랭킹 페이지
  */
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import type { FC } from 'react';
 import { useRanking } from '../../../hooks/api/useRanking';
 import { Leaderboard } from '../components/Leaderboard';
@@ -22,19 +22,9 @@ export const RankingPage: FC = () => {
     const { data: ranking, isLoading, error } = useRanking({ period, limit });
 
     // 데이터 분리: Top 3와 나머지
-    const { top3, restRanks, myRank } = useMemo(() => {
-        if (!ranking || ranking.length === 0) {
-            return { top3: [], restRanks: [], myRank: null };
-        }
-
-        const top3 = ranking.slice(0, 3).filter((r) => r.rank <= 3);
-        const restRanks = ranking.slice(3);
-        const myRank = user?.nickname 
-            ? ranking.find((r) => r.nickname === user.nickname) 
-            : null;
-
-        return { top3, restRanks, myRank };
-    }, [ranking, user?.nickname]);
+    const top3 = (ranking ?? []).slice(0, 3).filter((r) => r.rank <= 3);
+    const restRanks = (ranking ?? []).slice(3);
+    const myRank = user?.nickname ? (ranking ?? []).find((r) => r.nickname === user.nickname) : null;
 
     if (isLoading) {
         return (

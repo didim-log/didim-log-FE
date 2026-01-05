@@ -130,7 +130,11 @@ export const SignupPage: FC = () => {
                     </div>
                 )}
 
-                <SignupWizard onComplete={handleComplete} apiError={apiError} />
+                <SignupWizard
+                    onComplete={handleComplete}
+                    apiError={apiError}
+                    onClearApiError={() => setApiError(null)}
+                />
             </div>
         </div>
     );

@@ -29,11 +29,11 @@ export const stripMarkdown = (markdown: string): string => {
     text = text.replace(/_([^_]+)_/g, '$1');
 
     // 링크 제거 ([text](url) 또는 [text][ref])
-    text = text.replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1');
+    text = text.replace(/\[([^\]]+)\]\([^)]*\)/g, '$1');
     text = text.replace(/\[([^\]]+)\]\[[^\]]+\]/g, '$1');
 
     // 이미지 제거 (![alt](url))
-    text = text.replace(/!\[([^\]]*)\]\([^\)]+\)/g, '');
+    text = text.replace(/!\[([^\]]*)\]\([^)]*\)/g, '');
 
     // 블록쿼트 제거 (> text)
     text = text.replace(/^>\s+/gm, '');

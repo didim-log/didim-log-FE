@@ -2,7 +2,7 @@
  * 회고 목록 페이지
  */
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import type { FC } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useRetrospectives, useToggleBookmark, useDeleteRetrospective } from '../../../hooks/api/useRetrospective';
@@ -33,9 +33,9 @@ export const RetrospectiveListPage: FC = () => {
     const deleteMutation = useDeleteRetrospective();
 
     // 모든 회고의 solvedCategory를 파싱하여 고유 태그 목록 생성
-    const availableCategories = useMemo(() => {
+    const availableCategories = (() => {
         if (!data?.content) return [];
-        
+
         const categorySet = new Set<string>();
         data.content.forEach((retrospective) => {
             if (retrospective.solvedCategory) {
@@ -47,10 +47,10 @@ export const RetrospectiveListPage: FC = () => {
                 tags.forEach((tag) => categorySet.add(tag));
             }
         });
-        
+
         // 알파벳 순으로 정렬
         return Array.from(categorySet).sort();
-    }, [data?.content]);
+    })();
 
     const handleToggleBookmark = (id: string) => {
         toggleBookmarkMutation.mutate(id);

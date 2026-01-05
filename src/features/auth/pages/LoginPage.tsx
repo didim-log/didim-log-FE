@@ -36,7 +36,7 @@ export const LoginPage: FC = () => {
                 if (isMounted) {
                     setMaintenanceStatus(status);
                 }
-            } catch (err) {
+            } catch {
                 // 에러가 발생해도 로그인은 가능하도록 함
                 // 503 에러(유지보수 모드)인 경우에도 정상적으로 처리
                 if (isMounted) {

@@ -8,10 +8,6 @@ import { useStatistics } from '../../../hooks/api/useStatistics';
 import { Spinner } from '../../../components/ui/Spinner';
 import { BookOpen, Clock, Target } from 'lucide-react';
 
-interface DashboardStatsProps {
-    // Props 없음 - API에서 데이터 가져옴
-}
-
 // Mock 데이터 (API에 데이터가 없을 때 사용)
 const mockCategoryData = [
     { category: 'BFS', value: 80 },
@@ -27,7 +23,7 @@ const mockMetrics = {
     successRate: 72, // 퍼센트
 };
 
-export const DashboardStats: FC<DashboardStatsProps> = () => {
+export const DashboardStats: FC = () => {
     const { data: statistics, isLoading, error } = useStatistics();
 
     // 카테고리 레이더 차트 데이터 준비

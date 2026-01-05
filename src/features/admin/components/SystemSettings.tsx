@@ -70,7 +70,7 @@ export const SystemSettings: FC = () => {
                 const status = await systemApi.getSystemStatus();
                 setSystemStatus(status);
                 setEnabled(status.underMaintenance);
-            } catch (error) {
+            } catch {
                 toast.error('시스템 상태를 불러오는데 실패했습니다.');
             } finally {
                 setIsLoadingStatus(false);
@@ -87,7 +87,7 @@ export const SystemSettings: FC = () => {
                     const status = await systemApi.getSystemStatus();
                     setSystemStatus(status);
                     setEnabled(status.underMaintenance);
-                } catch (error) {
+                } catch {
                     toast.error('시스템 상태를 불러오는데 실패했습니다.');
                 }
             };

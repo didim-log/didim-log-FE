@@ -18,7 +18,7 @@ export interface NoticeListRequest {
     size?: number;
 }
 
-export interface NoticePageResponse extends Page<NoticeResponse> {}
+export type NoticePageResponse = Page<NoticeResponse>;
 
 export interface NoticeCreateRequest {
     title: string;

@@ -3,7 +3,6 @@
  * Activity Heatmap 제거: 렌더링 성능 및 레이아웃 안정성 개선
  */
 
-import { useMemo } from 'react';
 import type { FC } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStatistics } from '../../../hooks/api/useStatistics';
@@ -37,21 +36,22 @@ export const StatisticsPage: FC = () => {
     // 레이더 차트 데이터 준비
     // 백엔드에서 이미 집계된 categoryStats를 사용하여 레이더 차트 데이터 생성
     // CRITICAL: 모든 hooks는 early return 전에 호출되어야 함 (React Hooks 규칙)
-    const radarData = useMemo(() => {
+    const radarData = (() => {
         if (!statistics?.categoryStats || statistics.categoryStats.length === 0) {
             return [];
         }
 
         // 상위 8개만 사용 (레이더 차트가 너무 복잡해지지 않도록)
         const topCategories = statistics.categoryStats.slice(0, 8);
-        const maxCount = topCategories.length > 0 ? Math.max(...topCategories.map((item) => item.count)) : 1;
+        const maxCount =
+            topCategories.length > 0 ? Math.max(...topCategories.map((item) => item.count)) : 1;
 
         // 백엔드에서 이미 정렬되어 있으므로 그대로 사용
         return topCategories.map((item) => ({
             category: item.category,
             value: maxCount > 0 ? Math.round((item.count / maxCount) * 100) : 0,
         }));
-    }, [statistics?.categoryStats]);
+    })();
 
     if (isLoading) {
         return (

@@ -2,7 +2,7 @@
  * 회고 에디터 컴포넌트
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import type { FC } from 'react';
 import type { RetrospectiveRequest, ProblemResult } from '../../../types/api/retrospective.types';
 import { TagInput } from '../../../components/ui/TagInput';
@@ -36,44 +36,6 @@ export const RetrospectiveEditor: FC<RetrospectiveEditorProps> = ({
     );
     const [errors, setErrors] = useState<{ content?: string; summary?: string }>({});
     const [hasUserTypedSummary, setHasUserTypedSummary] = useState(false);
-    const prevInitialContentRef = useRef<string>(initialContent);
-    const isMountedRef = useRef<boolean>(false);
-
-    // 초기 마운트 시에만 모든 초기값 설정
-    useEffect(() => {
-        if (!isMountedRef.current) {
-            setContent(initialContent);
-            setSummary(initialSummary || ''); // 빈 문자열도 허용하여 항상 업데이트
-            setResultType(initialResultType || '');
-            setSolvedCategories(initialSolvedCategory ? initialSolvedCategory.split(',').filter(Boolean) : []);
-            prevInitialContentRef.current = initialContent;
-            isMountedRef.current = true;
-        }
-    }, [initialContent, initialSummary, initialResultType, initialSolvedCategory]);
-
-    // initialResultType이 변경될 때마다 resultType 업데이트 (수정 모드 진입 시)
-    useEffect(() => {
-        if (isMountedRef.current && initialResultType !== undefined) {
-            setResultType(initialResultType || '');
-        }
-    }, [initialResultType]);
-
-    // initialSummary가 변경될 때마다 summary 업데이트 (수정 모드 진입 시)
-    useEffect(() => {
-        if (isMountedRef.current && initialSummary !== undefined) {
-            setSummary(initialSummary);
-        }
-    }, [initialSummary]);
-
-    // initialContent가 변경될 때만 content 업데이트 (템플릿 로드 시)
-    // summary는 절대 덮어쓰지 않음 - 사용자 입력 보존
-    useEffect(() => {
-        // 마운트 후이고, initialContent가 실제로 변경된 경우에만 업데이트
-        if (isMountedRef.current && initialContent && initialContent !== prevInitialContentRef.current) {
-            setContent(initialContent);
-            prevInitialContentRef.current = initialContent;
-        }
-    }, [initialContent]);
 
     // summary 입력 핸들러: 사용자가 입력했음을 표시
     const handleSummaryChange = (e: React.ChangeEvent<HTMLInputElement>) => {

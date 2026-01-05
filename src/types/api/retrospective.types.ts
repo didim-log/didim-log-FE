@@ -40,7 +40,7 @@ export interface RetrospectiveListRequest {
     sort?: string;
 }
 
-export interface RetrospectivePageResponse extends Page<RetrospectiveResponse> {}
+export type RetrospectivePageResponse = Page<RetrospectiveResponse>;
 
 export interface BookmarkToggleResponse {
     isBookmarked: boolean;

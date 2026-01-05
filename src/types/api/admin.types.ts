@@ -32,16 +32,16 @@ export interface AdminUserUpdateDto {
     bojId?: string;
 }
 
-export interface AdminUserPageResponse extends Page<AdminUserResponse> {}
+export type AdminUserPageResponse = Page<AdminUserResponse>;
 
 export interface QuoteCreateRequest {
     content: string;
     author: string;
 }
 
-export interface QuotePageResponse extends Page<QuoteResponse> {}
+export type QuotePageResponse = Page<QuoteResponse>;
 
-export interface FeedbackPageResponse extends Page<FeedbackResponse> {}
+export type FeedbackPageResponse = Page<FeedbackResponse>;
 
 export interface AdminDashboardStatsResponse {
     totalUsers: number;
@@ -122,7 +122,7 @@ export interface AdminLogResponse {
     createdAt: string;
 }
 
-export interface AdminLogPageResponse extends Page<AdminLogResponse> {}
+export type AdminLogPageResponse = Page<AdminLogResponse>;
 
 export interface AdminMemberUpdateRequest {
     nickname?: string;
@@ -198,7 +198,7 @@ export interface AdminAuditLogResponse {
     createdAt: string;
 }
 
-export interface AdminAuditLogPageResponse extends Page<AdminAuditLogResponse> {}
+export type AdminAuditLogPageResponse = Page<AdminAuditLogResponse>;
 
 export interface AdminAuditLogRequest {
     page?: number;

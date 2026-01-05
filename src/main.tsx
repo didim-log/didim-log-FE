@@ -34,7 +34,7 @@ if (savedTheme) {
     document.documentElement.classList.remove('dark');
 }
 
-const App = () => {
+export const App = () => {
     return <RouterProvider router={router} />;
 };
 

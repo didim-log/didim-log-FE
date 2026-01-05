@@ -2,7 +2,7 @@
  * 마이페이지
  */
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import type { FC } from 'react';
 import { useDashboard } from '../../../hooks/api/useDashboard';
 import { useUpdateProfile, useDeleteAccount } from '../../../hooks/api/useStudent';
@@ -36,9 +36,9 @@ export const ProfilePage: FC = () => {
     });
 
     // 모든 회고의 solvedCategory를 파싱하여 고유 태그 목록 생성
-    const availableCategories = useMemo(() => {
+    const availableCategories = (() => {
         if (!retrospectives?.content) return [];
-        
+
         const categorySet = new Set<string>();
         retrospectives.content.forEach((retrospective) => {
             if (retrospective.solvedCategory) {
@@ -50,10 +50,10 @@ export const ProfilePage: FC = () => {
                 tags.forEach((tag) => categorySet.add(tag));
             }
         });
-        
+
         // 알파벳 순으로 정렬
         return Array.from(categorySet).sort();
-    }, [retrospectives?.content]);
+    })();
 
     const [isEditing, setIsEditing] = useState(false);
     const [isDangerZoneOpen, setIsDangerZoneOpen] = useState(false);
@@ -80,7 +80,7 @@ export const ProfilePage: FC = () => {
         try {
             await updateProfileMutation.mutateAsync(updateData);
             setIsEditing(false);
-        } catch (error) {
+        } catch {
             // 에러는 ProfileEditForm에서 처리하므로 여기서는 재throw하지 않음
             // ProfileEditForm의 error prop으로 전달됨
         }
