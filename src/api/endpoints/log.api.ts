@@ -10,7 +10,7 @@ export const logApi = {
      * 로그 생성 (AI 리뷰를 위한 선행 단계)
      */
     createLog: async (data: LogCreateRequest): Promise<LogResponse> => {
-        const response = await apiClient.post<LogResponse>('/api/v1/logs', data);
+        const response = await apiClient.post<LogResponse>('/logs', data);
         return response.data;
     },
 
@@ -18,7 +18,7 @@ export const logApi = {
      * 로그 템플릿 조회 (백엔드 제공 시 사용)
      */
     getLogTemplate: async (logId: string): Promise<LogTemplateResponse> => {
-        const response = await apiClient.get<LogTemplateResponse>(`/api/v1/logs/${logId}/template`);
+        const response = await apiClient.get<LogTemplateResponse>(`/logs/${logId}/template`);
         return response.data;
     },
 
@@ -29,7 +29,7 @@ export const logApi = {
      */
     getAiReview: async (logId: string): Promise<AiReviewResponse> => {
         const response = await apiClient.post<AiReviewResponse>(
-            `/api/v1/logs/${logId}/ai-review`
+            `/logs/${logId}/ai-review`
         );
         return response.data;
     },
@@ -42,7 +42,7 @@ export const logApi = {
      */
     submitFeedback: async (logId: string, feedback: LogFeedbackRequest): Promise<LogFeedbackResponse> => {
         const response = await apiClient.post<LogFeedbackResponse>(
-            `/api/v1/logs/${logId}/feedback`,
+            `/logs/${logId}/feedback`,
             feedback
         );
         return response.data;
@@ -53,7 +53,7 @@ export const logApi = {
      * @returns AI 사용량 정보
      */
     getAiUsage: async (): Promise<AiUsageResponse> => {
-        const response = await apiClient.get<AiUsageResponse>('/api/v1/logs/ai-usage/me');
+        const response = await apiClient.get<AiUsageResponse>('/logs/ai-usage/me');
         return response.data;
     },
 };

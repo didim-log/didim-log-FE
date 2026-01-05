@@ -15,7 +15,7 @@ export const problemApi = {
      * 문제 추천
      */
     recommend: async (params: RecommendRequest): Promise<ProblemResponse[]> => {
-        const response = await apiClient.get<ProblemResponse[]>('/api/v1/problems/recommend', { params });
+        const response = await apiClient.get<ProblemResponse[]>('/problems/recommend', { params });
         return response.data;
     },
 
@@ -23,7 +23,7 @@ export const problemApi = {
      * 문제 상세 조회
      */
     getProblemDetail: async (problemId: string): Promise<ProblemDetailResponse> => {
-        const response = await apiClient.get<ProblemDetailResponse>(`/api/v1/problems/${problemId}`);
+        const response = await apiClient.get<ProblemDetailResponse>(`/problems/${problemId}`);
         return response.data;
     },
 
@@ -31,7 +31,7 @@ export const problemApi = {
      * 문제 검색
      */
     search: async (params: SearchRequest): Promise<ProblemDetailResponse> => {
-        const response = await apiClient.get<ProblemDetailResponse>('/api/v1/problems/search', { params });
+        const response = await apiClient.get<ProblemDetailResponse>('/problems/search', { params });
         return response.data;
     },
 };

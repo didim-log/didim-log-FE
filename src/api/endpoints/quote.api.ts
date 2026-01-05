@@ -12,7 +12,7 @@ export const quoteApi = {
      */
     getRandomQuote: async (): Promise<QuoteResponse | null> => {
         try {
-            const response = await apiClient.get<QuoteResponse>('/api/v1/quotes/random');
+            const response = await apiClient.get<QuoteResponse>('/quotes/random');
             return response.data;
         } catch (error: unknown) {
             // 204 No Content인 경우 null 반환

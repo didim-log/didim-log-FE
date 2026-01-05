@@ -3,13 +3,11 @@
  */
 
 import axios from 'axios';
-import { toast } from 'sonner';
 import { useAuthStore } from '../stores/auth.store';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+import { API_URL } from '../config/env';
 
 export const apiClient = axios.create({
-    baseURL: API_BASE_URL,
+    baseURL: API_URL,
     headers: {
         'Content-Type': 'application/json',
     },
@@ -90,8 +88,13 @@ export const removeAuthHeader = (): void => {
  */
 apiClient.interceptors.request.use(
     (config) => {
+        const url = config.url ?? '';
+        if (url.startsWith('/')) {
+            config.url = url.slice(1);
+        }
+
         // Refresh Token API 호출 시에는 토큰을 추가하지 않음
-        const isRefreshEndpoint = config.url?.includes('/auth/refresh');
+        const isRefreshEndpoint = config.url?.includes('auth/refresh');
         if (isRefreshEndpoint) {
             // Refresh API는 Request Body에 refreshToken을 포함하므로 Authorization 헤더 제거
             delete config.headers.Authorization;
@@ -136,17 +139,12 @@ apiClient.interceptors.response.use(
         const originalRequest = error.config;
 
         // Public API는 401 처리에서 제외 (무한 루프 방지)
-        const isPublicApi = originalRequest.url?.includes('/api/v1/system/status') || 
-                           originalRequest.url?.includes('/api/v1/auth/');
+        const requestUrl = originalRequest.url ?? '';
+        const isPublicApi = requestUrl.includes('system/status') || requestUrl.includes('auth/');
 
         // 429 Rate Limiting 에러 처리
+        // UX 정책: 서버 응답 에러는 페이지(요청 호출부)에서 Toast로 단일 처리한다.
         if (error.response?.status === 429) {
-            const errorMessage = error.response?.data?.message || 
-                '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.';
-            toast.error(errorMessage, {
-                description: '너무 많은 요청이 발생했습니다. 1시간 후 다시 시도해주세요.',
-                duration: 5000,
-            });
             return Promise.reject(error);
         }
 
@@ -156,8 +154,7 @@ apiClient.interceptors.response.use(
             // Maintenance Mode 에러인 경우 Maintenance 페이지로 리다이렉트
             if (errorCode === 'MAINTENANCE_MODE') {
                 // Public API(Notices, System Status)는 리다이렉트하지 않음
-                const isPublicApi = originalRequest.url?.includes('/api/v1/notices') || 
-                                   originalRequest.url?.includes('/api/v1/system/status');
+                const isPublicApi = requestUrl.includes('notices') || requestUrl.includes('system/status');
                 if (!isPublicApi) {
                     window.location.href = '/maintenance';
                     return Promise.reject(error);
@@ -167,7 +164,7 @@ apiClient.interceptors.response.use(
 
         // 401 에러이고, refresh 엔드포인트가 아닌 경우에만 처리
         if (error.response?.status === 401 && !originalRequest._retry && 
-            !originalRequest.url?.includes('/auth/refresh') && !isPublicApi) {
+            !requestUrl.includes('auth/refresh') && !isPublicApi) {
             if (isRefreshing) {
                 // 이미 refresh 중이면 대기열에 추가
                 return new Promise((resolve, reject) => {
@@ -202,7 +199,7 @@ apiClient.interceptors.response.use(
                 // Refresh API 호출 시 별도의 axios 인스턴스 사용 (interceptor 우회)
                 // 만료된 Access Token이 Authorization 헤더에 추가되지 않도록 함
                 const refreshResponse = await axios.post(
-                    `${API_BASE_URL}/api/v1/auth/refresh`,
+                    `${API_URL}/auth/refresh`,
                     { refreshToken },
                     {
                         headers: {

@@ -10,7 +10,7 @@ export const statisticsApi = {
      * 통계 정보 조회
      */
     getStatistics: async (): Promise<StatisticsResponse> => {
-        const response = await apiClient.get<StatisticsResponse>('/api/v1/statistics');
+        const response = await apiClient.get<StatisticsResponse>('/statistics');
         return response.data;
     },
 
@@ -21,7 +21,7 @@ export const statisticsApi = {
     getHeatmapByYear: async (year?: number): Promise<HeatmapDataResponse[]> => {
         const yearParam = year || new Date().getFullYear();
         const response = await apiClient.get<HeatmapDataResponse[]>(
-            `/api/v1/statistics/heatmap?year=${yearParam}`
+            `/statistics/heatmap?year=${yearParam}`
         );
         return response.data;
     },

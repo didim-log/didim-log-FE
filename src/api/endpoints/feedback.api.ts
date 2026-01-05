@@ -10,7 +10,7 @@ export const feedbackApi = {
      * 피드백 생성
      */
     createFeedback: async (data: FeedbackCreateRequest): Promise<FeedbackResponse> => {
-        const response = await apiClient.post<FeedbackResponse>('/api/v1/feedback', data);
+        const response = await apiClient.post<FeedbackResponse>('/feedback', data);
         return response.data;
     },
 };

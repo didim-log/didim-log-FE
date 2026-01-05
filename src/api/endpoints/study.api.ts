@@ -10,7 +10,7 @@ export const studyApi = {
      * 문제 풀이 결과 제출
      */
     submitSolution: async (data: SolutionSubmitRequest): Promise<SolutionSubmitResponse> => {
-        const response = await apiClient.post<SolutionSubmitResponse>('/api/v1/study/submit', data);
+        const response = await apiClient.post<SolutionSubmitResponse>('/study/submit', data);
         return response.data;
     },
 };

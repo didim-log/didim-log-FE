@@ -10,7 +10,7 @@ export const dashboardApi = {
      * 대시보드 정보 조회
      */
     getDashboard: async (): Promise<DashboardResponse> => {
-        const response = await apiClient.get<DashboardResponse>('/api/v1/dashboard');
+        const response = await apiClient.get<DashboardResponse>('/dashboard');
         return response.data;
     },
 };

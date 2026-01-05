@@ -10,7 +10,7 @@ export const systemApi = {
      * 시스템 상태 조회 (Public)
      */
     getSystemStatus: async (): Promise<SystemStatusResponse> => {
-        const response = await apiClient.get<SystemStatusResponse>('/api/v1/system/status');
+        const response = await apiClient.get<SystemStatusResponse>('/system/status');
         return response.data;
     },
 };

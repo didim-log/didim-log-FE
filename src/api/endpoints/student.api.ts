@@ -12,21 +12,21 @@ export const studentApi = {
      * 프로필 수정
      */
     updateProfile: async (data: UpdateProfileRequest): Promise<void> => {
-        await apiClient.patch('/api/v1/students/me', data);
+        await apiClient.patch('/students/me', data);
     },
 
     /**
      * 계정 삭제
      */
     deleteAccount: async (): Promise<void> => {
-        await apiClient.delete('/api/v1/students/me');
+        await apiClient.delete('/students/me');
     },
 
     /**
      * BOJ 프로필 동기화
      */
     syncBojProfile: async (): Promise<StudentProfileResponse> => {
-        const response = await apiClient.post<StudentProfileResponse>('/api/v1/students/sync');
+        const response = await apiClient.post<StudentProfileResponse>('/students/sync');
         return response.data;
     },
 };

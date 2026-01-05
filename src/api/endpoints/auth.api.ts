@@ -22,12 +22,24 @@ import type {
     RefreshTokenRequest,
 } from '../../types/api/auth.types';
 
+type InFlightLogin = {
+    key: string;
+    startedAt: number;
+    promise: Promise<AuthResponse>;
+};
+
+let inFlightLogin: InFlightLogin | null = null;
+
+const createLoginKey = (data: LoginRequest): string => {
+    return `${data.bojId}:${data.password}`;
+};
+
 export const authApi = {
     /**
      * 회원가입
      */
     signup: async (data: SignupRequest): Promise<AuthResponse> => {
-        const response = await apiClient.post<AuthResponse>('/api/v1/auth/signup', data);
+        const response = await apiClient.post<AuthResponse>('/auth/signup', data);
         return response.data;
     },
 
@@ -49,15 +61,31 @@ export const authApi = {
      * @see {@link https://github.com/didimlog/didim-log/blob/main/DOCS/API_SPECIFICATION.md#post-apiv1authlogin API 명세서}
      */
     login: async (data: LoginRequest): Promise<AuthResponse> => {
-        const response = await apiClient.post<AuthResponse>('/api/v1/auth/login', data);
-        return response.data;
+        const key = createLoginKey(data);
+        const now = Date.now();
+
+        if (inFlightLogin && inFlightLogin.key === key && now - inFlightLogin.startedAt < 1200) {
+            return await inFlightLogin.promise;
+        }
+
+        const promise = apiClient
+            .post<AuthResponse>('/auth/login', data)
+            .then((response) => response.data)
+            .finally(() => {
+                if (inFlightLogin?.promise === promise) {
+                    inFlightLogin = null;
+                }
+            });
+
+        inFlightLogin = { key, startedAt: now, promise };
+        return await promise;
     },
 
     /**
      * 슈퍼 관리자 생성
      */
     createSuperAdmin: async (data: SuperAdminRequest): Promise<AuthResponse> => {
-        const response = await apiClient.post<AuthResponse>('/api/v1/auth/super-admin', data);
+        const response = await apiClient.post<AuthResponse>('/auth/super-admin', data);
         return response.data;
     },
 
@@ -65,7 +93,7 @@ export const authApi = {
      * 회원가입 마무리 (소셜 로그인)
      */
     signupFinalize: async (data: SignupFinalizeRequest): Promise<AuthResponse> => {
-        const response = await apiClient.post<AuthResponse>('/api/v1/auth/signup/finalize', data);
+        const response = await apiClient.post<AuthResponse>('/auth/signup/finalize', data);
         return response.data;
     },
 
@@ -73,7 +101,7 @@ export const authApi = {
      * 계정 찾기 (소셜 제공자 확인)
      */
     findAccount: async (data: FindAccountRequest): Promise<FindAccountResponse> => {
-        const response = await apiClient.post<FindAccountResponse>('/api/v1/auth/find-account', data);
+        const response = await apiClient.post<FindAccountResponse>('/auth/find-account', data);
         return response.data;
     },
 
@@ -81,7 +109,7 @@ export const authApi = {
      * 아이디 찾기
      */
     findId: async (data: FindIdRequest): Promise<FindIdPasswordResponse> => {
-        const response = await apiClient.post<FindIdPasswordResponse>('/api/v1/auth/find-id', data);
+        const response = await apiClient.post<FindIdPasswordResponse>('/auth/find-id', data);
         return response.data;
     },
 
@@ -89,7 +117,7 @@ export const authApi = {
      * 비밀번호 찾기
      */
     findPassword: async (data: FindPasswordRequest): Promise<FindIdPasswordResponse> => {
-        const response = await apiClient.post<FindIdPasswordResponse>('/api/v1/auth/find-password', data);
+        const response = await apiClient.post<FindIdPasswordResponse>('/auth/find-password', data);
         return response.data;
     },
 
@@ -97,7 +125,7 @@ export const authApi = {
      * 비밀번호 재설정
      */
     resetPassword: async (data: ResetPasswordRequest): Promise<FindIdPasswordResponse> => {
-        const response = await apiClient.post<FindIdPasswordResponse>('/api/v1/auth/reset-password', data);
+        const response = await apiClient.post<FindIdPasswordResponse>('/auth/reset-password', data);
         return response.data;
     },
 
@@ -105,7 +133,7 @@ export const authApi = {
      * BOJ 인증 코드 발급
      */
     issueBojCode: async (): Promise<BojCodeIssueResponse> => {
-        const response = await apiClient.post<BojCodeIssueResponse>('/api/v1/auth/boj/code');
+        const response = await apiClient.post<BojCodeIssueResponse>('/auth/boj/code');
         return response.data;
     },
 
@@ -125,7 +153,7 @@ export const authApi = {
      * @see {@link https://github.com/didimlog/didim-log/blob/main/DOCS/API_SPECIFICATION.md#post-apiv1authbojverify API 명세서}
      */
     verifyBoj: async (data: BojVerifyRequest): Promise<BojVerifyResponse> => {
-        const response = await apiClient.post<BojVerifyResponse>('/api/v1/auth/boj/verify', data);
+        const response = await apiClient.post<BojVerifyResponse>('/auth/boj/verify', data);
         return response.data;
     },
 
@@ -136,7 +164,7 @@ export const authApi = {
      * @throws AxiosError 404: BOJ ID를 찾을 수 없음, 기타 서버 에러
      */
     checkIdDuplicate: async (bojId: string): Promise<boolean> => {
-        const response = await apiClient.get<BojIdDuplicateCheckResponse>('/api/v1/auth/check-duplicate', {
+        const response = await apiClient.get<BojIdDuplicateCheckResponse>('/auth/check-duplicate', {
             params: { bojId },
         });
         return response.data.isDuplicate;
@@ -146,7 +174,7 @@ export const authApi = {
      * 토큰 갱신
      */
     refresh: async (data: RefreshTokenRequest): Promise<AuthResponse> => {
-        const response = await apiClient.post<AuthResponse>('/api/v1/auth/refresh', data);
+        const response = await apiClient.post<AuthResponse>('/auth/refresh', data);
         return response.data;
     },
 };

@@ -10,7 +10,7 @@ export const memberApi = {
      * 닉네임 사용 가능 여부(유효성 + 중복) 확인
      */
     checkNickname: async (nickname: string): Promise<boolean> => {
-        const response = await apiClient.get<boolean>('/api/v1/members/check-nickname', {
+        const response = await apiClient.get<boolean>('/members/check-nickname', {
             params: { nickname },
         });
         return response.data;
@@ -20,21 +20,21 @@ export const memberApi = {
      * 내 닉네임 변경
      */
     updateMyNickname: async (data: UpdateMyNicknameRequest): Promise<void> => {
-        await apiClient.patch('/api/v1/members/me/nickname', data);
+        await apiClient.patch('/members/me/nickname', data);
     },
 
     /**
      * 온보딩 투어 완료
      */
     completeOnboarding: async (): Promise<void> => {
-        await apiClient.patch('/api/v1/members/onboarding/complete');
+        await apiClient.patch('/members/onboarding/complete');
     },
 
     /**
      * 온보딩 투어 리셋 (Help 버튼으로 재시작 시 사용)
      */
     resetOnboarding: async (): Promise<void> => {
-        await apiClient.patch('/api/v1/members/onboarding/reset');
+        await apiClient.patch('/members/onboarding/reset');
     },
 };
 
