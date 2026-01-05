@@ -19,13 +19,13 @@ export const Layout: FC<LayoutProps> = ({ children }) => {
 
     // 페이지 변경 시 스크롤을 맨 위로 이동
     useEffect(() => {
-        mainRef.current?.scrollTo({ top: 0 });
+        window.scrollTo({ top: 0 });
     }, [location.pathname]);
 
     return (
-        <div className="h-full bg-gray-50 dark:bg-gray-900 flex flex-col">
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
             <Header />
-            <main ref={mainRef} className="flex-1 w-full overflow-y-auto">
+            <main ref={mainRef} className="flex-1 w-full">
                 {children}
             </main>
             <Footer />
