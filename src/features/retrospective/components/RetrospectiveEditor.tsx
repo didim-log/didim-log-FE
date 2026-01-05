@@ -6,6 +6,11 @@ import { useState } from 'react';
 import type { FC } from 'react';
 import type { RetrospectiveRequest, ProblemResult } from '../../../types/api/retrospective.types';
 import { TagInput } from '../../../components/ui/TagInput';
+import { Info } from 'lucide-react';
+
+const MAX_CONTENT_LENGTH = 5000;
+const AI_ANALYSIS_LIMIT = 2000;
+const RETENTION_DAYS = 180;
 
 interface RetrospectiveEditorProps {
     initialContent?: string;
@@ -54,8 +59,8 @@ export const RetrospectiveEditor: FC<RetrospectiveEditorProps> = ({
             return;
         }
 
-        if (content.trim().length > 2000) {
-            setErrors({ content: '회고 내용은 2000자 이하여야 합니다.' });
+        if (content.trim().length > MAX_CONTENT_LENGTH) {
+            setErrors({ content: `회고 내용은 ${MAX_CONTENT_LENGTH}자 이하여야 합니다.` });
             return;
         }
 
@@ -142,22 +147,52 @@ export const RetrospectiveEditor: FC<RetrospectiveEditorProps> = ({
                         setContent(e.target.value);
                         onContentChange?.(e.target.value);
                     }}
-                    placeholder="회고 내용을 작성해주세요 (10자 이상, 최대 2000자)"
+                    placeholder={`회고 내용을 작성해주세요 (10자 이상, 최대 ${MAX_CONTENT_LENGTH}자)`}
                     rows={20}
                     minLength={10}
-                    maxLength={2000}
+                    maxLength={MAX_CONTENT_LENGTH}
                     className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm resize-y min-h-[500px]"
                 />
-                <p className={`mt-2 text-xs ${content.length > 2000 ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}`}>
-                    {content.length}/2000자 {content.length < 10 && '(최소 10자 필요)'} {content.length > 2000 && '(최대 2000자 초과)'}
-                </p>
+                <div className="mt-2 space-y-2">
+                    <p
+                        className={`text-xs ${
+                            content.length > MAX_CONTENT_LENGTH
+                                ? 'text-red-600 dark:text-red-400'
+                                : 'text-gray-500 dark:text-gray-400'
+                        }`}
+                    >
+                        {content.length}/{MAX_CONTENT_LENGTH}자 {content.length < 10 && '(최소 10자 필요)'}{' '}
+                        {content.length > MAX_CONTENT_LENGTH && `(최대 ${MAX_CONTENT_LENGTH}자 초과)`}
+                    </p>
+                    {content.length > AI_ANALYSIS_LIMIT && content.length <= MAX_CONTENT_LENGTH && (
+                        <div className="flex items-start gap-2 p-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                            <Info className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                            <p className="text-xs text-blue-800 dark:text-blue-200 leading-relaxed">
+                                💡 작성 내용은 {MAX_CONTENT_LENGTH}자까지 저장되지만, AI 분석은 앞부분{' '}
+                                {AI_ANALYSIS_LIMIT}자까지만 반영됩니다. 핵심 내용은 앞부분에 작성해주세요.
+                            </p>
+                        </div>
+                    )}
+                    <div className="flex items-start gap-2 p-2 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg">
+                        <Info className="w-4 h-4 text-gray-500 dark:text-gray-400 flex-shrink-0 mt-0.5" />
+                        <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+                            최대 {MAX_CONTENT_LENGTH}자까지 작성할 수 있으며, 작성하신 회고는 {RETENTION_DAYS}일
+                            뒤 자동 삭제됩니다. 영구 소장이 필요한 내용은 별도로 백업해주세요.
+                        </p>
+                    </div>
+                </div>
                 {errors.content && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.content}</p>}
             </div>
 
             <div className="flex justify-end">
                 <button
                     type="submit"
-                    disabled={isLoading || content.trim().length < 10 || content.trim().length > 2000 || !summary.trim()}
+                    disabled={
+                        isLoading ||
+                        content.trim().length < 10 ||
+                        content.trim().length > MAX_CONTENT_LENGTH ||
+                        !summary.trim()
+                    }
                     className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors"
                 >
                     {isLoading ? '저장 중...' : '저장'}

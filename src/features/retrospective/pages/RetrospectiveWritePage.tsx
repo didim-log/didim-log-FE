@@ -324,6 +324,7 @@ export const RetrospectiveWritePage: FC = () => {
                     {!isLoadingTemplate && (
                         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 border border-gray-200 dark:border-gray-700">
                             <RetrospectiveEditor
+                                key={`${retrospectiveId ?? 'new'}:${problemId}`}
                                 initialContent={content || template}
                                 initialSummary={summary}
                                 initialResultType={(() => {
