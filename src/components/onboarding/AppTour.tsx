@@ -252,7 +252,7 @@ const AppTour = () => {
       if (intervalId) clearInterval(intervalId);
       if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [stepIndex, run, forceHide, isNavigating, steps, location.pathname]);
+  }, [stepIndex, run, forceHide, isNavigating, steps, location.pathname, navigate]);
 
 
   // 🎮 5. Event Handler

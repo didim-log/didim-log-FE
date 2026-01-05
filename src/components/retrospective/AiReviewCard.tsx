@@ -128,10 +128,14 @@ export const AiReviewCard: FC<AiReviewCardProps> = ({
 
     // logId가 있으면 currentLogId에만 설정 (자동 조회하지 않음)
     useEffect(() => {
-        if (logId && !currentLogId) {
-            setCurrentLogId(logId);
+        if (!logId) {
+            return;
         }
-    }, [logId]);
+        if (currentLogId) {
+            return;
+        }
+        setCurrentLogId(logId);
+    }, [logId, currentLogId]);
 
     // AI 리뷰 요청 (logId가 있으면 바로 조회, 없으면 로그 생성 후 조회)
     const handleRequestAiReview = async () => {

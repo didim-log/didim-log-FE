@@ -2,7 +2,7 @@
  * 회고 작성 페이지
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { FC } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useCreateRetrospective, useUpdateRetrospective, useStaticTemplate } from '../../../hooks/api/useRetrospective';
@@ -47,7 +47,7 @@ export const RetrospectiveWritePage: FC = () => {
     // 문제 상세 정보 조회
     const { data: problem, isLoading: isProblemLoading } = useProblemDetail(problemId);
 
-    const loadTemplate = async (pid: string, code: string, success: boolean) => {
+    const loadTemplate = useCallback(async (pid: string, code: string, success: boolean) => {
         if (hasLoadedTemplate) {
             return; // 이미 로드했으면 중복 호출 방지
         }
@@ -71,7 +71,7 @@ export const RetrospectiveWritePage: FC = () => {
         } finally {
             setIsLoadingTemplate(false);
         }
-    };
+    }, [hasLoadedTemplate, staticTemplateMutation]);
 
     // 온보딩 모드: 자동으로 폼 열기 (AI 버튼이 보이도록)
     useEffect(() => {
@@ -79,7 +79,7 @@ export const RetrospectiveWritePage: FC = () => {
             // 온보딩 모드이고 문제 ID가 있으면 자동으로 SUCCESS 상태로 설정
             setIsSuccess(true);
         }
-    }, [isOnboarding, problemId]);
+    }, [isOnboarding, isSuccess, problemId]);
 
     useEffect(() => {
         // location.state에서 전달된 데이터 확인
@@ -142,7 +142,7 @@ export const RetrospectiveWritePage: FC = () => {
                 setHasLoadedTemplate(true);
             }
         }
-    }, [location.state]);
+    }, [location.state, loadTemplate]);
 
 
     const handleCopyMarkdown = async () => {

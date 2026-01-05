@@ -32,15 +32,15 @@ export const NoticeManagement: FC = () => {
     const [editPinned, setEditPinned] = useState(false);
     const [copiedId, setCopiedId] = useState<string | null>(null);
 
-    const notices = data?.content ?? [];
     const sortedContent = useMemo(() => {
+        const notices = data?.content ?? [];
         if (notices.length === 0) {
             return [];
         }
         // 서버가 이미 pinned 우선 정렬을 보장한다고 가정하되,
         // 프론트에서도 pinned를 상단으로 한번 더 안정화합니다.
         return [...notices].sort((a, b) => Number(b.isPinned) - Number(a.isPinned));
-    }, [notices]);
+    }, [data?.content]);
 
     const beginEdit = (notice: NoticeResponse) => {
         setEditingId(notice.id);
