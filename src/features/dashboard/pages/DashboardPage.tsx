@@ -2,7 +2,7 @@
  * 대시보드 페이지
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { FC } from 'react';
 import { useDashboard } from '../../../hooks/api/useDashboard';
 import { NoticeWidget } from '../components/NoticeWidget';
@@ -15,6 +15,7 @@ import { Spinner } from '../../../components/ui/Spinner';
 import { useAuthStore } from '../../../stores/auth.store';
 import { Layout } from '../../../components/layout/Layout';
 import { useSyncBojProfile } from '../../../hooks/api/useStudent';
+import { Menu, X } from 'lucide-react';
 
 const LAST_SYNC_KEY = 'boj_last_sync_time';
 const SYNC_INTERVAL_MS = 60 * 60 * 1000; // 1시간
@@ -24,6 +25,7 @@ export const DashboardPage: FC = () => {
     const { setUser, user } = useAuthStore();
     const syncMutation = useSyncBojProfile();
     const hasAutoSynced = useRef(false);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     // 대시보드 데이터를 받아올 때 primaryLanguage를 전역 상태에 업데이트
     useEffect(() => {
@@ -115,6 +117,18 @@ export const DashboardPage: FC = () => {
         <Layout>
             <div className="bg-gray-50 dark:bg-gray-900 py-4 px-4">
                 <div className="max-w-7xl mx-auto space-y-4">
+                    {/* 모바일: 우측 위젯(사이드바) Drawer 토글 */}
+                    <div className="flex items-center justify-end md:hidden">
+                        <button
+                            type="button"
+                            onClick={() => setIsSidebarOpen(true)}
+                            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                        >
+                            <Menu className="w-4 h-4" />
+                            위젯
+                        </button>
+                    </div>
+
                     {/* 메인 컨텐츠 그리드 - 2:1 비율 레이아웃 */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                         {/* 좌측 컬럼 (메인 콘텐츠) - lg:col-span-2 */}
@@ -131,7 +145,7 @@ export const DashboardPage: FC = () => {
                         </div>
 
                         {/* 우측 컬럼 (사이드바) - lg:col-span-1 */}
-                        <div className="space-y-4">
+                        <div className="space-y-4 hidden md:block">
                             {/* 공지사항 위젯 */}
                             <div id="notice-section">
                                 <NoticeWidget />
@@ -157,6 +171,35 @@ export const DashboardPage: FC = () => {
                             )}
                         </div>
                     </div>
+
+                    {/* 모바일 사이드바 Drawer */}
+                    {isSidebarOpen && (
+                        <>
+                            <div
+                                className="fixed inset-0 bg-black/50 z-40 md:hidden"
+                                onClick={() => setIsSidebarOpen(false)}
+                            />
+                            <div className="fixed inset-y-0 right-0 z-50 w-[85vw] max-w-sm bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 shadow-xl md:hidden overflow-y-auto">
+                                <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+                                    <p className="font-semibold text-gray-900 dark:text-white">위젯</p>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsSidebarOpen(false)}
+                                        className="p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                                        aria-label="닫기"
+                                    >
+                                        <X className="w-5 h-5" />
+                                    </button>
+                                </div>
+                                <div className="p-4 space-y-4">
+                                    <NoticeWidget />
+                                    <StatisticsPreview />
+                                    <TodaySolvedList problems={dashboard.todaySolvedProblems ?? []} />
+                                    {dashboard.quote && <QuoteCard quote={dashboard.quote} />}
+                                </div>
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
         </Layout>

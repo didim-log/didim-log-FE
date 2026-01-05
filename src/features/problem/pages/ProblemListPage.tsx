@@ -126,8 +126,8 @@ export const ProblemListPage: FC = () => {
                                 />
                             </div>
                         </form>
-                        <div className="flex items-center gap-4">
-                            <div className="w-32">
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                            <div className="w-full sm:w-32">
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                     개수
                                 </label>
@@ -172,7 +172,7 @@ export const ProblemListPage: FC = () => {
                                     variant="select"
                                 />
                             </div>
-                            <div className="flex items-center justify-end min-w-[140px]">
+                            <div className="flex items-center justify-start sm:justify-end">
                                 <OnlyKoreanToggle
                                     value={onlyKorean}
                                     onChange={(value) => setOnlyKorean(value)}
