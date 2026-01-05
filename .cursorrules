@@ -27,7 +27,6 @@
 3. **Finalization**
 
    - 사용자가 승인하면, `DOCS/COMMIT_CONVENTION.md` 규칙에 맞춰 커밋 메시지를 생성하세요.
-   - `TODO.md`를 업데이트하세요.
 
 # Tech Stack
 
