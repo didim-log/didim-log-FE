@@ -65,6 +65,7 @@ export const StudyPage: FC = () => {
     const [isSubmittingSuccess, setIsSubmittingSuccess] = useState(false);
     const [isSubmittingFail, setIsSubmittingFail] = useState(false);
     const [isSubmitted, setIsSubmitted] = useState(false); // 제출 완료 여부
+    const [actionError, setActionError] = useState<string | null>(null);
 
     // 사용자의 주 언어를 스토어에서 가져와서 언어 선택 초기값으로 적용
     useEffect(() => {
@@ -84,6 +85,14 @@ export const StudyPage: FC = () => {
 
     const handleTimeUpdate = (seconds: number) => {
         setTimeTaken(seconds);
+        if (seconds > 0) {
+            setActionError(null);
+        }
+    };
+
+    const handleCodeChange = (nextCode: string) => {
+        setCode(nextCode);
+        setActionError(null);
     };
 
     const handleToggleTimer = () => {
@@ -106,13 +115,15 @@ export const StudyPage: FC = () => {
 
         // 코드가 비어있으면 제출 불가
         if (!code || code.trim().length === 0) {
-            alert('코드를 입력해주세요.');
+            setActionError('코드를 입력해주세요.');
             return;
         }
 
         // 타이머가 0이면 제출 불가
         if (timeTaken === 0) {
-            alert('타이머가 0초입니다. 페이지를 새로고침하여 타이머를 시작한 후 다시 시도해주세요.');
+            setActionError(
+                '타이머가 0초입니다. 페이지를 새로고침하여 타이머를 시작한 후 다시 시도해주세요.'
+            );
             return;
         }
 
@@ -135,6 +146,7 @@ export const StudyPage: FC = () => {
             setSubmitResult(result);
             setShowResult(true);
             setIsSubmitted(true); // 제출 완료 표시
+            setActionError(null);
             
             // 온보딩 Phase 완료 처리
             completePhase('study');
@@ -155,7 +167,9 @@ export const StudyPage: FC = () => {
 
         // 타이머가 0이면 회고 작성 불가
         if (timeTaken === 0) {
-            alert('타이머가 0초입니다. 페이지를 새로고침하여 타이머를 시작한 후 다시 시도해주세요.');
+            setActionError(
+                '타이머가 0초입니다. 페이지를 새로고침하여 타이머를 시작한 후 다시 시도해주세요.'
+            );
             return;
         }
 
@@ -353,32 +367,39 @@ export const StudyPage: FC = () => {
 
                         {/* Body Section - 코드 에디터 */}
                         <div className="p-4">
-                            <CodeEditor value={code} onChange={setCode} language={language} />
+                            <CodeEditor value={code} onChange={handleCodeChange} language={language} />
                         </div>
 
                         {/* Footer Section - 액션 버튼 */}
-                        <div className="tour-submit-buttons p-4 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3">
-                            {/* 실패 제출 (Outline/Ghost) */}
-                            <Button
-                                onClick={() => handleSubmit(false)}
-                                variant="outline"
-                                size="lg"
-                                isLoading={isSubmittingFail}
-                                disabled={isSubmitted || isSubmittingSuccess || isSubmittingFail}
-                                className="text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
-                            >
-                                {isSubmitted ? '제출 완료' : '실패로 제출'}
-                            </Button>
-                            {/* 성공 제출 (Primary Solid) */}
-                            <Button
-                                onClick={() => handleSubmit(true)}
-                                variant="primary"
-                                size="lg"
-                                isLoading={isSubmittingSuccess}
-                                disabled={isSubmitted || isSubmittingSuccess || isSubmittingFail}
-                            >
-                                {isSubmitted ? '제출 완료' : '성공으로 제출'}
-                            </Button>
+                        <div className="tour-submit-buttons p-4 border-t border-gray-100 dark:border-gray-700 flex flex-col gap-2">
+                            {actionError && (
+                                <p className="text-xs text-red-600 dark:text-red-400">
+                                    {actionError}
+                                </p>
+                            )}
+                            <div className="flex justify-end gap-3">
+                                {/* 실패 제출 (Outline/Ghost) */}
+                                <Button
+                                    onClick={() => handleSubmit(false)}
+                                    variant="outline"
+                                    size="lg"
+                                    isLoading={isSubmittingFail}
+                                    disabled={isSubmitted || isSubmittingSuccess || isSubmittingFail}
+                                    className="text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
+                                >
+                                    {isSubmitted ? '제출 완료' : '실패로 제출'}
+                                </Button>
+                                {/* 성공 제출 (Primary Solid) */}
+                                <Button
+                                    onClick={() => handleSubmit(true)}
+                                    variant="primary"
+                                    size="lg"
+                                    isLoading={isSubmittingSuccess}
+                                    disabled={isSubmitted || isSubmittingSuccess || isSubmittingFail}
+                                >
+                                    {isSubmitted ? '제출 완료' : '성공으로 제출'}
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 </div>
