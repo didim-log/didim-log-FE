@@ -8,11 +8,13 @@ import { useAdminQuotes, useCreateQuote, useDeleteQuote } from '../../../hooks/a
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { Spinner } from '../../../components/ui/Spinner';
+import { toast } from 'sonner';
 
 export const QuoteManagement: FC = () => {
     const [page, setPage] = useState(1);
     const [content, setContent] = useState('');
     const [author, setAuthor] = useState('');
+    const [errors, setErrors] = useState<{ content?: string; author?: string }>({});
 
     const { data, isLoading, error } = useAdminQuotes({ page, size: 20 });
     const createMutation = useCreateQuote();
@@ -20,8 +22,12 @@ export const QuoteManagement: FC = () => {
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!content.trim() || !author.trim()) {
-            alert('명언 내용과 저자명을 입력해주세요.');
+        if (!content.trim()) {
+            setErrors({ content: '명언 내용을 입력해주세요.' });
+            return;
+        }
+        if (!author.trim()) {
+            setErrors({ author: '저자명을 입력해주세요.' });
             return;
         }
 
@@ -29,6 +35,8 @@ export const QuoteManagement: FC = () => {
             await createMutation.mutateAsync({ content: content.trim(), author: author.trim() });
             setContent('');
             setAuthor('');
+            setErrors({});
+            toast.success('명언이 추가되었습니다.');
         } catch {
             // Error is handled by React Query mutation
         }
@@ -72,17 +80,25 @@ export const QuoteManagement: FC = () => {
                         label="명언 내용"
                         type="text"
                         value={content}
-                        onChange={(e) => setContent(e.target.value)}
+                        onChange={(e) => {
+                            setContent(e.target.value);
+                            setErrors((prev) => ({ ...prev, content: undefined }));
+                        }}
                         placeholder="명언 내용을 입력하세요"
                         required
+                        error={errors.content}
                     />
                     <Input
                         label="저자명"
                         type="text"
                         value={author}
-                        onChange={(e) => setAuthor(e.target.value)}
+                        onChange={(e) => {
+                            setAuthor(e.target.value);
+                            setErrors((prev) => ({ ...prev, author: undefined }));
+                        }}
                         placeholder="저자명을 입력하세요"
                         required
+                        error={errors.author}
                     />
                     <Button type="submit" variant="primary" isLoading={createMutation.isPending}>
                         추가

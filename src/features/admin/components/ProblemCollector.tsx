@@ -9,10 +9,12 @@ import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { Spinner } from '../../../components/ui/Spinner';
 import { BookOpen, Minus, Maximize } from 'lucide-react';
+import { toast } from 'sonner';
 
 export const ProblemCollector: FC = () => {
     const [start, setStart] = useState('');
     const [end, setEnd] = useState('');
+    const [errors, setErrors] = useState<{ start?: string; end?: string }>({});
 
     const collectMetadataMutation = useCollectMetadata();
     const collectDetailsMutation = useCollectDetails();
@@ -23,7 +25,10 @@ export const ProblemCollector: FC = () => {
         e.preventDefault();
         const resolvedStart = start || suggestedStart;
         if (!resolvedStart || !end) {
-            alert('시작 문제 ID와 종료 문제 ID를 입력해주세요.');
+            setErrors({
+                start: resolvedStart ? undefined : '시작 문제 ID를 입력해주세요.',
+                end: end ? undefined : '종료 문제 ID를 입력해주세요.',
+            });
             return;
         }
 
@@ -31,13 +36,14 @@ export const ProblemCollector: FC = () => {
         const endNum = Number(end);
 
         if (isNaN(startNum) || isNaN(endNum) || startNum < 1 || endNum < 1 || startNum > endNum) {
-            alert('유효한 문제 ID 범위를 입력해주세요.');
+            setErrors({ start: '유효한 범위를 입력해주세요.', end: '유효한 범위를 입력해주세요.' });
             return;
         }
 
         try {
             await collectMetadataMutation.mutateAsync({ start: startNum, end: endNum });
-            alert('문제 메타데이터 수집이 완료되었습니다.');
+            toast.success('문제 메타데이터 수집이 완료되었습니다.');
+            setErrors({});
             // 통계 갱신
             refetchStats();
             // 최대 ID 업데이트 후 자동으로 다음 시작 ID 설정
@@ -46,7 +52,7 @@ export const ProblemCollector: FC = () => {
             }
             setEnd('');
         } catch {
-            alert('수집에 실패했습니다.');
+            toast.error('수집에 실패했습니다.');
         }
     };
 
@@ -57,9 +63,9 @@ export const ProblemCollector: FC = () => {
 
         try {
             await collectDetailsMutation.mutateAsync();
-            alert('문제 상세 정보 크롤링이 완료되었습니다.');
+            toast.success('문제 상세 정보 크롤링이 완료되었습니다.');
         } catch {
-            alert('크롤링에 실패했습니다.');
+            toast.error('크롤링에 실패했습니다.');
         }
     };
 
@@ -120,19 +126,27 @@ export const ProblemCollector: FC = () => {
                             label="시작 문제 ID"
                             type="number"
                             value={start}
-                            onChange={(e) => setStart(e.target.value)}
+                            onChange={(e) => {
+                                setStart(e.target.value);
+                                setErrors((prev) => ({ ...prev, start: undefined }));
+                            }}
                             placeholder={suggestedStart || '예: 1000'}
                             min={1}
                             required
+                            error={errors.start}
                         />
                         <Input
                             label="종료 문제 ID"
                             type="number"
                             value={end}
-                            onChange={(e) => setEnd(e.target.value)}
+                            onChange={(e) => {
+                                setEnd(e.target.value);
+                                setErrors((prev) => ({ ...prev, end: undefined }));
+                            }}
                             placeholder="예: 1100"
                             min={1}
                             required
+                            error={errors.end}
                         />
                     </div>
                     <Button type="submit" variant="primary" isLoading={collectMetadataMutation.isPending}>

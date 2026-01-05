@@ -11,8 +11,8 @@ import { Spinner } from '../../../components/ui/Spinner';
 import { useCreateNotice, useDeleteNotice, useNotices, useUpdateNotice } from '../../../hooks/api/useNotice';
 import type { NoticeResponse } from '../../../types/api/notice.types';
 import { formatKST } from '../../../utils/dateUtils';
-import { getErrorMessage } from '../../../types/api/common.types';
 import { toast } from 'sonner';
+import { toastApiError } from '../../../utils/toastApiError';
 
 export const NoticeManagement: FC = () => {
     const [page, setPage] = useState(1);
@@ -25,6 +25,7 @@ export const NoticeManagement: FC = () => {
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
     const [isPinned, setIsPinned] = useState(false);
+    const [createErrors, setCreateErrors] = useState<{ title?: string; content?: string }>({});
 
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editTitle, setEditTitle] = useState('');
@@ -81,8 +82,12 @@ export const NoticeManagement: FC = () => {
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!title.trim() || !content.trim()) {
-            alert('제목과 내용을 모두 입력해주세요.');
+        if (!title.trim()) {
+            setCreateErrors({ title: '제목을 입력해주세요.' });
+            return;
+        }
+        if (!content.trim()) {
+            setCreateErrors({ content: '내용을 입력해주세요.' });
             return;
         }
         try {
@@ -95,12 +100,12 @@ export const NoticeManagement: FC = () => {
             setTitle('');
             setContent('');
             setIsPinned(false);
+            setCreateErrors({});
             // 명시적으로 refetch 호출하여 즉시 업데이트
             await refetch();
+            toast.success('공지가 작성되었습니다.');
         } catch (error: unknown) {
-            // 서버에서 반환한 검증 메시지를 사용자에게 표시
-            const errorMessage = getErrorMessage(error);
-            alert(errorMessage);
+            toastApiError(error, '공지 작성에 실패했습니다.');
         }
     };
 
@@ -153,9 +158,13 @@ export const NoticeManagement: FC = () => {
                         label="제목"
                         type="text"
                         value={title}
-                        onChange={(e) => setTitle(e.target.value)}
+                        onChange={(e) => {
+                            setTitle(e.target.value);
+                            setCreateErrors((prev) => ({ ...prev, title: undefined }));
+                        }}
                         placeholder="제목 (최대 200자)"
                         required
+                        error={createErrors.title}
                     />
 
                     <div>
@@ -164,11 +173,19 @@ export const NoticeManagement: FC = () => {
                         </label>
                         <textarea
                             value={content}
-                            onChange={(e) => setContent(e.target.value)}
+                            onChange={(e) => {
+                                setContent(e.target.value);
+                                setCreateErrors((prev) => ({ ...prev, content: undefined }));
+                            }}
                             className="w-full min-h-[160px] rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             placeholder="내용 (10자 이상, 최대 10000자)"
                             required
                         />
+                        {createErrors.content && (
+                            <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                                {createErrors.content}
+                            </p>
+                        )}
                     </div>
 
                     <div className="flex items-center gap-2">
