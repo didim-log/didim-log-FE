@@ -16,7 +16,7 @@
 
   <img src="https://img.shields.io/badge/Project-DidimLog-0078FF?style=flat-square&logo=github" />
   <img src="https://img.shields.io/badge/Language-TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white" />
-  <img src="https://img.shields.io/badge/Library-React%2019-61DAFB?style=flat-square&logo=react&logoColor=black" />
+  <img src="https://img.shields.io/badge/Library-React%2018-61DAFB?style=flat-square&logo=react&logoColor=black" />
   <img src="https://img.shields.io/badge/Build-Vite-646CFF?style=flat-square&logo=vite&logoColor=white" />
   <img src="https://img.shields.io/badge/Style-Tailwind_CSS-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white" />
 
@@ -49,7 +49,7 @@
 | Category | Technology |
 | --- | --- |
 | Language | TypeScript |
-| Framework | React 19 |
+| Framework | React 18 |
 | Build Tool | Vite (rolldown-vite) |
 | Styling | Tailwind CSS |
 | State | TanStack Query |
