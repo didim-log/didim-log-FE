@@ -8,11 +8,18 @@ import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { validation } from '../../../utils/validation';
 import { Check, X } from 'lucide-react';
+import type { OAuthSignupState } from '@/types/auth/oauth.types';
+import { toast } from 'sonner';
+import {
+    getOAuthSignupEmailViewModel,
+    GITHUB_PRIVATE_EMAIL_TOAST_MESSAGE,
+} from '../utils/oauthSignupEmail';
 
 interface SignupFormStepProps {
     bojId: string;
     onComplete: (data: { email: string; password: string }) => void;
     onBack: () => void;
+    oauthSignupState?: OAuthSignupState | null;
     apiError?: {
         message: string;
         code?: string;
@@ -21,8 +28,16 @@ interface SignupFormStepProps {
     } | null;
 }
 
-export const SignupFormStep: FC<SignupFormStepProps> = ({ bojId, onComplete, onBack, apiError }) => {
-    const [email, setEmail] = useState('');
+export const SignupFormStep: FC<SignupFormStepProps> = ({
+    bojId,
+    onComplete,
+    onBack,
+    oauthSignupState = null,
+    apiError,
+}) => {
+    const oauthEmailViewModel = getOAuthSignupEmailViewModel(oauthSignupState);
+
+    const [email, setEmail] = useState(() => oauthEmailViewModel.email);
     const [password, setPassword] = useState('');
     const [passwordConfirm, setPasswordConfirm] = useState('');
     const [errors, setErrors] = useState<{
@@ -33,6 +48,14 @@ export const SignupFormStep: FC<SignupFormStepProps> = ({ bojId, onComplete, onB
     }>({});
     const [passwordPolicy, setPasswordPolicy] = useState(validation.getPasswordPolicyDetails(''));
     const bojIdInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (!oauthEmailViewModel.shouldShowGithubPrivateEmailToast) {
+            return;
+        }
+
+        toast.message(GITHUB_PRIVATE_EMAIL_TOAST_MESSAGE);
+    }, [oauthEmailViewModel.shouldShowGithubPrivateEmailToast]);
 
     // API 에러 처리
     useEffect(() => {
@@ -150,6 +173,7 @@ export const SignupFormStep: FC<SignupFormStepProps> = ({ bojId, onComplete, onB
                     error={errors.email}
                     placeholder="example@email.com"
                     autoComplete="email"
+                    readOnly={oauthEmailViewModel.isLocked}
                 />
 
                 <div>

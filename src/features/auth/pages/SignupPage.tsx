@@ -14,13 +14,13 @@ import { isApiError } from '../../../types/api/common.types';
 import { ThemeToggle } from '../../../components/common/ThemeToggle';
 import { toastApiError } from '../../../utils/toastApiError';
 import { parseOAuthSignupState } from '../../../types/auth/oauth.types';
-import { SignupFinalizePage } from './SignupFinalizePage';
+import type { SignupRequest } from '../../../types/api/auth.types';
 
 export const SignupPage: FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { setIsNewUser } = useOnboardingStore();
-    const { setToken, setUser } = useAuthStore();
+    const { setTokens, setUser } = useAuthStore();
     const [apiError, setApiError] = useState<{
         message: string;
         code?: string;
@@ -28,15 +28,29 @@ export const SignupPage: FC = () => {
         fieldErrors?: Record<string, string[]>;
     } | null>(null);
 
+    const oauthState = parseOAuthSignupState(location.state);
+
+    const mergeSignupRequest = (params: { bojId: string; email: string; password: string }): SignupRequest => {
+        if (!oauthState) {
+            return params;
+        }
+
+        return {
+            ...params,
+            provider: oauthState.provider,
+            providerId: oauthState.providerId,
+        };
+    };
+
     const handleComplete = async (data: { bojId: string; email: string; password: string }) => {
         setApiError(null); // 새 시도 시 에러 초기화
 
         try {
             setIsNewUser(true);
-            const response = await authApi.signup(data);
+            const response = await authApi.signup(mergeSignupRequest(data));
             
             // 토큰 저장
-            setToken(response.token);
+            setTokens(response.token, response.refreshToken);
 
             // 사용자 정보 저장 (토큰에서 추출)
             const { decodeJwt } = await import('../../../utils/jwt');
@@ -90,11 +104,6 @@ export const SignupPage: FC = () => {
         }
     };
 
-    const oauthState = parseOAuthSignupState(location.state);
-    if (oauthState) {
-        return <SignupFinalizePage />;
-    }
-
     return (
         <div className="relative min-h-screen flex items-center justify-center bg-white dark:bg-gray-900 py-12 px-4">
             <ThemeToggle className="absolute top-4 right-4" />
@@ -109,6 +118,7 @@ export const SignupPage: FC = () => {
                     onComplete={handleComplete}
                     apiError={apiError}
                     onClearApiError={() => setApiError(null)}
+                    oauthSignupState={oauthState}
                 />
             </div>
         </div>

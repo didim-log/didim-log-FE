@@ -8,12 +8,14 @@ import { Check } from 'lucide-react';
 import { TermsStep } from './TermsStep';
 import { BojVerifyStep } from './BojVerifyStep';
 import { SignupFormStep } from './SignupFormStep';
+import type { OAuthSignupState } from '@/types/auth/oauth.types';
 
 type Step = 1 | 2 | 3;
 
 interface SignupWizardProps {
     onComplete: (data: { bojId: string; email: string; password: string }) => void;
     onClearApiError?: () => void;
+    oauthSignupState?: OAuthSignupState | null;
     apiError?: {
         message: string;
         code?: string;
@@ -22,7 +24,12 @@ interface SignupWizardProps {
     } | null;
 }
 
-export const SignupWizard: FC<SignupWizardProps> = ({ onComplete, onClearApiError, apiError }) => {
+export const SignupWizard: FC<SignupWizardProps> = ({
+    onComplete,
+    onClearApiError,
+    oauthSignupState = null,
+    apiError,
+}) => {
     const [currentStep, setCurrentStep] = useState<Step>(1);
     const [bojId, setBojId] = useState('');
 
@@ -120,6 +127,7 @@ export const SignupWizard: FC<SignupWizardProps> = ({ onComplete, onClearApiErro
                     onComplete={handleStep3Complete}
                     onBack={() => setCurrentStep(2)}
                     apiError={apiError}
+                    oauthSignupState={oauthSignupState}
                 />
             )}
         </div>

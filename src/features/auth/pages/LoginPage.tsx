@@ -11,7 +11,7 @@ import { validation } from '../../../utils/validation';
 import { systemApi } from '../../../api/endpoints/system.api';
 import type { SystemStatusResponse } from '../../../types/api/system.types';
 import { ThemeToggle } from '../../../components/common/ThemeToggle';
-import { API_ORIGIN } from '../../../config/env';
+import { SERVER_ROOT } from '../../../config/env';
 
 export const LoginPage: FC = () => {
     const navigate = useNavigate();
@@ -197,7 +197,7 @@ export const LoginPage: FC = () => {
     };
 
     const handleOAuthLogin = (provider: 'google' | 'github' | 'naver') => {
-        window.location.href = `${API_ORIGIN}/oauth2/authorization/${provider}`;
+        window.location.href = `${SERVER_ROOT}/oauth2/authorization/${provider}`;
     };
 
     const formatMaintenanceTime = (startTime: string, endTime: string): string => {
