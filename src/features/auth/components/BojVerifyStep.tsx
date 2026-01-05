@@ -154,8 +154,8 @@ export const BojVerifyStep: FC<BojVerifyStepProps> = ({ onNext, onBack, duplicat
     return (
         <div className="space-y-6">
             <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">BOJ 아이디 인증</h2>
-                <p className="text-gray-600">백준 온라인 저지 아이디의 소유권을 인증합니다.</p>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">BOJ 아이디 인증</h2>
+                <p className="text-gray-600 dark:text-gray-400">백준 온라인 저지 아이디의 소유권을 인증합니다.</p>
             </div>
 
             <div className="space-y-4">

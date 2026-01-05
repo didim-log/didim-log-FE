@@ -7,15 +7,18 @@ import type { FC } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authApi } from '../../../api/endpoints/auth.api';
 import { Button } from '../../../components/ui/Button';
+import { Input } from '../../../components/ui/Input';
 import { validation } from '../../../utils/validation';
 import { toast } from 'sonner';
-import { getErrorMessage } from '../../../types/api/common.types';
+import { isApiErrorWithResponse } from '../../../types/api/common.types';
+import { toastApiError } from '../../../utils/toastApiError';
+import { ThemeToggle } from '../../../components/common/ThemeToggle';
 
 export const FindPasswordPage: FC = () => {
     const navigate = useNavigate();
     const [email, setEmail] = useState('');
     const [bojId, setBojId] = useState('');
-    const [error, setError] = useState<string | null>(null);
+    const [errors, setErrors] = useState<{ email?: string; bojId?: string }>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
 
@@ -23,41 +26,34 @@ export const FindPasswordPage: FC = () => {
         e.preventDefault();
         
         if (!email.trim()) {
-            setError('이메일을 입력해주세요.');
+            setErrors({ email: '이메일을 입력해주세요.' });
             return;
         }
 
         if (!validation.isValidEmail(email.trim())) {
-            setError('올바른 이메일 형식이 아닙니다.');
+            setErrors({ email: '올바른 이메일 형식이 아닙니다.' });
             return;
         }
 
         const bojIdValidation = validation.isValidBojId(bojId.trim());
         if (!bojIdValidation.valid) {
-            setError(bojIdValidation.message || '올바른 BOJ ID 형식이 아닙니다.');
+            setErrors({ bojId: bojIdValidation.message || '올바른 BOJ ID 형식이 아닙니다.' });
             return;
         }
 
         setIsSubmitting(true);
-        setError(null);
+        setErrors({});
 
         try {
             const response = await authApi.findPassword({ email: email.trim(), bojId: bojId.trim() });
             setIsSuccess(true);
             toast.success(response.message || '이메일로 비밀번호 재설정 코드가 전송되었습니다.');
         } catch (err: unknown) {
-            const errorMessage = getErrorMessage(err);
-            // 404 에러인 경우 특정 메시지 표시
-            if (err && typeof err === 'object' && 'response' in err) {
-                const apiError = err as { response?: { status?: number } };
-                if (apiError.response?.status === 404) {
-                    setError('정보를 찾을 수 없습니다.');
-                } else {
-                    setError(errorMessage);
-                }
-            } else {
-                setError(errorMessage || '정보를 찾을 수 없습니다.');
+            if (isApiErrorWithResponse(err) && err.response.status === 404) {
+                setErrors({ bojId: '정보를 찾을 수 없습니다.' });
+                return;
             }
+            toastApiError(err, '비밀번호 재설정 코드 발송에 실패했습니다.');
         } finally {
             setIsSubmitting(false);
         }
@@ -65,7 +61,8 @@ export const FindPasswordPage: FC = () => {
 
     if (isSuccess) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900 py-12 px-4">
+            <div className="relative min-h-screen flex items-center justify-center bg-white dark:bg-gray-900 py-12 px-4">
+                <ThemeToggle className="absolute top-4 right-4" />
                 <div className="max-w-md w-full space-y-8 p-8">
                     <div className="text-center">
                         <h1 className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-2">디딤로그</h1>
@@ -115,7 +112,8 @@ export const FindPasswordPage: FC = () => {
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900 py-12 px-4">
+        <div className="relative min-h-screen flex items-center justify-center bg-white dark:bg-gray-900 py-12 px-4">
+            <ThemeToggle className="absolute top-4 right-4" />
             <div className="max-w-md w-full space-y-8 p-8">
                 <div className="text-center">
                     <h1 className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-2">디딤로그</h1>
@@ -124,71 +122,37 @@ export const FindPasswordPage: FC = () => {
                 </div>
 
                 <form className="space-y-6" onSubmit={handleSubmit}>
-                    <div>
-                        <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            이메일
-                        </label>
-                        <input
-                            id="email"
-                            type="email"
-                            value={email}
-                            onChange={(e) => {
-                                setEmail(e.target.value);
-                                setError(null);
-                            }}
-                            placeholder="example@email.com"
-                            disabled={isSubmitting}
-                            className={`w-full px-4 py-3 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 transition-all ${
-                                error
-                                    ? 'border-red-500 dark:border-red-500 focus:ring-red-500 dark:focus:ring-red-500'
-                                    : 'border-gray-300 dark:border-gray-600 focus:ring-blue-500 dark:focus:ring-blue-400'
-                            } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            autoComplete="email"
-                        />
-                    </div>
+                    <Input
+                        label="이메일"
+                        type="email"
+                        value={email}
+                        onChange={(e) => {
+                            setEmail(e.target.value);
+                            setErrors((prev) => ({ ...prev, email: undefined }));
+                        }}
+                        placeholder="example@email.com"
+                        disabled={isSubmitting}
+                        autoComplete="email"
+                        error={errors.email}
+                    />
 
-                    <div>
-                        <label htmlFor="bojId" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            BOJ ID
-                        </label>
-                        <input
-                            id="bojId"
-                            type="text"
-                            value={bojId}
-                            onChange={(e) => {
-                                const value = e.target.value;
-                                if (value === '' || /^[a-zA-Z0-9_]*$/.test(value)) {
-                                    setBojId(value);
-                                }
-                                setError(null);
-                            }}
-                            placeholder="백준 온라인 저지 ID"
-                            disabled={isSubmitting}
-                            className={`w-full px-4 py-3 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 transition-all ${
-                                error
-                                    ? 'border-red-500 dark:border-red-500 focus:ring-red-500 dark:focus:ring-red-500'
-                                    : 'border-gray-300 dark:border-gray-600 focus:ring-blue-500 dark:focus:ring-blue-400'
-                            } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            autoComplete="username"
-                        />
-                    </div>
-
-                    {error && (
-                        <div className="p-4 bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 dark:border-red-500 rounded-lg">
-                            <div className="flex items-start gap-2">
-                                <svg className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                                    <path
-                                        fillRule="evenodd"
-                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                                        clipRule="evenodd"
-                                    />
-                                </svg>
-                                <p className="text-sm text-red-600 dark:text-red-400 font-medium">
-                                    {error}
-                                </p>
-                            </div>
-                        </div>
-                    )}
+                    <Input
+                        label="BOJ ID"
+                        type="text"
+                        value={bojId}
+                        onChange={(e) => {
+                            const value = e.target.value;
+                            if (value === '' || /^[a-zA-Z0-9_]*$/.test(value)) {
+                                setBojId(value);
+                            }
+                            setErrors((prev) => ({ ...prev, bojId: undefined }));
+                        }}
+                        placeholder="백준 온라인 저지 ID"
+                        disabled={isSubmitting}
+                        autoComplete="username"
+                        helperText="영문, 숫자, 언더스코어(_)만 사용 가능"
+                        error={errors.bojId}
+                    />
 
                     <Button
                         type="submit"

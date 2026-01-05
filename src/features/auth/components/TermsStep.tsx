@@ -12,10 +12,11 @@ interface TermsStepProps {
 
 export const TermsStep: FC<TermsStepProps> = ({ onNext }) => {
     const [isAgreed, setIsAgreed] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const handleNext = () => {
         if (!isAgreed) {
-            alert('약관에 동의해주세요.');
+            setError('약관에 동의해주세요.');
             return;
         }
         onNext(true);
@@ -24,13 +25,13 @@ export const TermsStep: FC<TermsStepProps> = ({ onNext }) => {
     return (
         <div className="space-y-6">
             <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">약관 동의</h2>
-                <p className="text-gray-600">서비스 이용을 위해 약관에 동의해주세요.</p>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">약관 동의</h2>
+                <p className="text-gray-600 dark:text-gray-400">서비스 이용을 위해 약관에 동의해주세요.</p>
             </div>
 
-            <div className="border rounded-lg p-4 max-h-96 overflow-y-auto">
-                <h3 className="font-semibold mb-2">서비스 이용약관</h3>
-                <p className="text-sm text-gray-700 whitespace-pre-line">
+            <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 max-h-96 overflow-y-auto bg-gray-50 dark:bg-gray-800">
+                <h3 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">서비스 이용약관</h3>
+                <p className="text-sm text-gray-700 dark:text-gray-200 whitespace-pre-line">
                     {`제1조 (목적)
 이 약관은 디딤로그(이하 "회사")가 제공하는 서비스의 이용과 관련하여 회사와 이용자 간의 권리, 의무 및 책임사항을 규정함을 목적으로 합니다.
 
@@ -67,16 +68,20 @@ export const TermsStep: FC<TermsStepProps> = ({ onNext }) => {
                     type="checkbox"
                     id="terms-agree"
                     checked={isAgreed}
-                    onChange={(e) => setIsAgreed(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    onChange={(e) => {
+                        setIsAgreed(e.target.checked);
+                        setError(null);
+                    }}
+                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
                 />
-                <label htmlFor="terms-agree" className="ml-2 text-sm text-gray-700">
+                <label htmlFor="terms-agree" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
                     약관에 동의합니다 (필수)
                 </label>
             </div>
+            {error && <p className="text-xs text-red-600 dark:text-red-400">{error}</p>}
 
             <div className="flex justify-end">
-                <Button onClick={handleNext} variant="primary" disabled={!isAgreed}>
+                <Button onClick={handleNext} variant="primary">
                     다음
                 </Button>
             </div>

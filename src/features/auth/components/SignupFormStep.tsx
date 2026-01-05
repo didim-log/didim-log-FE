@@ -41,20 +41,27 @@ export const SignupFormStep: FC<SignupFormStepProps> = ({ bojId, onComplete, onB
                 // BOJ ID 중복 에러
                 setErrors({ bojId: apiError.message });
                 bojIdInputRef.current?.focus();
-            } else if (apiError.fieldErrors) {
-                // 필드별 에러
-                const fieldErrors: typeof errors = {};
-                if (apiError.fieldErrors.email) {
-                    fieldErrors.email = apiError.fieldErrors.email.join(', ');
-                }
-                if (apiError.fieldErrors.password) {
-                    fieldErrors.password = apiError.fieldErrors.password.join(', ');
-                }
-                if (apiError.fieldErrors.bojId) {
-                    fieldErrors.bojId = apiError.fieldErrors.bojId.join(', ');
-                }
-                setErrors(fieldErrors);
+                return;
             }
+            if (apiError.status === 404) {
+                setErrors({ bojId: apiError.message });
+                return;
+            }
+            if (!apiError.fieldErrors) {
+                return;
+            }
+            // 필드별 에러
+            const fieldErrors: typeof errors = {};
+            if (apiError.fieldErrors.email) {
+                fieldErrors.email = apiError.fieldErrors.email.join(', ');
+            }
+            if (apiError.fieldErrors.password) {
+                fieldErrors.password = apiError.fieldErrors.password.join(', ');
+            }
+            if (apiError.fieldErrors.bojId) {
+                fieldErrors.bojId = apiError.fieldErrors.bojId.join(', ');
+            }
+            setErrors(fieldErrors);
         }
     }, [apiError]);
 

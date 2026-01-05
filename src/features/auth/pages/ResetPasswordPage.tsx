@@ -7,16 +7,22 @@ import type { FC } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authApi } from '../../../api/endpoints/auth.api';
 import { Button } from '../../../components/ui/Button';
+import { Input } from '../../../components/ui/Input';
 import { validation } from '../../../utils/validation';
 import { toast } from 'sonner';
-import { getErrorMessage } from '../../../types/api/common.types';
+import { toastApiError } from '../../../utils/toastApiError';
+import { ThemeToggle } from '../../../components/common/ThemeToggle';
 
 export const ResetPasswordPage: FC = () => {
     const navigate = useNavigate();
     const [resetCode, setResetCode] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-    const [error, setError] = useState<string | null>(null);
+    const [errors, setErrors] = useState<{
+        resetCode?: string;
+        newPassword?: string;
+        confirmPassword?: string;
+    }>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
 
@@ -24,28 +30,28 @@ export const ResetPasswordPage: FC = () => {
         e.preventDefault();
         
         if (!resetCode.trim()) {
-            setError('재설정 코드를 입력해주세요.');
+            setErrors({ resetCode: '재설정 코드를 입력해주세요.' });
             return;
         }
 
         if (!newPassword.trim()) {
-            setError('새 비밀번호를 입력해주세요.');
+            setErrors({ newPassword: '새 비밀번호를 입력해주세요.' });
             return;
         }
 
         const passwordValidation = validation.isValidPassword(newPassword);
         if (!passwordValidation.valid) {
-            setError(passwordValidation.message || '비밀번호 형식이 올바르지 않습니다.');
+            setErrors({ newPassword: passwordValidation.message || '비밀번호 형식이 올바르지 않습니다.' });
             return;
         }
 
         if (newPassword !== confirmPassword) {
-            setError('비밀번호가 일치하지 않습니다.');
+            setErrors({ confirmPassword: '비밀번호가 일치하지 않습니다.' });
             return;
         }
 
         setIsSubmitting(true);
-        setError(null);
+        setErrors({});
 
         try {
             await authApi.resetPassword({
@@ -55,8 +61,7 @@ export const ResetPasswordPage: FC = () => {
             setIsSuccess(true);
             toast.success('비밀번호가 성공적으로 변경되었습니다.');
         } catch (err: unknown) {
-            const errorMessage = getErrorMessage(err);
-            setError(errorMessage);
+            toastApiError(err, '비밀번호 변경에 실패했습니다.');
         } finally {
             setIsSubmitting(false);
         }
@@ -64,7 +69,8 @@ export const ResetPasswordPage: FC = () => {
 
     if (isSuccess) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900 py-12 px-4">
+            <div className="relative min-h-screen flex items-center justify-center bg-white dark:bg-gray-900 py-12 px-4">
+                <ThemeToggle className="absolute top-4 right-4" />
                 <div className="max-w-md w-full space-y-8 p-8">
                     <div className="text-center">
                         <h1 className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-2">디딤로그</h1>
@@ -101,7 +107,8 @@ export const ResetPasswordPage: FC = () => {
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900 py-12 px-4">
+        <div className="relative min-h-screen flex items-center justify-center bg-white dark:bg-gray-900 py-12 px-4">
+            <ThemeToggle className="absolute top-4 right-4" />
             <div className="max-w-md w-full space-y-8 p-8">
                 <div className="text-center">
                     <h1 className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-2">디딤로그</h1>
@@ -110,96 +117,48 @@ export const ResetPasswordPage: FC = () => {
                 </div>
 
                 <form className="space-y-6" onSubmit={handleSubmit}>
-                    <div>
-                        <label htmlFor="resetCode" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            재설정 코드
-                        </label>
-                        <input
-                            id="resetCode"
-                            type="text"
-                            value={resetCode}
-                            onChange={(e) => {
-                                setResetCode(e.target.value);
-                                setError(null);
-                            }}
-                            placeholder="이메일로 받은 8자리 코드"
-                            disabled={isSubmitting}
-                            className={`w-full px-4 py-3 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 transition-all ${
-                                error
-                                    ? 'border-red-500 dark:border-red-500 focus:ring-red-500 dark:focus:ring-red-500'
-                                    : 'border-gray-300 dark:border-gray-600 focus:ring-blue-500 dark:focus:ring-blue-400'
-                            } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            autoComplete="off"
-                        />
-                    </div>
+                    <Input
+                        label="재설정 코드"
+                        type="text"
+                        value={resetCode}
+                        onChange={(e) => {
+                            setResetCode(e.target.value);
+                            setErrors((prev) => ({ ...prev, resetCode: undefined }));
+                        }}
+                        placeholder="이메일로 받은 8자리 코드"
+                        disabled={isSubmitting}
+                        autoComplete="off"
+                        error={errors.resetCode}
+                    />
 
-                    <div>
-                        <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            새 비밀번호
-                        </label>
-                        <input
-                            id="newPassword"
-                            type="password"
-                            value={newPassword}
-                            onChange={(e) => {
-                                setNewPassword(e.target.value);
-                                setError(null);
-                            }}
-                            placeholder="새 비밀번호를 입력하세요"
-                            disabled={isSubmitting}
-                            className={`w-full px-4 py-3 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 transition-all ${
-                                error
-                                    ? 'border-red-500 dark:border-red-500 focus:ring-red-500 dark:focus:ring-red-500'
-                                    : 'border-gray-300 dark:border-gray-600 focus:ring-blue-500 dark:focus:ring-blue-400'
-                            } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            autoComplete="new-password"
-                        />
-                        {!error && (
-                            <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
-                                영문, 숫자, 특수문자 중 2종류 이상 조합 시 최소 10자, 3종류 이상 조합 시 최소 8자
-                            </p>
-                        )}
-                    </div>
+                    <Input
+                        label="새 비밀번호"
+                        type="password"
+                        value={newPassword}
+                        onChange={(e) => {
+                            setNewPassword(e.target.value);
+                            setErrors((prev) => ({ ...prev, newPassword: undefined }));
+                        }}
+                        placeholder="새 비밀번호를 입력하세요"
+                        disabled={isSubmitting}
+                        autoComplete="new-password"
+                        helperText="영문, 숫자, 특수문자 중 2종류 이상 조합 시 최소 10자, 3종류 이상 조합 시 최소 8자"
+                        error={errors.newPassword}
+                    />
 
-                    <div>
-                        <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            새 비밀번호 확인
-                        </label>
-                        <input
-                            id="confirmPassword"
-                            type="password"
-                            value={confirmPassword}
-                            onChange={(e) => {
-                                setConfirmPassword(e.target.value);
-                                setError(null);
-                            }}
-                            placeholder="새 비밀번호를 다시 입력하세요"
-                            disabled={isSubmitting}
-                            className={`w-full px-4 py-3 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 transition-all ${
-                                error
-                                    ? 'border-red-500 dark:border-red-500 focus:ring-red-500 dark:focus:ring-red-500'
-                                    : 'border-gray-300 dark:border-gray-600 focus:ring-blue-500 dark:focus:ring-blue-400'
-                            } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            autoComplete="new-password"
-                        />
-                    </div>
-
-                    {error && (
-                        <div className="p-4 bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 dark:border-red-500 rounded-lg">
-                            <div className="flex items-start gap-2">
-                                <svg className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                                    <path
-                                        fillRule="evenodd"
-                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                                        clipRule="evenodd"
-                                    />
-                                </svg>
-                                <p className="text-sm text-red-600 dark:text-red-400 font-medium">
-                                    {error}
-                                </p>
-                            </div>
-                        </div>
-                    )}
+                    <Input
+                        label="새 비밀번호 확인"
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => {
+                            setConfirmPassword(e.target.value);
+                            setErrors((prev) => ({ ...prev, confirmPassword: undefined }));
+                        }}
+                        placeholder="새 비밀번호를 다시 입력하세요"
+                        disabled={isSubmitting}
+                        autoComplete="new-password"
+                        error={errors.confirmPassword}
+                    />
 
                     <Button
                         type="submit"

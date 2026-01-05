@@ -10,6 +10,7 @@ import { Button } from '../../../components/ui/Button';
 import { validation } from '../../../utils/validation';
 import { toast } from 'sonner';
 import { getErrorMessage } from '../../../types/api/common.types';
+import { ThemeToggle } from '../../../components/common/ThemeToggle';
 
 export const FindIdPage: FC = () => {
     const navigate = useNavigate();
@@ -58,7 +59,8 @@ export const FindIdPage: FC = () => {
 
     if (isSuccess) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900 py-12 px-4">
+            <div className="relative min-h-screen flex items-center justify-center bg-white dark:bg-gray-900 py-12 px-4">
+                <ThemeToggle className="absolute top-4 right-4" />
                 <div className="max-w-md w-full space-y-8 p-8">
                     <div className="text-center">
                         <h1 className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-2">디딤로그</h1>
@@ -97,7 +99,8 @@ export const FindIdPage: FC = () => {
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900 py-12 px-4">
+        <div className="relative min-h-screen flex items-center justify-center bg-white dark:bg-gray-900 py-12 px-4">
+            <ThemeToggle className="absolute top-4 right-4" />
             <div className="max-w-md w-full space-y-8 p-8">
                 <div className="text-center">
                     <h1 className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-2">디딤로그</h1>

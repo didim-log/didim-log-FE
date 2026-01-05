@@ -8,9 +8,10 @@ import { clsx } from 'clsx';
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
     label?: string;
     error?: string;
+    helperText?: string;
 }
 
-export const Input: FC<InputProps> = ({ label, error, className, ...props }) => {
+export const Input: FC<InputProps> = ({ label, error, helperText, className, ...props }) => {
     return (
         <div className="w-full">
             {label && (
@@ -31,6 +32,9 @@ export const Input: FC<InputProps> = ({ label, error, className, ...props }) => 
                 {...props}
             />
             {error && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{error}</p>}
+            {!error && helperText && (
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{helperText}</p>
+            )}
         </div>
     );
 };

@@ -9,18 +9,57 @@ import { useAuthStore } from '../../stores/auth.store';
 import { isApiErrorWithResponse } from '../../types/api/common.types';
 import type { AuthResponse } from '../../types/api/auth.types';
 
-interface LoginError extends Error {
+export interface LoginError extends Error {
     code?: string;
     status?: number;
     remainingAttempts?: number; // Rate Limit 남은 시도 횟수
     unlockTime?: string; // Rate Limit 잠금 해제 시간 (ISO 8601 형식)
 }
 
-interface UseLoginReturn {
-    loginAsync: (data: { bojId: string; password: string }) => Promise<void>;
-    isLoading: boolean;
-    error: LoginError | null;
+export interface LoginRequest {
+    bojId: string;
+    password: string;
 }
+
+export interface LoginHandlers {
+    onError?: (error: LoginError) => void;
+    onSettled?: () => void;
+}
+
+interface UseLoginReturn {
+    login: (data: LoginRequest, handlers?: LoginHandlers) => void;
+    isLoading: boolean;
+}
+
+export const toLoginError = (error: unknown): LoginError => {
+    if (isApiErrorWithResponse(error)) {
+        const response = error.response;
+        const errorData = response.data;
+        const status = response.status;
+        const code = errorData?.code || 'UNKNOWN_ERROR';
+        const message = errorData?.message || '로그인 중 오류가 발생했습니다.';
+
+        const remainingAttempts =
+            errorData?.remainingAttempts ??
+            (response.headers?.['x-rate-limit-remaining']
+                ? parseInt(response.headers['x-rate-limit-remaining'], 10)
+                : undefined);
+        const unlockTime = errorData?.unlockTime;
+
+        const loginError: LoginError = new Error(message) as LoginError;
+        loginError.code = code;
+        loginError.status = status;
+        loginError.remainingAttempts = remainingAttempts;
+        loginError.unlockTime = unlockTime;
+        return loginError;
+    }
+
+    if (error instanceof Error) {
+        return error as LoginError;
+    }
+
+    return new Error('로그인 중 오류가 발생했습니다.') as LoginError;
+};
 
 export const useLogin = (): UseLoginReturn => {
     const navigate = useNavigate();
@@ -28,6 +67,7 @@ export const useLogin = (): UseLoginReturn => {
 
     const loginMutation = useMutation({
         mutationFn: authApi.login,
+        retry: 0,
         onSuccess: async (data: AuthResponse) => {
             // 1. 토큰 저장 (Access Token + Refresh Token)
             setTokens(data.token, data.refreshToken);
@@ -72,50 +112,20 @@ export const useLogin = (): UseLoginReturn => {
             // 4. 리다이렉트
             navigate('/dashboard', { replace: true });
         },
-        onError: () => {
-            // 에러는 mutation.error로 자동 전달됨
-            // React Query는 자동으로 isPending을 false로 설정하므로 추가 처리 불필요
-        },
     });
 
-    // 에러를 세분화하여 변환
-    const getError = (): LoginError | null => {
-        const error = loginMutation.error;
-        if (!error) return null;
-
-        // axios 에러인 경우
-        if (isApiErrorWithResponse(error)) {
-            const response = error.response;
-            const errorData = response.data;
-            const status = response.status;
-            const code = errorData?.code || 'UNKNOWN_ERROR';
-            const message = errorData?.message || '로그인 중 오류가 발생했습니다.';
-
-            // Rate Limit 정보 추출 (바디 또는 헤더에서)
-            const remainingAttempts = errorData?.remainingAttempts ?? 
-                (response.headers?.['x-rate-limit-remaining'] 
-                    ? parseInt(response.headers['x-rate-limit-remaining'], 10) 
-                    : undefined);
-            const unlockTime = errorData?.unlockTime;
-
-            const loginError: LoginError = new Error(message) as LoginError;
-            loginError.code = code;
-            loginError.status = status;
-            loginError.remainingAttempts = remainingAttempts;
-            loginError.unlockTime = unlockTime;
-            return loginError;
-        }
-
-        // 일반 에러인 경우
-        return error as LoginError;
-    };
-
     return {
-        loginAsync: async (data: { bojId: string; password: string }) => {
-            await loginMutation.mutateAsync(data);
+        login: (data: LoginRequest, handlers?: LoginHandlers) => {
+            loginMutation.mutate(data, {
+                onError: (error) => {
+                    handlers?.onError?.(toLoginError(error));
+                },
+                onSettled: () => {
+                    handlers?.onSettled?.();
+                },
+            });
         },
         isLoading: loginMutation.isPending,
-        error: getError(),
     };
 };
 
