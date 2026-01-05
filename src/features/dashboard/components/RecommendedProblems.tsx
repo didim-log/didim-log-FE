@@ -11,6 +11,7 @@ import { formatTierFromDifficulty, getTierColor, formatTier } from '../../../uti
 import { useAuthStore } from '../../../stores/auth.store';
 import type { ProblemResponse } from '../../../types/api/problem.types';
 import { OnlyKoreanToggle } from '../../../components/common/OnlyKoreanToggle';
+import { getCategoryDisplayLabel } from '../../../constants/categoryMapping';
 
 /**
  * 추천 문제 태그 필터 목록 (대기업 코딩 테스트 출제 빈도 순)
@@ -229,7 +230,7 @@ export const RecommendedProblems: FC<RecommendedProblemsProps> = ({ count = 4, c
                                     : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600'
                             }`}
                         >
-                            {category}
+                            {getCategoryDisplayLabel(category)}
                         </button>
                     ))}
                 </div>

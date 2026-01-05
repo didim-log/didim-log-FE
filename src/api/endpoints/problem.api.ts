@@ -9,13 +9,16 @@ import type {
     RecommendRequest,
     SearchRequest,
 } from '../../types/api/problem.types';
+import { mapCategoryToApiValue } from '../../constants/categoryMapping';
 
 export const problemApi = {
     /**
      * 문제 추천
      */
     recommend: async (params: RecommendRequest): Promise<ProblemResponse[]> => {
-        const response = await apiClient.get<ProblemResponse[]>('/problems/recommend', { params });
+        const category = params.category ? mapCategoryToApiValue(params.category) : undefined;
+        const mappedParams: RecommendRequest = { ...params, category };
+        const response = await apiClient.get<ProblemResponse[]>('/problems/recommend', { params: mappedParams });
         return response.data;
     },
 
