@@ -24,3 +24,15 @@ export default function Card({
     )
 }
 
+
+
+
+
+
+
+
+
+
+
+
+

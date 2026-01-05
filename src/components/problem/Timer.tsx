@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Play, Pause, RotateCcw } from 'lucide-react'
-import Button from '../common/Button'
+import { Button } from '../ui/Button'
 
 interface TimerProps {
     onTimeUpdate?: (seconds: number) => void
@@ -12,14 +12,10 @@ export default function Timer({ onTimeUpdate, shouldPause = false }: TimerProps)
     const [isRunning, setIsRunning] = useState(true)
     const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-    useEffect(() => {
-        if (shouldPause) {
-            setIsRunning(false)
-        }
-    }, [shouldPause])
+    const isActive = isRunning && !shouldPause
 
     useEffect(() => {
-        if (isRunning && !shouldPause) {
+        if (isActive) {
             intervalRef.current = setInterval(() => {
                 setSeconds((prev) => {
                     const newSeconds = prev + 1
@@ -40,7 +36,7 @@ export default function Timer({ onTimeUpdate, shouldPause = false }: TimerProps)
                 clearInterval(intervalRef.current)
             }
         }
-    }, [isRunning, shouldPause, onTimeUpdate])
+    }, [isActive, onTimeUpdate])
 
     const handlePause = () => {
         setIsRunning(false)
@@ -64,7 +60,7 @@ export default function Timer({ onTimeUpdate, shouldPause = false }: TimerProps)
         return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
     }
 
-    const timerColor = isRunning
+    const timerColor = isActive
         ? 'text-blue-600 dark:text-blue-400'
         : 'text-gray-500 dark:text-gray-400'
 
@@ -80,12 +76,12 @@ export default function Timer({ onTimeUpdate, shouldPause = false }: TimerProps)
                     {formatTime(seconds)}
                 </div>
                 <div className="flex gap-2 w-full sm:w-auto">
-                    {isRunning ? (
+                    {isActive ? (
                         <Button
                             variant="secondary"
                             size="sm"
                             onClick={handlePause}
-                            className="flex items-center gap-2"
+                            className="tour-timer-btn flex items-center gap-2"
                         >
                             <Pause className="w-4 h-4" />
                             일시정지
@@ -95,7 +91,8 @@ export default function Timer({ onTimeUpdate, shouldPause = false }: TimerProps)
                             variant="primary"
                             size="sm"
                             onClick={handleResume}
-                            className="flex items-center gap-2"
+                            disabled={shouldPause}
+                            className="tour-timer-btn flex items-center gap-2"
                         >
                             <Play className="w-4 h-4" />
                             재개

@@ -1,12 +1,14 @@
-import { X } from 'lucide-react'
+import type { ReactNode } from 'react';
+import { X } from 'lucide-react';
+import { useBodyScrollLock } from '@/hooks/ui/useBodyScrollLock';
 
 interface ModalProps {
-    isOpen: boolean
-    onClose: () => void
-    title: string
-    children: React.ReactNode
-    footer?: React.ReactNode
-    className?: string
+    isOpen: boolean;
+    onClose: () => void;
+    title: string;
+    children: ReactNode;
+    footer?: ReactNode;
+    className?: string;
 }
 
 export default function Modal({
@@ -17,13 +19,17 @@ export default function Modal({
     footer,
     className = '',
 }: ModalProps) {
+    useBodyScrollLock({ locked: isOpen });
+
     if (!isOpen) {
-        return null
+        return null;
     }
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 dark:bg-opacity-70">
-            <div className={`bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4 ${className}`}>
+            <div
+                className={`bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4 ${className}`}
+            >
                 <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
                     <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
                         {title}
@@ -43,6 +49,6 @@ export default function Modal({
                 )}
             </div>
         </div>
-    )
+    );
 }
 
