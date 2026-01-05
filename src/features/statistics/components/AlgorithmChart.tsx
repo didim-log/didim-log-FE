@@ -85,7 +85,7 @@ export const AlgorithmChart: FC<AlgorithmChartProps> = ({ categoryStats }) => {
                                     fontSize: '12px',
                                 }}
                                 labelStyle={{ color: '#374151', fontWeight: 600 }}
-                                formatter={(value: number) => [`${value}회`, '사용 횟수']}
+                                formatter={(value: number | undefined) => [`${value ?? 0}회`, '사용 횟수']}
                             />
                             <Bar dataKey="count" radius={[0, 4, 4, 0]} barSize={30}>
                                 {processedData.map((item, index) => (
