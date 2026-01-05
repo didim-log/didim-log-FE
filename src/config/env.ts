@@ -2,13 +2,13 @@
  * 실행 환경별 환경 변수 접근을 한 곳으로 모읍니다.
  */
 
-const DEFAULT_API_URL = 'http://localhost:8080/api/v1';
-const DEFAULT_API_ORIGIN = 'http://localhost:8080';
+const DEV_API_URL = 'http://localhost:8080/api/v1';
+const PROD_API_URL = 'https://didim-log.xyz/api/v1';
 
 const normalizeApiUrl = (apiUrl: string): string => {
     const normalized = apiUrl.trim().replace(/\/+$/, '');
     if (!normalized) {
-        return DEFAULT_API_URL;
+        return '';
     }
     if (normalized.endsWith('/api/v1')) {
         return normalized;
@@ -33,7 +33,8 @@ export const deriveServerRoot = (apiUrl: string, params: DeriveServerRootParams)
         return origin;
     }
 
-    if (origin !== DEFAULT_API_ORIGIN) {
+    const devOrigin = deriveApiOrigin(DEV_API_URL);
+    if (origin !== devOrigin) {
         return origin;
     }
 
@@ -48,7 +49,25 @@ export const deriveServerRoot = (apiUrl: string, params: DeriveServerRootParams)
     return window.location.origin;
 };
 
-export const API_URL: string = normalizeApiUrl(import.meta.env.VITE_API_URL || DEFAULT_API_URL);
+const resolveApiUrl = (): string => {
+    const raw = typeof import.meta.env.VITE_API_URL === 'string' ? import.meta.env.VITE_API_URL : '';
+    const fallback = import.meta.env.PROD ? PROD_API_URL : DEV_API_URL;
+    const resolved = normalizeApiUrl(raw) || fallback;
+
+    if (!import.meta.env.PROD) {
+        return resolved;
+    }
+
+    const origin = deriveApiOrigin(resolved);
+    const devOrigin = deriveApiOrigin(DEV_API_URL);
+    if (origin === devOrigin) {
+        throw new Error('운영 환경에서 VITE_API_URL이 localhost로 설정되었습니다.');
+    }
+
+    return resolved;
+};
+
+export const API_URL: string = resolveApiUrl();
 export const API_ORIGIN: string = deriveApiOrigin(API_URL);
 export const SERVER_ROOT: string = deriveServerRoot(API_URL, { isProd: import.meta.env.PROD });
 
