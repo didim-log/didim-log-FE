@@ -6,6 +6,8 @@ export interface SignupRequest {
     bojId: string;
     password: string;
     email: string;
+    provider?: 'GOOGLE' | 'GITHUB' | 'NAVER';
+    providerId?: string;
 }
 
 export interface LoginRequest {
@@ -31,16 +33,6 @@ export interface AuthResponse {
 
 export interface RefreshTokenRequest {
     refreshToken: string;
-}
-
-export interface SignupFinalizeRequest {
-    email: string;
-    provider: 'GOOGLE' | 'GITHUB' | 'NAVER';
-    providerId: string;
-    nickname: string;
-    bojId?: string | null;
-    isAgreedToTerms: boolean;
-    termsAgreed?: boolean;
 }
 
 export interface FindAccountRequest {

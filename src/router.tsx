@@ -12,7 +12,6 @@ import { RootRedirect } from './routes/RootRedirect';
 import { LoginPage } from './features/auth/pages/LoginPage';
 import { SignupPage } from './features/auth/pages/SignupPage';
 import { OAuthCallbackPage } from './pages/auth/OAuthCallbackPage';
-import { SignupFinalizePage } from './features/auth/pages/SignupFinalizePage';
 import { FindIdPage } from './features/auth/pages/FindIdPage';
 import { FindPasswordPage } from './features/auth/pages/FindPasswordPage';
 import { ResetPasswordPage } from './features/auth/pages/ResetPasswordPage';
@@ -188,11 +187,6 @@ export const router = createBrowserRouter([
     {
         path: '/oauth/callback',
         element: <OAuthCallbackPage />,
-        errorElement: <ErrorPage />,
-    },
-    {
-        path: '/signup/finalize',
-        element: <SignupFinalizePage />,
         errorElement: <ErrorPage />,
     },
     {

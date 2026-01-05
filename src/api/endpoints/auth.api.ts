@@ -8,7 +8,6 @@ import type {
     LoginRequest,
     SuperAdminRequest,
     AuthResponse,
-    SignupFinalizeRequest,
     FindAccountRequest,
     FindAccountResponse,
     FindIdRequest,
@@ -86,14 +85,6 @@ export const authApi = {
      */
     createSuperAdmin: async (data: SuperAdminRequest): Promise<AuthResponse> => {
         const response = await apiClient.post<AuthResponse>('/auth/super-admin', data);
-        return response.data;
-    },
-
-    /**
-     * 회원가입 마무리 (소셜 로그인)
-     */
-    signupFinalize: async (data: SignupFinalizeRequest): Promise<AuthResponse> => {
-        const response = await apiClient.post<AuthResponse>('/auth/signup/finalize', data);
         return response.data;
     },
 
