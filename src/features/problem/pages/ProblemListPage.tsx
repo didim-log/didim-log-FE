@@ -13,7 +13,8 @@ import { CategorySelect } from '../../../components/ui/CategorySelect';
 import { OnlyKoreanToggle } from '../../../components/common/OnlyKoreanToggle';
 import { formatTierFromDifficulty, getTierColor } from '../../../utils/tier';
 import type { ProblemResponse } from '../../../types/api/problem.types';
-import { Search } from 'lucide-react';
+import { Search, HelpCircle } from 'lucide-react';
+import { getCategoryHierarchyHints } from '../../../constants/algorithmHierarchy';
 
 export const ProblemListPage: FC = () => {
     const navigate = useNavigate();
@@ -30,6 +31,7 @@ export const ProblemListPage: FC = () => {
     const [category, setCategory] = useState(initialCategory);
     const [searchQuery, setSearchQuery] = useState('');
     const [onlyKorean, setOnlyKorean] = useState<boolean>(initialLanguage === 'ko');
+    const hierarchyHints = getCategoryHierarchyHints(category);
     
     const { data: problems, isLoading, error } = useProblemRecommend({ 
         count, 
@@ -124,7 +126,7 @@ export const ProblemListPage: FC = () => {
                                 />
                             </div>
                         </form>
-                        <div className="flex items-end gap-4">
+                        <div className="flex items-center gap-4">
                             <div className="w-32">
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                     개수
@@ -143,8 +145,25 @@ export const ProblemListPage: FC = () => {
                                 </select>
                             </div>
                             <div className="flex-1">
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-1.5">
                                     카테고리
+                                    <span className="relative inline-flex items-center group">
+                                        <HelpCircle className="w-4 h-4 text-gray-400 dark:text-gray-500 cursor-help" />
+                                        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-xs px-3 py-2 rounded-lg bg-gray-900/95 dark:bg-gray-700 text-white text-xs shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                                            <span className="block text-center">
+                                                선택한 카테고리의 하위 세부 유형(예: 그래프 → BFS, DFS)도 함께 검색 결과에 포함됩니다.
+                                            </span>
+                                            {hierarchyHints.length > 0 && (
+                                                <span className="block text-center mt-1 text-gray-200">
+                                                    포함: {hierarchyHints.slice(0, 6).join(', ')}
+                                                    {hierarchyHints.length > 6 ? '…' : ''}
+                                                </span>
+                                            )}
+                                            <span className="absolute top-full left-1/2 -translate-x-1/2 -mt-1">
+                                                <span className="block w-2 h-2 bg-gray-900/95 dark:bg-gray-700 rotate-45" />
+                                            </span>
+                                        </span>
+                                    </span>
                                 </label>
                                 <CategorySelect
                                     value={category || undefined}
@@ -153,13 +172,25 @@ export const ProblemListPage: FC = () => {
                                     variant="select"
                                 />
                             </div>
-                            <div className="flex items-center justify-end min-w-[140px] pb-2">
+                            <div className="flex items-center justify-end min-w-[140px]">
                                 <OnlyKoreanToggle
                                     value={onlyKorean}
                                     onChange={(value) => setOnlyKorean(value)}
                                 />
                             </div>
                         </div>
+                        {hierarchyHints.length > 0 && (
+                            <div className="mt-3">
+                                <div className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-900/30 border border-gray-200 dark:border-gray-700 text-xs text-gray-600 dark:text-gray-300">
+                                    <span className="font-medium">카테고리 확장 검색</span>
+                                    <span className="text-gray-400">•</span>
+                                    <span>
+                                        {category.toUpperCase()} 선택 시 {hierarchyHints.slice(0, 8).join(', ')}
+                                        {hierarchyHints.length > 8 ? '…' : ''}도 함께 포함됩니다.
+                                    </span>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* 문제 목록 */}
