@@ -13,6 +13,9 @@ import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { validation } from '../../../utils/validation';
 import type { SignupFinalizeRequest } from '../../../types/api/auth.types';
+import { toastApiError } from '../../../utils/toastApiError';
+import { ThemeToggle } from '../../../components/common/ThemeToggle';
+import { parseOAuthSignupState } from '../../../types/auth/oauth.types';
 
 export const SignupFinalizePage: FC = () => {
     const navigate = useNavigate();
@@ -20,9 +23,9 @@ export const SignupFinalizePage: FC = () => {
     const { setTokens, setUser } = useAuthStore();
     const { setIsNewUser } = useOnboardingStore();
 
-    const state = location.state as { email?: string; provider?: string; providerId?: string } | null;
+    const oauthState = parseOAuthSignupState(location.state);
 
-    const [email, setEmail] = useState(() => state?.email ?? '');
+    const [email, setEmail] = useState(() => oauthState?.email ?? '');
     const [nickname, setNickname] = useState('');
     const [bojId, setBojId] = useState('');
     const [isAgreedToTerms, setIsAgreedToTerms] = useState(false);
@@ -34,11 +37,11 @@ export const SignupFinalizePage: FC = () => {
     }>({});
 
     useEffect(() => {
-        if (!state) {
+        if (!oauthState) {
             navigate('/login', { replace: true });
             return;
         }
-    }, [state, navigate]);
+    }, [oauthState, navigate]);
 
     const finalizeMutation = useMutation({
         mutationFn: (data: SignupFinalizeRequest) => authApi.signupFinalize(data),
@@ -55,11 +58,14 @@ export const SignupFinalizePage: FC = () => {
                 rating: data.rating,
                 tier: data.tier,
                 tierLevel: data.tierLevel,
-                provider: (state?.provider?.toUpperCase() || 'GOOGLE') as 'GOOGLE' | 'GITHUB' | 'NAVER',
+                provider: oauthState?.provider || 'GOOGLE',
             };
             setUser(user);
 
             navigate('/dashboard', { replace: true });
+        },
+        onError: (error: unknown) => {
+            toastApiError(error, '회원가입에 실패했습니다.');
         },
     });
 
@@ -97,15 +103,15 @@ export const SignupFinalizePage: FC = () => {
             return;
         }
 
-        if (!state?.provider || !state?.providerId) {
+        if (!oauthState?.provider || !oauthState?.providerId) {
             setErrors({ email: '소셜 로그인 정보가 없습니다.' });
             return;
         }
 
         finalizeMutation.mutate({
             email: email.trim(),
-            provider: state.provider.toUpperCase() as 'GOOGLE' | 'GITHUB' | 'NAVER',
-            providerId: state.providerId,
+            provider: oauthState.provider,
+            providerId: oauthState.providerId,
             nickname: nickname.trim(),
             bojId: bojId.trim() || null,
             isAgreedToTerms: true,
@@ -113,14 +119,25 @@ export const SignupFinalizePage: FC = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
-            <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow-md">
+        <div className="relative min-h-screen flex items-center justify-center bg-white dark:bg-gray-900 py-12 px-4 text-gray-900 dark:text-white">
+            <ThemeToggle className="absolute top-4 right-4" />
+            <div className="max-w-md w-full space-y-8 p-8 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md">
                 <div>
-                    <h2 className="text-center text-3xl font-extrabold text-gray-900">회원가입 마무리</h2>
-                    <p className="text-center text-gray-600 mt-2">추가 정보를 입력해주세요.</p>
+                    <h2 className="text-center text-3xl font-extrabold text-gray-900 dark:text-white">회원가입 마무리</h2>
+                    <p className="text-center text-gray-600 dark:text-gray-400 mt-2">추가 정보를 입력해주세요.</p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
+                    {oauthState?.profileImage && (
+                        <div className="flex items-center justify-center">
+                            <img
+                                src={oauthState.profileImage}
+                                alt="프로필 이미지"
+                                className="w-14 h-14 rounded-full border border-gray-200 dark:border-gray-700 object-cover"
+                                referrerPolicy="no-referrer"
+                            />
+                        </div>
+                    )}
                     <Input
                         label="이메일"
                         type="email"
@@ -156,21 +173,13 @@ export const SignupFinalizePage: FC = () => {
                             id="terms-agree"
                             checked={isAgreedToTerms}
                             onChange={(e) => setIsAgreedToTerms(e.target.checked)}
-                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
                         />
-                        <label htmlFor="terms-agree" className="ml-2 text-sm text-gray-700">
+                        <label htmlFor="terms-agree" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
                             약관에 동의합니다 (필수)
                         </label>
                     </div>
-                    {errors.terms && <p className="text-red-600 text-sm">{errors.terms}</p>}
-
-                    {finalizeMutation.error && (
-                        <div className="text-red-600 text-sm">
-                            {finalizeMutation.error instanceof Error
-                                ? finalizeMutation.error.message
-                                : '회원가입에 실패했습니다.'}
-                        </div>
-                    )}
+                    {errors.terms && <p className="text-red-600 dark:text-red-400 text-sm">{errors.terms}</p>}
 
                     <Button type="submit" variant="primary" size="lg" isLoading={finalizeMutation.isPending} className="w-full">
                         회원가입 완료

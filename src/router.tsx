@@ -11,7 +11,7 @@ import { AdminRoute } from './routes/AdminRoute';
 import { RootRedirect } from './routes/RootRedirect';
 import { LoginPage } from './features/auth/pages/LoginPage';
 import { SignupPage } from './features/auth/pages/SignupPage';
-import { OAuthCallbackPage } from './features/auth/pages/OAuthCallbackPage';
+import { OAuthCallbackPage } from './pages/auth/OAuthCallbackPage';
 import { SignupFinalizePage } from './features/auth/pages/SignupFinalizePage';
 import { FindIdPage } from './features/auth/pages/FindIdPage';
 import { FindPasswordPage } from './features/auth/pages/FindPasswordPage';
