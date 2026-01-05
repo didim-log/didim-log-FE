@@ -8,6 +8,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/auth.store';
 import { useTourStore } from '../../stores/tour.store';
 import { useUIStore } from '../../stores/ui.store';
+import { useBodyScrollLock } from '@/hooks/ui/useBodyScrollLock';
 import { memberApi } from '../../api/endpoints/member.api';
 import { dashboardApi } from '../../api/endpoints/dashboard.api';
 import { HelpCircle, Menu, X } from 'lucide-react';
@@ -18,6 +19,8 @@ export const Header: FC = () => {
     const { theme, toggleTheme } = useUIStore();
     const navigate = useNavigate();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+    useBodyScrollLock({ locked: isMobileMenuOpen });
 
     const handleLogout = () => {
         logout();

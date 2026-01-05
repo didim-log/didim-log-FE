@@ -9,6 +9,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { useAdminDashboardChart } from '../../../hooks/api/useAdmin';
 import { Spinner } from '../../../components/ui/Spinner';
 import type { ChartDataType, ChartPeriod } from '../../../types/api/admin.types';
+import { useBodyScrollLock } from '@/hooks/ui/useBodyScrollLock';
 
 interface StatsChartModalProps {
     isOpen: boolean;
@@ -20,6 +21,8 @@ interface StatsChartModalProps {
 export const StatsChartModal: FC<StatsChartModalProps> = ({ isOpen, onClose, dataType, title }) => {
     const [period, setPeriod] = useState<ChartPeriod>('DAILY');
     const { data, isLoading, error } = useAdminDashboardChart(dataType, period);
+
+    useBodyScrollLock({ locked: isOpen });
 
     if (!isOpen) {
         return null;
