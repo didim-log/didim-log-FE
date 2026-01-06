@@ -5,7 +5,7 @@
 import type { FC } from 'react';
 import { Crown } from 'lucide-react';
 import { TierBadge } from '../../dashboard/components/TierBadge';
-import { formatTier, formatTierFromDifficulty, resolveSolvedAcTierLevel } from '../../../utils/tier';
+import { formatTierFromDifficulty, resolveSolvedAcTierLevel } from '../../../utils/tier';
 import type { LeaderboardResponse } from '../../../types/api/ranking.types';
 
 interface TopRankPodiumProps {

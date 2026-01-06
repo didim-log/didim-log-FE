@@ -11,7 +11,7 @@ import { Spinner } from '../../../components/ui/Spinner';
 import { Layout } from '../../../components/layout/Layout';
 import { useAuthStore } from '../../../stores/auth.store';
 import { TierBadge } from '../../dashboard/components/TierBadge';
-import { formatTier, formatTierFromDifficulty, resolveSolvedAcTierLevel } from '../../../utils/tier';
+import { formatTierFromDifficulty, resolveSolvedAcTierLevel } from '../../../utils/tier';
 import type { RankingPeriod } from '../../../types/api/ranking.types';
 
 export const RankingPage: FC = () => {
