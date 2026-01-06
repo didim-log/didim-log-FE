@@ -11,7 +11,7 @@ import { Spinner } from '../../../components/ui/Spinner';
 import { Layout } from '../../../components/layout/Layout';
 import { useAuthStore } from '../../../stores/auth.store';
 import { TierBadge } from '../../dashboard/components/TierBadge';
-import { formatTierFromDifficulty } from '../../../utils/tier';
+import { formatTier, formatTierFromDifficulty, resolveSolvedAcTierLevel } from '../../../utils/tier';
 import type { RankingPeriod } from '../../../types/api/ranking.types';
 
 export const RankingPage: FC = () => {
@@ -133,7 +133,13 @@ export const RankingPage: FC = () => {
                                         </span>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <TierBadge tierLevel={myRank.tierLevel} size="sm" />
+                                        <TierBadge
+                                            tierLevel={resolveSolvedAcTierLevel({
+                                                tierLevel: myRank.tierLevel,
+                                                rating: myRank.rating,
+                                            })}
+                                            size="sm"
+                                        />
                                         <span className="text-sm text-gray-600 dark:text-gray-400">
                                             {formatTierFromDifficulty(myRank.tier, myRank.tierLevel)}
                                         </span>

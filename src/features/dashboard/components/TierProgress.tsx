@@ -11,6 +11,7 @@ import { RefreshCw } from 'lucide-react';
 import { useSyncBojProfile } from '../../../hooks/api/useStudent';
 import { toast } from 'sonner';
 import { getErrorMessage } from '../../../types/api/common.types';
+import { formatTier, resolveSolvedAcTierLevel, getTierMinRating } from '../../../utils/tier';
 
 interface TierProgressProps {
     dashboard: DashboardResponse;
@@ -29,15 +30,22 @@ export const TierProgress: FC<TierProgressProps> = ({ dashboard }) => {
         );
     }
 
-    const { currentTierTitle, nextTierTitle, currentRating, requiredRatingForNextTier, progressPercentage } = dashboard;
+    const { nextTierTitle, currentRating, requiredRatingForNextTier, progressPercentage } = dashboard;
     const { nickname, currentTierLevel, consecutiveSolveDays, currentTier } = dashboard.studentProfile;
     
-    // UNRATED 처리: tierLevel이 0이거나 undefined이거나, currentTier가 UNRATED인 경우
-    const isUnrated = !currentTierLevel || currentTierLevel <= 0 || currentTier === 'UNRATED';
+    // 백엔드가 tierLevel을 정확한 solved.ac 단계(0~31)로 내려주므로 직접 사용
+    // 안전을 위해 fallback은 유지
+    const displayTierLevel = resolveSolvedAcTierLevel({
+        tierLevel: currentTierLevel ?? 0,
+        rating: currentRating ?? 0,
+    });
+
+    // UNRATED 처리: tierLevel이 0이거나 currentTier가 UNRATED인 경우
+    const isUnrated = displayTierLevel === 0 || currentTier === 'UNRATED';
     
-    // UNRATED일 때 다음 목표 티어 정보 (Bronze V = 30점)
-    const UNRATED_NEXT_TIER_TITLE = 'Bronze V';
-    const UNRATED_NEXT_TIER_RATING = 30; // Solved.ac 기준 Bronze V 시작 점수
+    // UNRATED일 때 다음 목표 티어 정보 (Bronze V = 레벨 1)
+    const UNRATED_NEXT_TIER_TITLE = formatTier(1);
+    const UNRATED_NEXT_TIER_RATING = getTierMinRating(1);
     const unratedCurrentRating = currentRating ?? 0;
     const unratedRequiredRating = UNRATED_NEXT_TIER_RATING;
     const unratedProgressPercentage = Math.min(100, Math.max(0, (unratedCurrentRating / unratedRequiredRating) * 100));
@@ -85,11 +93,11 @@ export const TierProgress: FC<TierProgressProps> = ({ dashboard }) => {
 
                 {/* 티어 정보 */}
                 <div className="flex items-center gap-3">
-                    <TierBadge tierLevel={currentTierLevel ?? 0} size="lg" />
+                    <TierBadge tierLevel={displayTierLevel} size="lg" />
                     <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                             <span className="text-lg font-bold text-gray-900 dark:text-white">
-                                {isUnrated ? 'Unrated' : currentTierTitle || 'Unknown'}
+                                {isUnrated ? 'Unrated' : formatTier(displayTierLevel)}
                             </span>
                             <span className="text-sm text-gray-600 dark:text-gray-400">{currentRating ?? 0}pt</span>
                         </div>

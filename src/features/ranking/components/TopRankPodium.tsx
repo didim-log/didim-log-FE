@@ -5,7 +5,7 @@
 import type { FC } from 'react';
 import { Crown } from 'lucide-react';
 import { TierBadge } from '../../dashboard/components/TierBadge';
-import { formatTierFromDifficulty } from '../../../utils/tier';
+import { formatTier, formatTierFromDifficulty, resolveSolvedAcTierLevel } from '../../../utils/tier';
 import type { LeaderboardResponse } from '../../../types/api/ranking.types';
 
 interface TopRankPodiumProps {
@@ -84,7 +84,10 @@ const RankCard: FC<RankCardProps> = ({ rank, user, position }) => {
 
                 {/* 티어 배지 */}
                 <div className="mb-4">
-                    <TierBadge tierLevel={user.tierLevel} size="lg" />
+                    <TierBadge
+                        tierLevel={resolveSolvedAcTierLevel({ tierLevel: user.tierLevel, rating: user.rating })}
+                        size="lg"
+                    />
                 </div>
 
                 {/* 닉네임 */}
