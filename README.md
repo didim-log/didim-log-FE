@@ -79,14 +79,14 @@ npm install
   - `.env.development` (프로젝트 루트, git ignore)
 
 ```properties
-VITE_API_URL=http://localhost:8080/api/v1
+VITE_API_URL=http://localhost:8080
 ```
 
 - **배포 프론트 → 배포 백엔드**
   - `.env.production` (프로젝트 루트, git ignore)
 
 ```properties
-VITE_API_URL=https://didim-log.xyz/api/v1
+VITE_API_URL=https://YOUR_API_HOST
 ```
 
 > `.env`, `.env.*`는 `.gitignore`에 의해 커밋되지 않습니다.  
