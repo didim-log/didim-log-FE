@@ -11,7 +11,30 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: npm ci && npm run build
+      - run: npm ci
+
+      # 빌드 시 환경 변수 주입 (중요!)
+      # - 실제 API 주소는 레포에 하드코딩하지 않고 GitHub Secrets로만 관리합니다.
+      - run: npm run build
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+
+      # [검증 단계] 빌드 산출물에 localhost가 섞이지 않았는지 확인
+      - name: Verify no localhost in build artifacts
+        run: |
+          echo "🔎 Checking build artifacts..."
+
+          if [ -z "${{ secrets.VITE_API_URL }}" ]; then
+            echo "❌ Error: VITE_API_URL secret is not set."
+            exit 1
+          fi
+
+          if grep -r "localhost:8080" dist/ > /dev/null; then
+            echo "❌ Error: Build artifacts contain localhost:8080."
+            exit 1
+          fi
+
+          echo "✅ Success: No localhost:8080 found in build artifacts."
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
