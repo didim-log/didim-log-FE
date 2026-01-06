@@ -128,7 +128,7 @@ export const RetrospectiveDetailPage: FC = () => {
         }
     };
 
-    // 60일 이상 된 회고인지 확인 (KST 기준)
+    // 180일 이상 된 회고인지 확인 (KST 기준)
     const isOldRetrospective = () => {
         const createdAt = new Date(retrospective.createdAt);
         const now = new Date();
@@ -136,7 +136,7 @@ export const RetrospectiveDetailPage: FC = () => {
         const kstCreatedAt = new Date(createdAt.toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
         const kstNow = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
         const daysDiff = Math.floor((kstNow.getTime() - kstCreatedAt.getTime()) / (1000 * 60 * 60 * 24));
-        return daysDiff >= 60;
+        return daysDiff >= 180;
     };
 
     return (
