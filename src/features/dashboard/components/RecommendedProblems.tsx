@@ -13,6 +13,8 @@ import type { ProblemResponse } from '../../../types/api/problem.types';
 import { OnlyKoreanToggle } from '../../../components/common/OnlyKoreanToggle';
 import { getCategoryDisplayLabel } from '../../../constants/categoryMapping';
 
+const BOJ_STEP_URL = 'https://www.acmicpc.net/step';
+
 /**
  * 추천 문제 태그 필터 목록 (대기업 코딩 테스트 출제 빈도 순)
  * 백엔드 TagUtils가 자동으로 공식 전체 이름으로 변환하므로 축약형을 그대로 전송
@@ -54,6 +56,14 @@ export const RecommendedProblems: FC<RecommendedProblemsProps> = ({ count = 4, c
     const problemList = Array.isArray(problems) ? problems : null;
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+    const isTierZeroUser = useMemo(() => {
+        if (!user) {
+            return false;
+        }
+
+        return user.tierLevel === 0;
+    }, [user]);
 
     // 사용자 티어 기반 개인화된 빈 상태 버튼 정보 계산
     const personalizedEmptyState = useMemo(() => {
@@ -157,6 +167,44 @@ export const RecommendedProblems: FC<RecommendedProblemsProps> = ({ count = 4, c
         }
     };
 
+    const renderContent = () => {
+        if (isLoading) {
+            return <RecommendedProblemsLoadingState />;
+        }
+
+        if (error) {
+            return <RecommendedProblemsErrorState isRetrying={isLoading} onRetry={() => refetch()} />;
+        }
+
+        if (problemList === null) {
+            return <RecommendedProblemsLoadingState />;
+        }
+
+        const isEmpty = problemList.length === 0;
+        const shouldShowUnratedEmptyState = isEmpty && isTierZeroUser;
+
+        if (shouldShowUnratedEmptyState) {
+            return <RecommendedProblemsUnratedEmptyState />;
+        }
+
+        if (isEmpty) {
+            return (
+                <RecommendedProblemsDefaultEmptyState
+                    buttonText={personalizedEmptyState.buttonText}
+                    targetUrl={personalizedEmptyState.targetUrl}
+                />
+            );
+        }
+
+        return (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {problemList.map((problem: ProblemResponse) => (
+                    <ProblemCard key={problem.id} problem={problem} />
+                ))}
+            </div>
+        );
+    };
+
     // 최외곽 컨테이너에 타겟 클래스 추가 (항상 렌더링됨)
     return (
         <div className="tour-recommendations bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 border border-gray-200 dark:border-gray-700">
@@ -238,96 +286,136 @@ export const RecommendedProblems: FC<RecommendedProblemsProps> = ({ count = 4, c
             </div>
             )}
 
-            {/* 로딩 상태 */}
-            {isLoading && (
-                <div className="text-center py-6">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">문제를 불러오는 중...</p>
-                </div>
-            )}
+            {renderContent()}
+        </div>
+    );
+};
 
-            {/* 에러/빈 상태 또는 문제 목록 */}
-            {!isLoading && (
-                <>
-                    {/* 에러 상태 */}
-                    {error ? (
-                <div className="text-center py-6 px-4">
-                    <div className="mb-4">
-                        <svg
-                            className="w-16 h-16 mx-auto text-red-400 dark:text-red-600"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                            />
-                        </svg>
-                    </div>
-                    <p className="text-gray-700 dark:text-gray-300 text-sm font-medium mb-2">
-                        추천 문제를 불러오는 중 오류가 발생했습니다.
-                    </p>
-                    <p className="text-gray-600 dark:text-gray-400 text-xs mb-4">
-                        네트워크 연결을 확인하거나 잠시 후 다시 시도해주세요.
-                    </p>
-                    <button
-                        onClick={() => refetch()}
-                        disabled={isLoading}
-                        className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors"
-                    >
-                        {isLoading ? '불러오는 중...' : '다시 시도'}
-                    </button>
-                </div>
-            ) : problemList === null ? (
-                <div className="text-center py-6">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">문제를 불러오는 중...</p>
-                </div>
-            ) : problemList.length === 0 ? (
-                <div className="text-center py-8 px-4">
-                    <div className="mb-4">
-                        <svg
-                            className="w-16 h-16 mx-auto text-gray-400 dark:text-gray-600"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                            />
-                        </svg>
-                    </div>
-                    <p className="text-gray-700 dark:text-gray-300 text-sm font-medium mb-2">
-                        아직 풀이 기록이 부족해요!
-                    </p>
-                    <p className="text-gray-600 dark:text-gray-400 text-xs mb-4">
-                        문제를 풀면 실력에 맞는 추천을 받을 수 있어요.
-                    </p>
-                    <div className="flex justify-center">
-                        <Link
-                            to={personalizedEmptyState.targetUrl}
-                            className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-md hover:shadow-lg"
-                        >
-                            {personalizedEmptyState.buttonText}
-                            <ArrowRight className="w-4 h-4" />
-                        </Link>
-                    </div>
-                </div>
-            ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {problemList.map((problem: ProblemResponse) => (
-                        <ProblemCard key={problem.id} problem={problem} />
-                    ))}
-                </div>
-                    )}
-                </>
-            )}
+const RecommendedProblemsLoadingState: FC = () => {
+    return (
+        <div className="text-center py-6">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">문제를 불러오는 중...</p>
+        </div>
+    );
+};
+
+interface RecommendedProblemsErrorStateProps {
+    isRetrying: boolean;
+    onRetry: () => void;
+}
+
+const RecommendedProblemsErrorState: FC<RecommendedProblemsErrorStateProps> = ({ isRetrying, onRetry }) => {
+    return (
+        <div className="text-center py-6 px-4">
+            <div className="mb-4">
+                <svg
+                    className="w-16 h-16 mx-auto text-red-400 dark:text-red-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                </svg>
+            </div>
+            <p className="text-gray-700 dark:text-gray-300 text-sm font-medium mb-2">
+                추천 문제를 불러오는 중 오류가 발생했습니다.
+            </p>
+            <p className="text-gray-600 dark:text-gray-400 text-xs mb-4">
+                네트워크 연결을 확인하거나 잠시 후 다시 시도해주세요.
+            </p>
+            <button
+                onClick={onRetry}
+                disabled={isRetrying}
+                className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors"
+            >
+                {isRetrying ? '불러오는 중...' : '다시 시도'}
+            </button>
+        </div>
+    );
+};
+
+interface RecommendedProblemsDefaultEmptyStateProps {
+    buttonText: string;
+    targetUrl: string;
+}
+
+const RecommendedProblemsDefaultEmptyState: FC<RecommendedProblemsDefaultEmptyStateProps> = ({ buttonText, targetUrl }) => {
+    return (
+        <div className="text-center py-8 px-4">
+            <div className="mb-4">
+                <svg
+                    className="w-16 h-16 mx-auto text-gray-400 dark:text-gray-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                </svg>
+            </div>
+            <p className="text-gray-700 dark:text-gray-300 text-sm font-medium mb-2">아직 풀이 기록이 부족해요!</p>
+            <p className="text-gray-600 dark:text-gray-400 text-xs mb-4">
+                문제를 풀면 실력에 맞는 추천을 받을 수 있어요.
+            </p>
+            <div className="flex justify-center">
+                <Link
+                    to={targetUrl}
+                    className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-md hover:shadow-lg"
+                >
+                    {buttonText}
+                    <ArrowRight className="w-4 h-4" />
+                </Link>
+            </div>
+        </div>
+    );
+};
+
+const RecommendedProblemsUnratedEmptyState: FC = () => {
+    return (
+        <div className="text-center py-8 px-4">
+            <div className="mb-4">
+                <svg
+                    className="w-16 h-16 mx-auto text-gray-400 dark:text-gray-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                </svg>
+            </div>
+            <p className="text-gray-700 dark:text-gray-300 text-sm font-medium mb-2">
+                아직 분석할 데이터가 부족해요! 🧐
+            </p>
+            <p className="text-gray-600 dark:text-gray-400 text-xs mb-5">
+                Solved.ac <strong>Bronze V</strong> 티어를 달성하면, 딱 맞는 문제를 추천해 드릴 수 있어요. 백준에서 쉬운
+                문제부터 차근차근 풀어보세요!
+            </p>
+            <div className="flex justify-center">
+                <a
+                    href={BOJ_STEP_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-md hover:shadow-lg"
+                >
+                    백준 문제 풀러 가기
+                    <ArrowRight className="w-4 h-4" />
+                </a>
+            </div>
         </div>
     );
 };
