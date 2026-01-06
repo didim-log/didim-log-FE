@@ -51,6 +51,7 @@ export const RecommendedProblems: FC<RecommendedProblemsProps> = ({ count = 4, c
         category: selectedCategory || undefined,
         language: onlyKorean ? 'ko' : undefined
     });
+    const problemList = Array.isArray(problems) ? problems : null;
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
@@ -280,7 +281,12 @@ export const RecommendedProblems: FC<RecommendedProblemsProps> = ({ count = 4, c
                         {isLoading ? '불러오는 중...' : '다시 시도'}
                     </button>
                 </div>
-            ) : !problems || problems.length === 0 ? (
+            ) : problemList === null ? (
+                <div className="text-center py-6">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">문제를 불러오는 중...</p>
+                </div>
+            ) : problemList.length === 0 ? (
                 <div className="text-center py-8 px-4">
                     <div className="mb-4">
                         <svg
@@ -315,7 +321,7 @@ export const RecommendedProblems: FC<RecommendedProblemsProps> = ({ count = 4, c
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {problems.map((problem: ProblemResponse) => (
+                    {problemList.map((problem: ProblemResponse) => (
                         <ProblemCard key={problem.id} problem={problem} />
                     ))}
                 </div>
