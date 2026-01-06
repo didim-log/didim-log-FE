@@ -2,6 +2,10 @@
  * 유효성 검사 함수
  */
 
+// 비밀번호에서 "특수문자"는 영문/숫자/공백이 아닌 모든 문자로 판단합니다.
+// - 예: ., _, -, @ 등 일반적인 키보드 특수문자 포함
+const PASSWORD_SPECIAL_CHAR_REGEX = /[^A-Za-z0-9\s]/;
+
 export const validation = {
     /**
      * 이메일 유효성 검사
@@ -24,7 +28,7 @@ export const validation = {
 
         const hasLetter = /[a-zA-Z]/.test(password);
         const hasNumber = /\d/.test(password);
-        const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+        const hasSpecial = PASSWORD_SPECIAL_CHAR_REGEX.test(password);
 
         const typeCount = [hasLetter, hasNumber, hasSpecial].filter(Boolean).length;
 
@@ -58,7 +62,7 @@ export const validation = {
     } => {
         const hasLetter = /[a-zA-Z]/.test(password);
         const hasNumber = /\d/.test(password);
-        const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+        const hasSpecial = PASSWORD_SPECIAL_CHAR_REGEX.test(password);
         const hasNoSpace = !password.includes(' ');
         const typeCount = [hasLetter, hasNumber, hasSpecial].filter(Boolean).length;
         
