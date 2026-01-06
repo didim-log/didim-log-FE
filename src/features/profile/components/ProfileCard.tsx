@@ -6,7 +6,7 @@ import type { FC } from 'react';
 import { TierBadge } from '../../dashboard/components/TierBadge';
 import { Button } from '../../../components/ui/Button';
 import { Edit2 } from 'lucide-react';
-import { getTierColor } from '../../../utils/tier';
+import { formatTier, getTierColor, resolveSolvedAcTierLevel } from '../../../utils/tier';
 import type { DashboardResponse } from '../../../types/api/dashboard.types';
 import { LanguageBadge } from '../../../components/common/LanguageBadge';
 
@@ -18,8 +18,15 @@ interface ProfileCardProps {
 
 
 export const ProfileCard: FC<ProfileCardProps> = ({ dashboard, primaryLanguage, onEdit }) => {
-    const { studentProfile, currentTierTitle } = dashboard;
-    const tierLevel = studentProfile.currentTierLevel || 1;
+    const { studentProfile, currentRating } = dashboard;
+    // 백엔드가 tierLevel을 정확한 solved.ac 단계(0~31)로 내려주므로 직접 사용
+    // 안전을 위해 fallback은 유지
+    const tierLevel = resolveSolvedAcTierLevel({
+        tierLevel: studentProfile.currentTierLevel,
+        rating: currentRating,
+    });
+    const isUnrated = studentProfile.currentTier === 'UNRATED' || tierLevel === 0;
+    const tierTitle = isUnrated ? 'Unrated' : formatTier(tierLevel);
 
     return (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 border border-gray-200 dark:border-gray-700">
@@ -45,8 +52,8 @@ export const ProfileCard: FC<ProfileCardProps> = ({ dashboard, primaryLanguage, 
 
                             {/* 티어 및 주 언어 */}
                             <div className="flex items-center gap-3 flex-wrap">
-                                <span className={`px-3 py-1 rounded-lg text-sm font-medium ${getTierColor(currentTierTitle?.split(' ')[0] || 'UNRATED')}`}>
-                                    {currentTierTitle}
+                                <span className={`px-3 py-1 rounded-lg text-sm font-medium ${getTierColor(tierTitle.split(' ')[0] || 'UNRATED')}`}>
+                                    {tierTitle}
                                 </span>
 
                                 {/* 온보딩 투어 타겟은 로딩/미설정 상황에서도 항상 DOM에 존재해야 합니다. */}

@@ -15,6 +15,8 @@ import {
     GITHUB_PRIVATE_EMAIL_TOAST_MESSAGE,
 } from '../utils/oauthSignupEmail';
 
+const SOLVED_AC_URL = 'https://solved.ac/';
+
 interface SignupFormStepProps {
     bojId: string;
     onComplete: (data: { email: string; password: string }) => void;
@@ -28,6 +30,56 @@ interface SignupFormStepProps {
     } | null;
 }
 
+interface SignupFormErrors {
+    email?: string;
+    password?: string;
+    passwordConfirm?: string;
+    bojId?: string;
+}
+
+const createErrorsFromApiError = (apiError: SignupFormStepProps['apiError']): SignupFormErrors => {
+    if (!apiError) {
+        return {};
+    }
+
+    if (apiError.code === 'DUPLICATE_BOJ_ID') {
+        return { bojId: apiError.message };
+    }
+
+    if (apiError.status === 404) {
+        return { bojId: apiError.message };
+    }
+
+    if (!apiError.fieldErrors) {
+        return {};
+    }
+
+    const fieldErrors: SignupFormErrors = {};
+    if (apiError.fieldErrors.email) {
+        fieldErrors.email = apiError.fieldErrors.email.join(', ');
+    }
+    if (apiError.fieldErrors.password) {
+        fieldErrors.password = apiError.fieldErrors.password.join(', ');
+    }
+    if (apiError.fieldErrors.bojId) {
+        fieldErrors.bojId = apiError.fieldErrors.bojId.join(', ');
+    }
+    return fieldErrors;
+};
+
+const isSolvedAcOnboardingHintTargetError = (errorMessage?: string): boolean => {
+    if (!errorMessage) {
+        return false;
+    }
+
+    const normalized = errorMessage.toLowerCase();
+    if (normalized.includes('not found')) {
+        return true;
+    }
+
+    return errorMessage.includes('존재하지 않는');
+};
+
 export const SignupFormStep: FC<SignupFormStepProps> = ({
     bojId,
     onComplete,
@@ -40,12 +92,7 @@ export const SignupFormStep: FC<SignupFormStepProps> = ({
     const [email, setEmail] = useState(() => oauthEmailViewModel.email);
     const [password, setPassword] = useState('');
     const [passwordConfirm, setPasswordConfirm] = useState('');
-    const [errors, setErrors] = useState<{
-        email?: string;
-        password?: string;
-        passwordConfirm?: string;
-        bojId?: string;
-    }>({});
+    const [errors, setErrors] = useState<SignupFormErrors>(() => createErrorsFromApiError(apiError));
     const [passwordPolicy, setPasswordPolicy] = useState(validation.getPasswordPolicyDetails(''));
     const bojIdInputRef = useRef<HTMLInputElement>(null);
 
@@ -59,32 +106,14 @@ export const SignupFormStep: FC<SignupFormStepProps> = ({
 
     // API 에러 처리
     useEffect(() => {
-        if (apiError) {
-            if (apiError.code === 'DUPLICATE_BOJ_ID') {
-                // BOJ ID 중복 에러
-                setErrors({ bojId: apiError.message });
-                bojIdInputRef.current?.focus();
-                return;
-            }
-            if (apiError.status === 404) {
-                setErrors({ bojId: apiError.message });
-                return;
-            }
-            if (!apiError.fieldErrors) {
-                return;
-            }
-            // 필드별 에러
-            const fieldErrors: typeof errors = {};
-            if (apiError.fieldErrors.email) {
-                fieldErrors.email = apiError.fieldErrors.email.join(', ');
-            }
-            if (apiError.fieldErrors.password) {
-                fieldErrors.password = apiError.fieldErrors.password.join(', ');
-            }
-            if (apiError.fieldErrors.bojId) {
-                fieldErrors.bojId = apiError.fieldErrors.bojId.join(', ');
-            }
-            setErrors(fieldErrors);
+        const nextErrors = createErrorsFromApiError(apiError);
+        if (Object.keys(nextErrors).length === 0) {
+            return;
+        }
+
+        setErrors(nextErrors);
+        if (apiError?.code === 'DUPLICATE_BOJ_ID') {
+            bojIdInputRef.current?.focus();
         }
     }, [apiError]);
 
@@ -150,16 +179,19 @@ export const SignupFormStep: FC<SignupFormStepProps> = ({
                         />
                     </div>
                     {errors.bojId && (
-                        <p className="mt-1.5 text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
-                            <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                <path
-                                    fillRule="evenodd"
-                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                                    clipRule="evenodd"
-                                />
-                            </svg>
-                            {errors.bojId}
-                        </p>
+                        <div className="mt-1.5">
+                            <p className="text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
+                                <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                    <path
+                                        fillRule="evenodd"
+                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                                        clipRule="evenodd"
+                                    />
+                                </svg>
+                                {errors.bojId}
+                            </p>
+                            {isSolvedAcOnboardingHintTargetError(errors.bojId) && <SolvedAcOnboardingHint />}
+                        </div>
                     )}
                 </div>
             </div>
@@ -281,6 +313,28 @@ export const SignupFormStep: FC<SignupFormStepProps> = ({
                     </Button>
                 </div>
             </form>
+        </div>
+    );
+};
+
+const SolvedAcOnboardingHint: FC = () => {
+    return (
+        <div className="mt-2 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+            <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
+                💡 <strong>방금 만든 계정인가요?</strong>
+                <br />
+                Solved.ac에 등록되지 않은 아이디일 수 있어요. 아래 링크에서 <strong>[사용 하기]</strong> 설정을 완료해 주세요.
+            </p>
+            <div className="mt-2">
+                <a
+                    href={SOLVED_AC_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline"
+                >
+                    Solved.ac 바로가기 →
+                </a>
+            </div>
         </div>
     );
 };

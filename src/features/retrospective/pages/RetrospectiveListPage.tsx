@@ -125,7 +125,7 @@ export const RetrospectiveListPage: FC = () => {
                             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs border border-gray-200 dark:border-gray-700">
                                 <Info className="w-3.5 h-3.5" />
                                 <span>
-                                    작성한 회고는 서버 저장 공간 최적화를 위해 <strong>작성일로부터 60일 뒤 자동으로 삭제</strong>
+                                    작성한 회고는 서버 저장 공간 최적화를 위해 <strong>작성일로부터 180일 뒤 자동으로 삭제</strong>
                                     됩니다.
                                 </span>
                             </div>

@@ -83,7 +83,7 @@ function validatePassword(password: string): { isValid: boolean; error?: string 
 
     const hasLetter = /[a-zA-Z]/.test(password)
     const hasNumber = /[0-9]/.test(password)
-    const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password)
+    const hasSpecial = /[^A-Za-z0-9\s]/.test(password)
 
     const typeCount = [hasLetter, hasNumber, hasSpecial].filter(Boolean).length
 
