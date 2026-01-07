@@ -274,4 +274,10 @@ export const useProblemStats = () => {
     });
 };
 
+export const useUpdateLanguage = () => {
+    return useMutation({
+        mutationFn: () => adminApi.updateLanguage(),
+    });
+};
+
 
