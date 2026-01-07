@@ -44,6 +44,54 @@ export const formatKST = (dateString: string, format: 'full' | 'dateOnly' | 'tim
     return kstDate.format('YYYY년 MM월 DD일 A h:mm');
 };
 
+/**
+ * 초 단위 시간을 "X분 Y초" 형식으로 포맷팅합니다.
+ * 
+ * @param seconds - 초 단위 시간 (null/undefined 허용)
+ * @returns 포맷된 시간 문자열 (예: "5분 30초", "45초", "2분"). null/undefined인 경우 빈 문자열 반환
+ * 
+ * @example
+ * formatTimeFromSeconds(90) // "1분 30초"
+ * formatTimeFromSeconds(45) // "45초"
+ * formatTimeFromSeconds(120) // "2분"
+ * formatTimeFromSeconds(null) // ""
+ */
+export const formatTimeFromSeconds = (seconds: number | null | undefined): string => {
+    if (seconds === null || seconds === undefined) return '';
+    if (seconds === 0) return '0분';
+    if (seconds < 60) return `${seconds}초`;
+    
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    
+    if (remainingSeconds === 0) {
+        return `${minutes}분`;
+    }
+    return `${minutes}분 ${remainingSeconds}초`;
+};
+
+/**
+ * 초 단위 시간을 시계 형식("HH:MM:SS" 또는 "MM:SS")으로 포맷팅합니다.
+ * 
+ * @param totalSeconds - 초 단위 시간
+ * @returns 포맷된 시간 문자열 (예: "01:30:45", "05:30")
+ * 
+ * @example
+ * formatTimeToClock(3665) // "01:01:05"
+ * formatTimeToClock(330) // "05:30"
+ */
+export const formatTimeToClock = (totalSeconds: number): string => {
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const secs = totalSeconds % 60;
+
+    if (hours > 0) {
+        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+};
+
+
 
 
 
