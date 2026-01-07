@@ -6,12 +6,12 @@ import { useState } from 'react';
 import type { FC } from 'react';
 import type { DashboardResponse } from '../../../types/api/dashboard.types';
 import { TierBadge } from './TierBadge';
-import { LanguageBadge } from '../../../components/common/LanguageBadge';
 import { RefreshCw } from 'lucide-react';
 import { useSyncBojProfile } from '../../../hooks/api/useStudent';
 import { toast } from 'sonner';
 import { getErrorMessage } from '../../../types/api/common.types';
 import { formatTier, resolveSolvedAcTierLevel, getTierMinRating } from '../../../utils/tier';
+import { getLanguageLabel, getLanguageColor } from '../../../constants/languageColors';
 
 interface TierProgressProps {
     dashboard: DashboardResponse;
@@ -74,9 +74,14 @@ export const TierProgress: FC<TierProgressProps> = ({ dashboard }) => {
                         <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                             {nickname || '사용자'}
                         </h2>
-                        {dashboard.studentProfile.primaryLanguage && dashboard.studentProfile.primaryLanguage !== 'TEXT' && (
-                            <LanguageBadge language={dashboard.studentProfile.primaryLanguage} size="sm" />
-                        )}
+                        {dashboard.studentProfile.primaryLanguage && dashboard.studentProfile.primaryLanguage !== 'TEXT' && (() => {
+                            const languageColors = getLanguageColor(dashboard.studentProfile.primaryLanguage);
+                            return (
+                                <span className={`px-3 py-1 rounded-lg text-sm font-medium ${languageColors.bg} ${languageColors.text} ${languageColors.darkBg} ${languageColors.darkText}`}>
+                                    {getLanguageLabel(dashboard.studentProfile.primaryLanguage)}
+                                </span>
+                            );
+                        })()}
                     </div>
                     <button
                         onClick={handleSync}
