@@ -2,7 +2,7 @@ import { CheckCircle2, XCircle, Clock } from 'lucide-react'
 import Card from '../common/Card'
 import type { TodaySolvedProblemResponse } from '../../types/api/dtos'
 import { useNavigate } from 'react-router-dom'
-import { formatTimeToKorea } from '../../utils/dateUtils'
+import { formatKST } from '../../utils/dateUtils'
 
 interface TodaySolvedListProps {
     problems: TodaySolvedProblemResponse[]
@@ -79,7 +79,7 @@ export default function TodaySolvedList({
                                         문제 {problem.problemId}
                                     </p>
                                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                                        {formatTimeToKorea(problem.solvedAt)}
+                                        {formatKST(problem.solvedAt, 'default')}
                                     </p>
                                 </div>
                                 <span

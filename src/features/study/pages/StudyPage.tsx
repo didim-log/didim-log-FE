@@ -20,7 +20,7 @@ import { useOnboardingStore } from '../../../stores/onboarding.store';
 import type { SolutionSubmitResponse } from '../../../types/api/study.types';
 import { ChevronLeft, ExternalLink, Clock, Pause, Play } from 'lucide-react';
 import { formatTierFromDifficulty, getTierColor } from '../../../utils/tier';
-import { LanguageBadge } from '../../../components/common/LanguageBadge';
+import { getLanguageLabel, getLanguageColor } from '../../../constants/languageColors';
 
 const LANGUAGE_OPTIONS = [
     { value: 'text', label: 'Text' },
@@ -297,8 +297,15 @@ export const StudyPage: FC = () => {
                                         <span className={`px-2 py-1 rounded text-sm font-medium whitespace-nowrap ${getTierColor(problem.difficulty)}`}>
                                             {formatTierFromDifficulty(problem.difficulty, problem.difficultyLevel)}
                                         </span>
-                                        {/* 언어 배지 */}
-                                        <LanguageBadge language={language} />
+                                        {/* 주 프로그래밍 언어 배지 */}
+                                        {language && language !== 'text' && (() => {
+                                            const languageColors = getLanguageColor(language);
+                                            return (
+                                                <span className={`px-2 py-1 rounded text-sm font-medium ${languageColors.bg} ${languageColors.text} ${languageColors.darkBg} ${languageColors.darkText}`}>
+                                                    {getLanguageLabel(language)}
+                                                </span>
+                                            );
+                                        })()}
                                     </div>
                                 </div>
                             </div>

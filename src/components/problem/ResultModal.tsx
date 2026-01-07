@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Button } from '../ui/Button'
 import { CheckCircle, XCircle, X } from 'lucide-react'
 import { fireConfetti } from '../../utils/confetti'
+import { formatTimeToClock } from '../../utils/dateUtils'
 
 interface ResultModalProps {
     isOpen: boolean
@@ -31,11 +32,6 @@ export default function ResultModal({
         }
     }, [isOpen, isSuccess])
 
-    const formatTime = (totalSeconds: number): string => {
-        const minutes = Math.floor(totalSeconds / 60)
-        const secs = totalSeconds % 60
-        return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
-    }
 
     const handleGoToDashboard = () => {
         navigate('/dashboard')
@@ -96,7 +92,7 @@ export default function ResultModal({
                     </p>
                     {isSuccess && (
                         <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                            소요 시간: {formatTime(timeTaken)}
+                            소요 시간: {formatTimeToClock(timeTaken)}
                         </p>
                     )}
                 </div>

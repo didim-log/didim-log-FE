@@ -13,25 +13,11 @@ import { WeaknessAnalysisCard } from '../components/WeaknessAnalysisCard';
 import { Spinner } from '../../../components/ui/Spinner';
 import { Layout } from '../../../components/layout/Layout';
 import { BookOpen, FileText, Clock, Target } from 'lucide-react';
+import { formatTimeFromSeconds } from '../../../utils/dateUtils';
 
 export const StatisticsPage: FC = () => {
     const navigate = useNavigate();
     const { data: statistics, isLoading, error } = useStatistics();
-
-    // 시간 포맷 유틸리티 함수
-    const formatTime = (seconds: number): string => {
-        if (seconds === 0) return '0분';
-        const minutes = Math.floor(seconds / 60);
-        const remainingSeconds = Math.floor(seconds % 60);
-        
-        if (minutes === 0) {
-            return `${remainingSeconds}초`;
-        }
-        if (remainingSeconds === 0) {
-            return `${minutes}분`;
-        }
-        return `${minutes}분 ${remainingSeconds}초`;
-    };
 
     // 레이더 차트 데이터 준비
     // 백엔드에서 이미 집계된 categoryStats를 사용하여 레이더 차트 데이터 생성
@@ -114,7 +100,7 @@ export const StatisticsPage: FC = () => {
                             />
                             <StatCard
                                 title="평균 풀이 시간"
-                                value={formatTime(statistics.averageSolveTime ?? 0)}
+                                value={formatTimeFromSeconds(statistics.averageSolveTime ?? 0)}
                                 icon={Clock}
                                 iconColor="text-purple-600 dark:text-purple-400"
                                 bgColor="bg-purple-100 dark:bg-purple-900/30"

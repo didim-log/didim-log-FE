@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '../ui/Button'
 import type { FeedbackType } from '../../types/api/feedback.types'
-import { feedbackApi } from '../../api/endpoints/feedback.api'
+import { useCreateFeedback } from '../../hooks/api/useFeedback'
 import type { AxiosError } from 'axios'
 import { getErrorMessage, type ApiErrorResponse } from '../../utils/errorHandler'
 
@@ -15,7 +15,7 @@ const MIN_CONTENT_LENGTH = 10
 export default function FeedbackForm({ onSuccess }: FeedbackFormProps) {
     const [type, setType] = useState<FeedbackType>('BUG')
     const [content, setContent] = useState('')
-    const [isSubmitting, setIsSubmitting] = useState(false)
+    const createFeedbackMutation = useCreateFeedback()
 
     const trimmedContent = content.trim()
     const isValid = useMemo(() => {
@@ -41,9 +41,8 @@ export default function FeedbackForm({ onSuccess }: FeedbackFormProps) {
             return
         }
 
-        setIsSubmitting(true)
         try {
-            await feedbackApi.createFeedback({
+            await createFeedbackMutation.mutateAsync({
                 type,
                 content: trimmedContent,
             })
@@ -59,8 +58,6 @@ export default function FeedbackForm({ onSuccess }: FeedbackFormProps) {
                 ? getErrorMessage(error.response.data)
                 : '피드백 등록에 실패했습니다.'
             toast.error(errorMessage)
-        } finally {
-            setIsSubmitting(false)
         }
     }
 
@@ -104,8 +101,8 @@ export default function FeedbackForm({ onSuccess }: FeedbackFormProps) {
                     variant="primary"
                     size="sm"
                     onClick={handleSubmit}
-                    disabled={!isValid || isSubmitting}
-                    isLoading={isSubmitting}
+                    disabled={!isValid || createFeedbackMutation.isPending}
+                    isLoading={createFeedbackMutation.isPending}
                 >
                     등록
                 </Button>

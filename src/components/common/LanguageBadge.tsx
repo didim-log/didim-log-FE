@@ -1,69 +1,34 @@
 /**
- * 프로그래밍 언어 배지 컴포넌트
- * 공식 브랜드 색상을 사용하여 일관된 언어 배지를 표시합니다.
+ * 문제 언어를 표시하는 뱃지 컴포넌트
  */
 
 import type { FC } from 'react';
-import { getLanguageColor, getLanguageLabel, normalizeLanguage } from '../../constants/languageColors';
 
 interface LanguageBadgeProps {
-    language: string;
+    language?: string | null;
     className?: string;
-    size?: 'sm' | 'md' | 'lg';
-    showLabel?: boolean; // false일 경우 언어 이름을 표시하지 않음 (색상만)
 }
 
-const SIZE_CLASSES = {
-    sm: 'px-2 py-0.5 text-xs',
-    md: 'px-2 py-1 text-sm',
-    lg: 'px-3 py-1.5 text-base',
+const LANGUAGE_MAP: Record<string, { flag: string; label: string }> = {
+    ko: { flag: '🇰🇷', label: 'KR' },
+    en: { flag: '🇺🇸', label: 'EN' },
+    ja: { flag: '🇯🇵', label: 'JP' },
+    zh: { flag: '🇨🇳', label: 'CN' },
+    other: { flag: '🌐', label: 'ETC' },
 };
 
-/**
- * LanguageBadge 컴포넌트
- * 
- * @param language - 언어 이름 (대소문자 무관, 예: 'java', 'JAVA', 'Java')
- * @param className - 추가 CSS 클래스
- * @param size - 배지 크기 ('sm' | 'md' | 'lg'), 기본값 'md'
- * @param showLabel - 언어 이름 표시 여부, 기본값 true
- * 
- * @example
- * <LanguageBadge language="java" />
- * <LanguageBadge language="python" size="sm" />
- * <LanguageBadge language="kotlin" className="ml-2" />
- */
-export const LanguageBadge: FC<LanguageBadgeProps> = ({
-    language,
-    className = '',
-    size = 'md',
-    showLabel = true,
-}) => {
-    if (!language || normalizeLanguage(language) === 'text' || normalizeLanguage(language) === 'default') {
-        return null; // text나 default는 표시하지 않음
-    }
-
-    const colorConfig = getLanguageColor(language);
-    const label = showLabel ? getLanguageLabel(language) : '';
-    const sizeClass = SIZE_CLASSES[size];
-
-    const badgeClasses = `
-        ${sizeClass}
-        ${colorConfig.bg}
-        ${colorConfig.text}
-        ${colorConfig.darkBg}
-        ${colorConfig.darkText}
-        rounded
-        font-medium
-        whitespace-nowrap
-        ${className}
-    `.trim().replace(/\s+/g, ' ');
+export const LanguageBadge: FC<LanguageBadgeProps> = ({ language, className = '' }) => {
+    // language가 없으면 기본값 'ko' 사용
+    const normalizedLanguage = language || 'ko';
+    const languageInfo = LANGUAGE_MAP[normalizedLanguage] || LANGUAGE_MAP.other;
 
     return (
-        <span className={`tour-language-badge ${badgeClasses}`}>
-            {label}
+        <span
+            className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600 ${className}`}
+            title={`Language: ${normalizedLanguage}`}
+        >
+            <span>{languageInfo.flag}</span>
+            <span>{languageInfo.label}</span>
         </span>
     );
 };
-
-
-

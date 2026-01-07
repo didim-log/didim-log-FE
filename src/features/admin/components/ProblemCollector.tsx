@@ -4,11 +4,11 @@
 
 import { useState } from 'react';
 import type { FC } from 'react';
-import { useCollectMetadata, useCollectDetails, useProblemStats } from '../../../hooks/api/useAdmin';
+import { useCollectMetadata, useCollectDetails, useProblemStats, useUpdateLanguage } from '../../../hooks/api/useAdmin';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { Spinner } from '../../../components/ui/Spinner';
-import { BookOpen, Minus, Maximize } from 'lucide-react';
+import { BookOpen, Minus, Maximize, Languages } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const ProblemCollector: FC = () => {
@@ -18,6 +18,7 @@ export const ProblemCollector: FC = () => {
 
     const collectMetadataMutation = useCollectMetadata();
     const collectDetailsMutation = useCollectDetails();
+    const updateLanguageMutation = useUpdateLanguage();
     const { data: stats, isLoading: isStatsLoading, refetch: refetchStats } = useProblemStats();
     const suggestedStart = stats?.maxProblemId ? String(stats.maxProblemId + 1) : '';
 
@@ -66,6 +67,29 @@ export const ProblemCollector: FC = () => {
             toast.success('문제 상세 정보 크롤링이 완료되었습니다.');
         } catch {
             toast.error('크롤링에 실패했습니다.');
+        }
+    };
+
+    const handleUpdateLanguage = async () => {
+        const confirmed = window.confirm(
+            '모든 문제의 언어 정보를 업데이트하시겠습니까?\n\n' +
+            '이 작업은 시간이 오래 걸릴 수 있습니다.\n' +
+            '(문제 수에 따라 수 분 ~ 수십 분 소요)'
+        );
+
+        if (!confirmed) {
+            return;
+        }
+
+        try {
+            const result = await updateLanguageMutation.mutateAsync();
+            toast.success(`언어 정보가 성공적으로 업데이트되었습니다. (${result.updatedCount}개 문제)`);
+        } catch (error) {
+            if (error instanceof Error) {
+                toast.error(error.message);
+            } else {
+                toast.error('언어 정보 업데이트에 실패했습니다.');
+            }
         }
     };
 
@@ -163,6 +187,49 @@ export const ProblemCollector: FC = () => {
                 </p>
                 <Button onClick={handleCollectDetails} variant="primary" isLoading={collectDetailsMutation.isPending}>
                     상세 정보 크롤링 시작
+                </Button>
+            </div>
+
+            {/* 언어 정보 최신화 */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 border border-gray-200 dark:border-gray-700">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                    <Languages className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                    문제 언어 정보 최신화
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    DB에 저장된 모든 문제의 언어 정보를 재판별하여 업데이트합니다. 기존 크롤링 데이터는 유지하고 language 필드만 업데이트합니다.
+                    <br />
+                    <span className="text-xs text-gray-500 dark:text-gray-500 mt-1 block">
+                        (소요 시간: 문제 수에 따라 수 분 ~ 수십 분)
+                    </span>
+                </p>
+                {updateLanguageMutation.isPending && (
+                    <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                        <p className="text-sm text-blue-700 dark:text-blue-300 font-medium">
+                            언어 정보를 업데이트하는 중입니다. 이 작업은 시간이 오래 걸릴 수 있습니다.
+                        </p>
+                        <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                            페이지를 닫지 마세요.
+                        </p>
+                    </div>
+                )}
+                <Button
+                    onClick={handleUpdateLanguage}
+                    variant="primary"
+                    isLoading={updateLanguageMutation.isPending}
+                    className="flex items-center gap-2"
+                >
+                    {updateLanguageMutation.isPending ? (
+                        <>
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            업데이트 중...
+                        </>
+                    ) : (
+                        <>
+                            <Languages className="w-4 h-4" />
+                            언어 정보 최신화 시작
+                        </>
+                    )}
                 </Button>
             </div>
         </div>

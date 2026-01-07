@@ -15,6 +15,7 @@ import { formatTierFromDifficulty, getTierColor } from '../../../utils/tier';
 import type { ProblemResponse } from '../../../types/api/problem.types';
 import { Search, HelpCircle } from 'lucide-react';
 import { getCategoryHierarchyHints } from '../../../constants/algorithmHierarchy';
+import { LanguageBadge } from '../../../components/common/LanguageBadge';
 
 export const ProblemListPage: FC = () => {
     const navigate = useNavigate();
@@ -204,7 +205,10 @@ export const ProblemListPage: FC = () => {
                                 >
                                     <div className="flex items-start justify-between mb-3">
                                         <div className="flex-1">
-                                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">#{problem.id}</p>
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <p className="text-sm text-gray-600 dark:text-gray-400">#{problem.id}</p>
+                                                <LanguageBadge language={problem.language} />
+                                            </div>
                                             <h3 className="font-semibold text-gray-900 dark:text-white">{problem.title}</h3>
                                         </div>
                                         <span className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${getTierColor(problem.difficulty)}`}>

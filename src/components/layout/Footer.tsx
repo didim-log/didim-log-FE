@@ -4,16 +4,21 @@
 
 import { useState, useRef, useEffect } from 'react';
 import type { FC } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Github, BookOpen, Mail, User, ChevronDown, ChevronUp } from 'lucide-react';
+import Modal from '../common/Modal';
+import FeedbackForm from '../feedback/FeedbackForm';
 
 export const Footer: FC = () => {
-    const navigate = useNavigate();
     const [isDeveloperMenuOpen, setIsDeveloperMenuOpen] = useState(false);
+    const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
 
     const handleFeedbackClick = () => {
-        navigate('/admin/dashboard');
+        setIsFeedbackModalOpen(true);
+    };
+
+    const handleFeedbackSuccess = () => {
+        setIsFeedbackModalOpen(false);
     };
 
     // 외부 클릭 시 메뉴 닫기
@@ -116,6 +121,15 @@ export const Footer: FC = () => {
                     </div>
                 </div>
             </div>
+
+            {/* 피드백 모달 */}
+            <Modal
+                isOpen={isFeedbackModalOpen}
+                onClose={() => setIsFeedbackModalOpen(false)}
+                title="문의하기"
+            >
+                <FeedbackForm onSuccess={handleFeedbackSuccess} />
+            </Modal>
         </footer>
     );
 };

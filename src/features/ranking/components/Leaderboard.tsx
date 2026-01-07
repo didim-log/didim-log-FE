@@ -4,24 +4,13 @@
 
 import type { FC } from 'react';
 import type { LeaderboardResponse } from '../../../types/api/ranking.types';
+import { getTierColor } from '../../../utils/tier';
 
 interface LeaderboardProps {
     data: LeaderboardResponse[];
 }
 
 export const Leaderboard: FC<LeaderboardProps> = ({ data }) => {
-    const getTierColor = (tier: string) => {
-        const tierColors: Record<string, string> = {
-            BRONZE: 'bg-amber-600 text-white',
-            SILVER: 'bg-gray-400 text-white',
-            GOLD: 'bg-yellow-500 text-white',
-            PLATINUM: 'bg-cyan-400 text-white',
-            DIAMOND: 'bg-blue-500 text-white',
-            RUBY: 'bg-red-500 text-white',
-            UNRATED: 'bg-gray-300 text-gray-700',
-        };
-        return tierColors[tier] || 'bg-gray-300 text-gray-700';
-    };
 
     const getRankBadge = (rank: number) => {
         if (rank === 1) return '🥇';

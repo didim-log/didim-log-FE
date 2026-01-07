@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Play, Pause, RotateCcw } from 'lucide-react'
 import { Button } from '../ui/Button'
+import { formatTimeToClock } from '../../utils/dateUtils'
 
 interface TimerProps {
     onTimeUpdate?: (seconds: number) => void
@@ -54,11 +55,6 @@ export default function Timer({ onTimeUpdate, shouldPause = false }: TimerProps)
         }
     }
 
-    const formatTime = (totalSeconds: number): string => {
-        const minutes = Math.floor(totalSeconds / 60)
-        const secs = totalSeconds % 60
-        return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
-    }
 
     const timerColor = isActive
         ? 'text-blue-600 dark:text-blue-400'
@@ -73,7 +69,7 @@ export default function Timer({ onTimeUpdate, shouldPause = false }: TimerProps)
                 <div
                     className={`text-3xl sm:text-4xl font-bold ${timerColor} transition-colors`}
                 >
-                    {formatTime(seconds)}
+                    {formatTimeToClock(seconds)}
                 </div>
                 <div className="flex gap-2 w-full sm:w-auto">
                     {isActive ? (

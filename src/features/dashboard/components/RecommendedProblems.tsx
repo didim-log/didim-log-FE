@@ -12,6 +12,7 @@ import { useAuthStore } from '../../../stores/auth.store';
 import type { ProblemResponse } from '../../../types/api/problem.types';
 import { OnlyKoreanToggle } from '../../../components/common/OnlyKoreanToggle';
 import { getCategoryDisplayLabel } from '../../../constants/categoryMapping';
+import { LanguageBadge } from '../../../components/common/LanguageBadge';
 
 const BOJ_STEP_URL = 'https://www.acmicpc.net/step';
 
@@ -426,7 +427,6 @@ interface ProblemCardProps {
 
 const ProblemCard: FC<ProblemCardProps> = ({ problem }) => {
     const difficultyDisplay = formatTierFromDifficulty(problem.difficulty, problem.difficultyLevel);
-    const isEnglish = problem.language === 'en';
 
     return (
         <Link
@@ -437,15 +437,7 @@ const ProblemCard: FC<ProblemCardProps> = ({ problem }) => {
                 <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                         <p className="text-xs text-gray-600 dark:text-gray-400">#{problem.id}</p>
-                        {/* EN 배지 */}
-                        {isEnglish && (
-                            <span 
-                                className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
-                                title="This is an English problem"
-                            >
-                                🇺🇸 EN
-                            </span>
-                        )}
+                        <LanguageBadge language={problem.language} />
                     </div>
                     <h4 className="text-sm font-semibold text-gray-900 dark:text-white mt-1">{problem.title}</h4>
                     {/* 카테고리 정보 표시 */}

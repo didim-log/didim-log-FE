@@ -32,6 +32,7 @@ import type {
     AdminAuditLogRequest,
     AdminAuditLogPageResponse,
     ProblemStatsResponse,
+    UpdateLanguageResponse,
 } from '../../types/api/admin.types';
 import type { QuoteResponse } from '../../types/api/quote.types';
 import type { FeedbackResponse, FeedbackStatusUpdateRequest } from '../../types/api/feedback.types';
@@ -256,6 +257,14 @@ export const adminApi = {
      */
     getProblemStats: async (): Promise<ProblemStatsResponse> => {
         const response = await apiClient.get<ProblemStatsResponse>('/admin/problems/stats');
+        return response.data;
+    },
+
+    /**
+     * 문제 언어 정보 최신화
+     */
+    updateLanguage: async (): Promise<UpdateLanguageResponse> => {
+        const response = await apiClient.post<UpdateLanguageResponse>('/admin/problems/update-language');
         return response.data;
     },
 };

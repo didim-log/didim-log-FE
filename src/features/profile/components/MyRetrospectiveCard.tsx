@@ -6,7 +6,7 @@
 import type { FC } from 'react';
 import { Link } from 'react-router-dom';
 import type { RetrospectiveResponse } from '../../../types/api/retrospective.types';
-import { formatKST } from '../../../utils/dateUtils';
+import { formatKST, formatTimeFromSeconds } from '../../../utils/dateUtils';
 import { getCategoryLabel } from '../../../utils/constants';
 import { useProblemDetail } from '../../../hooks/api/useProblem';
 import { stripMarkdown, truncateText } from '../../../utils/markdownUtils';
@@ -50,14 +50,6 @@ export const MyRetrospectiveCard: FC<MyRetrospectiveCardProps> = ({ retrospectiv
         );
     };
 
-    const formatTimeTaken = (seconds: number | null | undefined): string => {
-        if (!seconds) return '';
-        if (seconds < 60) return `${seconds}초`;
-        const minutes = Math.floor(seconds / 60);
-        const remainingSeconds = seconds % 60;
-        if (remainingSeconds === 0) return `${minutes}분`;
-        return `${minutes}분 ${remainingSeconds}초`;
-    };
 
     return (
         <Link
@@ -75,7 +67,7 @@ export const MyRetrospectiveCard: FC<MyRetrospectiveCardProps> = ({ retrospectiv
                             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
-                            {retrospective.solveTime || formatTimeTaken(retrospective.timeTaken)}
+                            {retrospective.solveTime || formatTimeFromSeconds(retrospective.timeTaken)}
                         </span>
                     )}
                 </div>

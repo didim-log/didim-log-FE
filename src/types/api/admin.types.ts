@@ -73,6 +73,11 @@ export interface ProblemStatsResponse {
     maxProblemId: number | null;
 }
 
+export interface UpdateLanguageResponse {
+    message: string;
+    updatedCount: number;
+}
+
 export interface PerformanceMetricsResponse {
     rpm: number;
     averageResponseTime: number;

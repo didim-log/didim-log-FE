@@ -4,6 +4,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import type { FC } from 'react';
+import { formatTimeToClock } from '../../../utils/dateUtils';
 
 interface TimerProps {
     isRunning: boolean;
@@ -39,20 +40,9 @@ export const Timer: FC<TimerProps> = ({ isRunning, onTimeUpdate }) => {
         }
     }, [seconds]);
 
-    const formatTime = (totalSeconds: number) => {
-        const hours = Math.floor(totalSeconds / 3600);
-        const minutes = Math.floor((totalSeconds % 3600) / 60);
-        const secs = totalSeconds % 60;
-
-        if (hours > 0) {
-            return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-        }
-        return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    };
-
     return (
         <span className="text-sm font-mono font-semibold text-gray-900 dark:text-white">
-            {formatTime(seconds)}
+            {formatTimeToClock(seconds)}
         </span>
     );
 };

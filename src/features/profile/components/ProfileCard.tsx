@@ -8,7 +8,7 @@ import { Button } from '../../../components/ui/Button';
 import { Edit2 } from 'lucide-react';
 import { formatTier, getTierColor, resolveSolvedAcTierLevel } from '../../../utils/tier';
 import type { DashboardResponse } from '../../../types/api/dashboard.types';
-import { LanguageBadge } from '../../../components/common/LanguageBadge';
+import { getLanguageLabel, getLanguageColor } from '../../../constants/languageColors';
 
 interface ProfileCardProps {
     dashboard: DashboardResponse;
@@ -58,9 +58,14 @@ export const ProfileCard: FC<ProfileCardProps> = ({ dashboard, primaryLanguage, 
 
                                 {/* 온보딩 투어 타겟은 로딩/미설정 상황에서도 항상 DOM에 존재해야 합니다. */}
                                 <div className="tour-language-badge">
-                                    {primaryLanguage && primaryLanguage !== 'TEXT' ? (
-                                        <LanguageBadge language={primaryLanguage} size="md" />
-                                    ) : (
+                                    {primaryLanguage && primaryLanguage !== 'TEXT' ? (() => {
+                                        const languageColors = getLanguageColor(primaryLanguage);
+                                        return (
+                                            <span className={`px-3 py-1 rounded-lg text-sm font-medium ${languageColors.bg} ${languageColors.text} ${languageColors.darkBg} ${languageColors.darkText}`}>
+                                                {getLanguageLabel(primaryLanguage)}
+                                            </span>
+                                        );
+                                    })() : (
                                         <span className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg text-sm font-medium">
                                             언어 미설정
                                         </span>

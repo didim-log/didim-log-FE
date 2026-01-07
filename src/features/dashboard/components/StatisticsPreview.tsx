@@ -7,19 +7,10 @@ import type { FC } from 'react';
 import { useStatistics } from '../../../hooks/api/useStatistics';
 import { Spinner } from '../../../components/ui/Spinner';
 import { BookOpen, Clock, Target, TrendingUp } from 'lucide-react';
+import { formatTimeFromSeconds } from '../../../utils/dateUtils';
 
 export const StatisticsPreview: FC = () => {
     const { data: statistics, isLoading } = useStatistics();
-
-    // 시간 포맷 유틸리티 함수 (초 단위를 "MM분" 형식으로 변환)
-    const formatTime = (seconds: number): string => {
-        if (seconds === 0) return '0분';
-        const minutes = Math.floor(seconds / 60);
-        if (minutes === 0) {
-            return `${Math.floor(seconds)}초`;
-        }
-        return `${minutes}분`;
-    };
 
     // 핵심 지표 계산 (실제 API 데이터 사용)
     const getMetrics = () => {
@@ -33,7 +24,7 @@ export const StatisticsPreview: FC = () => {
 
         return {
             totalRetrospectives: statistics.totalRetrospectives ?? 0,
-            averageSolveTime: formatTime(statistics.averageSolveTime ?? 0),
+            averageSolveTime: formatTimeFromSeconds(statistics.averageSolveTime ?? 0),
             successRate: (statistics.successRate ?? 0).toFixed(1),
         };
     };
