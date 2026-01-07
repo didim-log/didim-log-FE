@@ -37,10 +37,16 @@ export const AdminStatsChart: FC<AdminStatsChartProps> = ({ stats }) => {
                     </div>
                     <div className="text-3xl font-bold text-gray-900 dark:text-white">{stats.totalUsers.toLocaleString()}</div>
                 </button>
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 border border-gray-200 dark:border-gray-700">
-                    <div className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">오늘 가입자</div>
+                <button
+                    onClick={() => handleCardClick('USER', '오늘 가입자')}
+                    className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow cursor-pointer text-left group"
+                >
+                    <div className="flex items-center justify-between mb-2">
+                        <div className="text-sm font-medium text-gray-600 dark:text-gray-400">오늘 가입자</div>
+                        <TrendingUp className="w-4 h-4 text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
+                    </div>
                     <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">{stats.todaySignups.toLocaleString()}</div>
-                </div>
+                </button>
                 <button
                     onClick={() => handleCardClick('SOLUTION', '총 해결된 문제')}
                     className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow cursor-pointer text-left group"
