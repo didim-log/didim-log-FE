@@ -19,6 +19,7 @@ import type {
     BojVerifyResponse,
     BojIdDuplicateCheckResponse,
     RefreshTokenRequest,
+    SignupFinalizeRequest,
 } from '../../types/api/auth.types';
 
 type InFlightLogin = {
@@ -166,6 +167,25 @@ export const authApi = {
      */
     refresh: async (data: RefreshTokenRequest): Promise<AuthResponse> => {
         const response = await apiClient.post<AuthResponse>('/auth/refresh', data);
+        return response.data;
+    },
+
+    /**
+     * 회원가입 마무리 (소셜 로그인용)
+     * 
+     * 소셜 로그인 후 약관 동의 및 닉네임 설정을 완료합니다.
+     * 신규 유저의 경우 Student 엔티티를 생성하고, 약관 동의가 완료되면 GUEST에서 USER로 역할이 변경되며 정식 Access Token이 발급됩니다.
+     * 
+     * @param data 회원가입 마무리 요청 데이터
+     * @returns JWT 토큰 및 사용자 정보
+     * 
+     * @throws {AxiosError} 400 (COMMON_INVALID_INPUT): 약관 동의 미완료, 닉네임 중복 등
+     * @throws {AxiosError} 409 (DUPLICATE_BOJ_ID): 이미 가입된 BOJ ID
+     * 
+     * @see {@link https://github.com/didimlog/didim-log/blob/main/DOCS/API_SPECIFICATION.md#post-apiv1authsignupfinalize API 명세서}
+     */
+    signupFinalize: async (data: SignupFinalizeRequest): Promise<AuthResponse> => {
+        const response = await apiClient.post<AuthResponse>('/auth/signup/finalize', data);
         return response.data;
     },
 };

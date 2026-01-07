@@ -83,4 +83,13 @@ export interface BojIdDuplicateCheckResponse {
     message: string;
 }
 
+export interface SignupFinalizeRequest {
+    email: string;
+    provider: 'GOOGLE' | 'GITHUB' | 'NAVER';
+    providerId: string;
+    nickname: string;
+    bojId?: string | null;
+    isAgreedToTerms: boolean;
+}
+
 
