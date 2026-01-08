@@ -57,5 +57,3 @@ export const getCategoryDisplayLabel = (category: string): string => {
     }
     return label;
 };
-
-

@@ -5,17 +5,3 @@
 export interface UpdateMyNicknameRequest {
     nickname: string;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-

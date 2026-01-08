@@ -84,5 +84,3 @@ export const NoticeDetailPage: FC = () => {
         </Layout>
     );
 };
-
-

@@ -165,4 +165,3 @@ export const MarkdownViewer: FC<MarkdownViewerProps> = ({ content, className = '
         </div>
     );
 };
-

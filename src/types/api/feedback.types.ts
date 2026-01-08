@@ -24,17 +24,3 @@ export interface FeedbackResponse {
 export interface FeedbackStatusUpdateRequest {
     status: FeedbackStatus;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -107,4 +107,3 @@ export const MyRetrospectiveCard: FC<MyRetrospectiveCardProps> = ({ retrospectiv
         </Link>
     );
 };
-

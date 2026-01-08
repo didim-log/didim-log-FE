@@ -36,4 +36,3 @@ export function fireConfetti() {
         origin: { x: 0.5, y: 0.5 },
     })
 }
-

@@ -124,4 +124,3 @@ export const SignupPage: FC = () => {
         </div>
     );
 };
-

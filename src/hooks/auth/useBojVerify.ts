@@ -57,17 +57,3 @@ export const useBojVerify = (): UseBojVerifyReturn => {
         error: issueCodeMutation.error || verifyMutation.error || null,
     };
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-

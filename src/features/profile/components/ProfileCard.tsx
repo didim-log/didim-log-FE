@@ -104,5 +104,3 @@ export const ProfileCard: FC<ProfileCardProps> = ({ dashboard, primaryLanguage, 
         </div>
     );
 };
-
-

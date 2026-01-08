@@ -88,4 +88,3 @@ export const TermsStep: FC<TermsStepProps> = ({ onNext }) => {
         </div>
     );
 };
-

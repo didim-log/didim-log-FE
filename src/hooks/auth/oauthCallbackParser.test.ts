@@ -60,6 +60,3 @@ describe('parseOAuthCallbackParams', () => {
         expect(result.tokens.accessToken).toBe('a');
     });
 });
-
-
-

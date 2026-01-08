@@ -111,7 +111,3 @@ export default function RetrospectiveFilterBar({
         </div>
     )
 }
-
-
-
-

@@ -9,6 +9,3 @@ export interface SystemStatusResponse {
     endTime?: string | null;   // ISO 8601 형식 (yyyy-MM-ddTHH:mm:ss)
     noticeId?: string | null;    // 관련 공지사항 ID
 }
-
-
-

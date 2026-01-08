@@ -57,4 +57,3 @@ export const logApi = {
         return response.data;
     },
 };
-

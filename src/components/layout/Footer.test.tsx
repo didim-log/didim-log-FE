@@ -15,6 +15,3 @@ describe('Footer', () => {
         expect(html).toContain('text-[10px]');
     });
 });
-
-
-

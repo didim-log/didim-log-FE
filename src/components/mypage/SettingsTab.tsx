@@ -358,9 +358,3 @@ export default function SettingsTab({ currentNickname, onSuccess }: SettingsTabP
         </div>
     )
 }
-
-
-
-
-
-

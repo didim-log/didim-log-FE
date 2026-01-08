@@ -159,15 +159,3 @@ export const getLanguageLabel = (language: string): string => {
     const normalized = normalizeLanguage(language);
     return LANGUAGE_LABELS[normalized] || language;
 };
-
-
-
-
-
-
-
-
-
-
-
-

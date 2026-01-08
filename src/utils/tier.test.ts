@@ -44,5 +44,3 @@ describe('Solved.ac tier mapping', () => {
         expect(resolveSolvedAcTierLevel({})).toBe(0); // Unrated
     });
 });
-
-

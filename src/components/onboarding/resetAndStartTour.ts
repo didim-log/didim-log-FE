@@ -11,5 +11,3 @@ export const resetAndStartTour = async (): Promise<void> => {
         window.location.reload();
     }
 };
-
-

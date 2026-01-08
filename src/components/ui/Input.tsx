@@ -38,5 +38,3 @@ export const Input: FC<InputProps> = ({ label, error, helperText, className, ...
         </div>
     );
 };
-
-

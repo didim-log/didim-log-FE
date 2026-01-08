@@ -31,6 +31,3 @@ export const getOAuthSignupEmailViewModel = (
         shouldShowGithubPrivateEmailToast,
     };
 };
-
-
-

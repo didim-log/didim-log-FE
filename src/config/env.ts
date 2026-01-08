@@ -85,5 +85,3 @@ const resolveApiUrl = (apiUrl: unknown): string => {
 export const API_URL: string = resolveApiUrl(import.meta.env.VITE_API_URL);
 export const API_ORIGIN: string = deriveApiOrigin(API_URL);
 export const SERVER_ROOT: string = deriveServerRoot(API_URL, { isProd: import.meta.env.PROD });
-
-

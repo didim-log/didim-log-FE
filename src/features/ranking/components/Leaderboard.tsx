@@ -79,4 +79,3 @@ export const Leaderboard: FC<LeaderboardProps> = ({ data }) => {
         </div>
     );
 };
-

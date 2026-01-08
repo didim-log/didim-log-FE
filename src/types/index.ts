@@ -15,4 +15,3 @@ export * from './api/ranking.types';
 export * from './api/feedback.types';
 export * from './api/admin.types';
 export * from './domain/user.types';
-

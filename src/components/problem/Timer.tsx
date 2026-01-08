@@ -108,4 +108,3 @@ export default function Timer({ onTimeUpdate, shouldPause = false }: TimerProps)
         </div>
     )
 }
-

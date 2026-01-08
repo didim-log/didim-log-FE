@@ -23,7 +23,3 @@ export const quoteApi = {
         }
     },
 };
-
-
-
-

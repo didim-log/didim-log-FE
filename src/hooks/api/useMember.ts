@@ -17,17 +17,3 @@ export const useUpdateMyNickname = () => {
         mutationFn: (data: UpdateMyNicknameRequest) => memberApi.updateMyNickname(data),
     });
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -38,5 +38,3 @@ export const CategoryChart: FC<CategoryChartProps> = ({ data }) => {
         </div>
     );
 };
-
-

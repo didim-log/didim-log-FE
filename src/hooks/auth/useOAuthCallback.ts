@@ -78,6 +78,3 @@ export const useOAuthCallback = (): UseOAuthCallbackReturn => {
 
     return { handleOAuthCallback };
 };
-
-
-

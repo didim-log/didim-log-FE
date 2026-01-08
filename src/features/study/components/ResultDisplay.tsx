@@ -99,5 +99,3 @@ export const ResultDisplay: FC<ResultDisplayProps> = ({ result, isSuccess, onWri
         </div>
     );
 };
-
-

@@ -201,4 +201,3 @@ export const RetrospectiveEditor: FC<RetrospectiveEditorProps> = ({
         </form>
     );
 };
-

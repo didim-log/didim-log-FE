@@ -221,5 +221,3 @@ export const OnboardingTour: FC = () => {
         </div>
     );
 };
-
-

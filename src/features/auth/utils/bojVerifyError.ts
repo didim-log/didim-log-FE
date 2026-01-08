@@ -229,5 +229,3 @@ export const getBojVerifyErrorViewModel = (error: unknown, bojId?: string): BojV
         },
     };
 };
-
-

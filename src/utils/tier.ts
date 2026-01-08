@@ -200,5 +200,3 @@ export const getTierColor = (tier: string): string => {
     };
     return tierColors[tier.toUpperCase()] || tierColors.UNRATED;
 };
-
-

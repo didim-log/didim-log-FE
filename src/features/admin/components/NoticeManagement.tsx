@@ -360,5 +360,3 @@ export const NoticeManagement: FC = () => {
         </div>
     );
 };
-
-

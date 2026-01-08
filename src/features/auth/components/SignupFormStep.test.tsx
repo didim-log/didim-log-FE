@@ -41,5 +41,3 @@ describe('SignupFormStep', () => {
         expect(html).not.toContain('href="https://solved.ac/"');
     });
 });
-
-

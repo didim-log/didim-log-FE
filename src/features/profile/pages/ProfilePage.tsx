@@ -249,4 +249,3 @@ export const ProfilePage: FC = () => {
         </Layout>
     );
 };
-

@@ -18,17 +18,3 @@ export const useSubmitSolution = () => {
         },
     });
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-

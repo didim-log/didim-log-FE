@@ -154,5 +154,3 @@ export const CategorySelect: FC<CategorySelectProps> = ({
         </div>
     );
 };
-
-

@@ -113,4 +113,3 @@ export function getRecommendedTiers(currentTier: Tier): Tier[] {
 
     return recommendedTiers
 }
-

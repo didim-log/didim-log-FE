@@ -37,7 +37,3 @@ export interface RecommendRequest {
 export interface SearchRequest {
     q: number;
 }
-
-
-
-

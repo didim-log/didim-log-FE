@@ -181,4 +181,3 @@ export default function ProblemTypeChart({ categoryData = {} }: ProblemTypeChart
         </Card>
     )
 }
-

@@ -232,4 +232,3 @@ export const ProblemListPage: FC = () => {
         </Layout>
     );
 };
-

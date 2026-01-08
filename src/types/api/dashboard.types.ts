@@ -31,4 +31,3 @@ export interface DashboardResponse {
     requiredRatingForNextTier: number;
     progressPercentage: number;
 }
-

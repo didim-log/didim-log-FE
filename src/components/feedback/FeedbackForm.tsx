@@ -110,5 +110,3 @@ export default function FeedbackForm({ onSuccess }: FeedbackFormProps) {
         </div>
     )
 }
-
-

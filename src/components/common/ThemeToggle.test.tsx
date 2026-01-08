@@ -10,5 +10,3 @@ describe('ThemeToggle', () => {
         expect(html).toMatch(/title="(다크 모드로 전환|라이트 모드로 전환)"/);
     });
 });
-
-

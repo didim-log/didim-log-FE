@@ -75,4 +75,3 @@ export const TierBadge: FC<TierBadgeProps> = ({ tierLevel, size = 'md', classNam
         </div>
     );
 };
-

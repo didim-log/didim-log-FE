@@ -54,5 +54,3 @@ export const HeatmapChart: FC<HeatmapChartProps> = ({ data }) => {
         </div>
     );
 };
-
-

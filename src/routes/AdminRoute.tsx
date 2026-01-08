@@ -33,5 +33,3 @@ export const AdminRoute: FC<AdminRouteProps> = ({ children }) => {
 
     return <>{children}</>;
 };
-
-

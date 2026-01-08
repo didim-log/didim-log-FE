@@ -10,5 +10,3 @@ describe('TierBadge', () => {
         expect(html).toContain('alt="Bronze V"');
     });
 });
-
-

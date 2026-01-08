@@ -10,4 +10,3 @@ describe('TermsStep', () => {
         expect(html).toContain('dark:text-gray-200');
     });
 });
-

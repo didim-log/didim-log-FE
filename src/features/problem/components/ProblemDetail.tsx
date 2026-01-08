@@ -203,4 +203,3 @@ export const ProblemDetail: FC<ProblemDetailProps> = ({ problem, isBlurred }) =>
         </div>
     );
 };
-

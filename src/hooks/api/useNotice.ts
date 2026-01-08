@@ -55,17 +55,3 @@ export const useDeleteNotice = () => {
         },
     });
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-

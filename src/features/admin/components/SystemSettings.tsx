@@ -433,5 +433,3 @@ export const SystemSettings: FC = () => {
         </div>
     );
 };
-
-

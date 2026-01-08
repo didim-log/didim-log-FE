@@ -38,17 +38,3 @@ export const problemApi = {
         return response.data;
     },
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-

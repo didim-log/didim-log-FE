@@ -18,16 +18,3 @@ export interface ApiErrorResponse {
 export function getErrorMessage(errorResponse: ApiErrorResponse): string {
     return errorResponse.message || errorResponse.error || '오류가 발생했습니다.';
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

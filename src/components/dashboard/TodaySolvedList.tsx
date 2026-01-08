@@ -95,15 +95,3 @@ export default function TodaySolvedList({
         </Card>
     )
 }
-
-
-
-
-
-
-
-
-
-
-
-

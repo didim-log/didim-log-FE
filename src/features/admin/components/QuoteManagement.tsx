@@ -160,4 +160,3 @@ export const QuoteManagement: FC = () => {
         </div>
     );
 };
-
