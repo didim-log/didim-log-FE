@@ -55,7 +55,7 @@ const initialState: CrawlerState = {
 export const useCrawler = (options: UseCrawlerOptions): UseCrawlerReturn => {
   const { type, pollInterval = 2000, onComplete, onError } = options;
   const [state, setState] = useState<CrawlerState>(initialState);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isPollingRef = useRef(false);
 
   // 상태 조회 API 선택
