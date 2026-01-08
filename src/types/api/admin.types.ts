@@ -62,6 +62,9 @@ export interface CollectMetadataRequest {
     end: number;
 }
 
+/**
+ * @deprecated 비동기 처리로 변경됨. JobStartResponse 사용
+ */
 export interface CollectResponse {
     message: string;
     range?: string;
@@ -73,9 +76,43 @@ export interface ProblemStatsResponse {
     maxProblemId: number | null;
 }
 
+/**
+ * @deprecated 비동기 처리로 변경됨. JobStartResponse 사용
+ */
 export interface UpdateLanguageResponse {
     message: string;
     updatedCount: number;
+}
+
+/**
+ * 비동기 작업 시작 응답 (메타데이터 수집, 언어 정보 업데이트)
+ */
+export interface JobStartResponse {
+    message: string;
+    jobId: string;
+    range?: string; // 메타데이터 수집의 경우
+}
+
+/**
+ * 작업 상태 조회 응답
+ */
+export type JobStatus = 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED';
+
+export interface JobStatusResponse {
+    jobId: string;
+    status: JobStatus;
+    totalCount: number;
+    processedCount: number;
+    successCount: number;
+    failCount: number;
+    progressPercentage: number;
+    estimatedRemainingSeconds: number | null;
+    startedAt: number; // Unix timestamp (초)
+    completedAt: number | null; // Unix timestamp (초)
+    errorMessage: string | null;
+    // 메타데이터 수집의 경우 추가 필드
+    startProblemId?: number;
+    endProblemId?: number;
 }
 
 export interface PerformanceMetricsResponse {
