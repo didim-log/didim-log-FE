@@ -8,7 +8,7 @@ import { Layout } from '../../../components/layout/Layout';
 import { Spinner } from '../../../components/ui/Spinner';
 import { Button } from '../../../components/ui/Button';
 import { useNotice } from '../../../hooks/api/useNotice';
-import { formatDateToKST } from '../../../utils/date';
+import { formatKST } from '../../../utils/dateUtils';
 
 export const NoticeDetailPage: FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -63,7 +63,7 @@ export const NoticeDetailPage: FC = () => {
                                     </h1>
                                 </div>
                                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                                    {formatDateToKST(data.createdAt, { includeDate: true })}
+                                    {formatKST(data.createdAt, 'default')}
                                 </p>
                             </div>
                             <Button onClick={() => navigate('/notices')} variant="outline" size="sm">

@@ -13,7 +13,6 @@ import type {
     FeedbackPageResponse,
     AdminDashboardStatsResponse,
     CollectMetadataRequest,
-    CollectResponse,
     MaintenanceModeRequest,
     MaintenanceModeResponse,
     PerformanceMetricsResponse,
@@ -32,7 +31,8 @@ import type {
     AdminAuditLogRequest,
     AdminAuditLogPageResponse,
     ProblemStatsResponse,
-    UpdateLanguageResponse,
+    JobStartResponse,
+    JobStatusResponse,
 } from '../../types/api/admin.types';
 import type { QuoteResponse } from '../../types/api/quote.types';
 import type { FeedbackResponse, FeedbackStatusUpdateRequest } from '../../types/api/feedback.types';
@@ -179,18 +179,34 @@ export const adminApi = {
     },
 
     /**
-     * 문제 메타데이터 수집
+     * 문제 메타데이터 수집 시작 (비동기)
+     * 작업은 백그라운드에서 실행되며, jobId를 반환합니다.
      */
-    collectMetadata: async (params: CollectMetadataRequest): Promise<CollectResponse> => {
-        const response = await apiClient.post<CollectResponse>('/admin/problems/collect-metadata', null, { params });
+    collectMetadata: async (params: CollectMetadataRequest): Promise<JobStartResponse> => {
+        const response = await apiClient.post<JobStartResponse>('/admin/problems/collect-metadata', null, { params });
         return response.data;
+    },
+
+    /**
+     * 메타데이터 수집 작업 상태 조회
+     */
+    getMetadataCollectStatus: async (jobId: string): Promise<JobStatusResponse | null> => {
+        try {
+            const response = await apiClient.get<JobStatusResponse>(`/admin/problems/collect-metadata/status/${jobId}`);
+            return response.data;
+        } catch (error: any) {
+            if (error.response?.status === 404) {
+                return null; // 작업을 찾을 수 없음
+            }
+            throw error;
+        }
     },
 
     /**
      * 문제 상세 정보 크롤링
      */
-    collectDetails: async (): Promise<CollectResponse> => {
-        const response = await apiClient.post<CollectResponse>('/admin/problems/collect-details');
+    collectDetails: async (): Promise<{ message: string }> => {
+        const response = await apiClient.post<{ message: string }>('/admin/problems/collect-details');
         return response.data;
     },
 
@@ -261,11 +277,27 @@ export const adminApi = {
     },
 
     /**
-     * 문제 언어 정보 최신화
+     * 문제 언어 정보 최신화 시작 (비동기)
+     * 작업은 백그라운드에서 실행되며, jobId를 반환합니다.
      */
-    updateLanguage: async (): Promise<UpdateLanguageResponse> => {
-        const response = await apiClient.post<UpdateLanguageResponse>('/admin/problems/update-language');
+    updateLanguage: async (): Promise<JobStartResponse> => {
+        const response = await apiClient.post<JobStartResponse>('/admin/problems/update-language');
         return response.data;
+    },
+
+    /**
+     * 언어 정보 업데이트 작업 상태 조회
+     */
+    getLanguageUpdateStatus: async (jobId: string): Promise<JobStatusResponse | null> => {
+        try {
+            const response = await apiClient.get<JobStatusResponse>(`/admin/problems/update-language/status/${jobId}`);
+            return response.data;
+        } catch (error: any) {
+            if (error.response?.status === 404) {
+                return null; // 작업을 찾을 수 없음
+            }
+            throw error;
+        }
     },
 };
 

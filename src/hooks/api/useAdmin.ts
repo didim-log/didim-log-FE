@@ -204,6 +204,28 @@ export const useCollectMetadata = () => {
     });
 };
 
+/**
+ * 메타데이터 수집 작업 상태 조회
+ */
+export const useMetadataCollectStatus = (jobId: string | null) => {
+    return useQuery({
+        queryKey: ['admin', 'metadata-collect-status', jobId],
+        queryFn: () => {
+            if (!jobId) return null;
+            return adminApi.getMetadataCollectStatus(jobId);
+        },
+        enabled: !!jobId,
+        refetchInterval: (query) => {
+            // 작업이 완료되거나 실패하면 폴링 중지
+            const data = query.state.data;
+            if (!data || data.status === 'COMPLETED' || data.status === 'FAILED') {
+                return false;
+            }
+            return 5000; // 5초마다 폴링
+        },
+    });
+};
+
 export const useCollectDetails = () => {
     return useMutation({
         mutationFn: () => adminApi.collectDetails(),
@@ -277,6 +299,28 @@ export const useProblemStats = () => {
 export const useUpdateLanguage = () => {
     return useMutation({
         mutationFn: () => adminApi.updateLanguage(),
+    });
+};
+
+/**
+ * 언어 정보 업데이트 작업 상태 조회
+ */
+export const useLanguageUpdateStatus = (jobId: string | null) => {
+    return useQuery({
+        queryKey: ['admin', 'language-update-status', jobId],
+        queryFn: () => {
+            if (!jobId) return null;
+            return adminApi.getLanguageUpdateStatus(jobId);
+        },
+        enabled: !!jobId,
+        refetchInterval: (query) => {
+            // 작업이 완료되거나 실패하면 폴링 중지
+            const data = query.state.data;
+            if (!data || data.status === 'COMPLETED' || data.status === 'FAILED') {
+                return false;
+            }
+            return 5000; // 5초마다 폴링
+        },
     });
 };
 
