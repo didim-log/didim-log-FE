@@ -23,5 +23,3 @@ describe('getCategoryDisplayLabel', () => {
         expect(getCategoryDisplayLabel('DP')).toBe('DP');
     });
 });
-
-

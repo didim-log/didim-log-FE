@@ -87,4 +87,3 @@ export const StatisticsPreview: FC = () => {
         </div>
     );
 };
-

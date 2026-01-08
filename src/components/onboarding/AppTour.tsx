@@ -376,5 +376,3 @@ const AppTour = () => {
 
 export { AppTour };
 export default AppTour;
-
-

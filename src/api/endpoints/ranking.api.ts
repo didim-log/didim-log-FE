@@ -14,17 +14,3 @@ export const rankingApi = {
         return response.data;
     },
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-

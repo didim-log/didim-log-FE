@@ -84,5 +84,3 @@ export const AdminStatsChart: FC<AdminStatsChartProps> = ({ stats }) => {
         </>
     );
 };
-
-

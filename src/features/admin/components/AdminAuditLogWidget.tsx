@@ -249,4 +249,3 @@ export const AdminAuditLogWidget: FC = () => {
         </div>
     );
 };
-

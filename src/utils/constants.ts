@@ -38,17 +38,3 @@ export const getCategoryLabel = (value: string): string => {
     const category = ALGORITHM_CATEGORIES.find((cat) => cat.value === value);
     return category?.label || value;
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-

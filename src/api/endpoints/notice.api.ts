@@ -51,17 +51,3 @@ export const noticeApi = {
         await apiClient.delete(`/notices/${noticeId}`);
     },
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-

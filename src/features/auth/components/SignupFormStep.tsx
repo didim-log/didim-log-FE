@@ -338,4 +338,3 @@ const SolvedAcOnboardingHint: FC = () => {
         </div>
     );
 };
-

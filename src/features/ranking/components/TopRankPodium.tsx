@@ -146,4 +146,3 @@ export const TopRankPodium: FC<TopRankPodiumProps> = ({ ranks }) => {
         </div>
     );
 };
-

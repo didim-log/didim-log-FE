@@ -14,16 +14,3 @@ export const systemApi = {
         return response.data;
     },
 };
-
-
-
-
-
-
-
-
-
-
-
-
-

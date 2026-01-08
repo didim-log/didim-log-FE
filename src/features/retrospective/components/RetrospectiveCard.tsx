@@ -135,4 +135,3 @@ export const RetrospectiveCard: FC<RetrospectiveCardProps> = ({
         </div>
     );
 };
-

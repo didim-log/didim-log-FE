@@ -1,401 +1,674 @@
 /**
  * 문제 크롤링 제어 컴포넌트
+ * Resumable Crawling 기능 지원
  */
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import type { FC } from 'react';
-import {
-    useCollectMetadata,
-    useCollectDetails,
-    useProblemStats,
-    useUpdateLanguage,
-    useMetadataCollectStatus,
-    useLanguageUpdateStatus,
-} from '../../../hooks/api/useAdmin';
+import { useCrawler } from '../../../hooks/useCrawler';
+import { useProblemStats } from '../../../hooks/api/useAdmin';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { Spinner } from '../../../components/ui/Spinner';
-import { BookOpen, Minus, Maximize, Languages } from 'lucide-react';
+import { BookOpen, Minus, Maximize, Languages, RotateCw, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import type { CollectMetadataRequest } from '../../../types/api/admin.types';
 
 export const ProblemCollector: FC = () => {
-    const [start, setStart] = useState('');
-    const [end, setEnd] = useState('');
-    const [errors, setErrors] = useState<{ start?: string; end?: string }>({});
-    const [metadataJobId, setMetadataJobId] = useState<string | null>(null);
-    const [languageJobId, setLanguageJobId] = useState<string | null>(null);
+  const [start, setStart] = useState('');
+  const [end, setEnd] = useState('');
+  const [errors, setErrors] = useState<{ start?: string; end?: string }>({});
+  const [metadataParams, setMetadataParams] = useState<CollectMetadataRequest | null>(null);
 
-    const collectMetadataMutation = useCollectMetadata();
-    const collectDetailsMutation = useCollectDetails();
-    const updateLanguageMutation = useUpdateLanguage();
-    const { data: stats, isLoading: isStatsLoading, refetch: refetchStats } = useProblemStats();
-    const suggestedStart = stats?.maxProblemId ? String(stats.maxProblemId + 1) : '';
+  const { data: stats, isLoading: isStatsLoading, refetch: refetchStats } = useProblemStats();
+  const suggestedStart = stats?.maxProblemId ? String(stats.maxProblemId + 1) : '';
 
-    // 작업 상태 조회
-    const metadataStatus = useMetadataCollectStatus(metadataJobId);
-    const languageStatus = useLanguageUpdateStatus(languageJobId);
+  // 크롤링 훅들
+  const metadataCrawler = useCrawler({
+    type: 'metadata',
+    pollInterval: 2000, // 2초마다 폴링
+    onComplete: (state) => {
+      toast.success(
+        `메타데이터 수집 완료: ${state.successCount}개 성공, ${state.failCount}개 실패`
+      );
+      refetchStats();
+      // 최대 ID 업데이트 후 자동으로 다음 시작 ID 설정
+      if (state.endProblemId && stats?.maxProblemId && state.endProblemId > stats.maxProblemId) {
+        setStart((state.endProblemId + 1).toString());
+      }
+      setEnd('');
+      setMetadataParams(null);
+    },
+    onError: (error) => {
+      toast.error(`메타데이터 수집 실패: ${error.message}`);
+    },
+  });
 
-    // 메타데이터 수집 완료 처리
-    useEffect(() => {
-        if (metadataStatus.data?.status === 'COMPLETED') {
-            toast.success(
-                `메타데이터 수집 완료: ${metadataStatus.data.successCount}개 성공, ${metadataStatus.data.failCount}개 실패`
-            );
-            setMetadataJobId(null);
-            refetchStats();
-            // 최대 ID 업데이트 후 자동으로 다음 시작 ID 설정
-            const endNum = metadataStatus.data.endProblemId;
-            if (endNum && stats?.maxProblemId && endNum > stats.maxProblemId) {
-                setStart((endNum + 1).toString());
-            }
-            setEnd('');
-        } else if (metadataStatus.data?.status === 'FAILED') {
-            toast.error(`메타데이터 수집 실패: ${metadataStatus.data.errorMessage || '알 수 없는 오류'}`);
-            setMetadataJobId(null);
-        }
-    }, [metadataStatus.data, refetchStats, stats?.maxProblemId]);
+  const detailsCrawler = useCrawler({
+    type: 'details',
+    pollInterval: 2000,
+    onComplete: (state) => {
+      toast.success(
+        `상세 정보 크롤링 완료: ${state.successCount}개 성공, ${state.failCount}개 실패`
+      );
+    },
+    onError: (error) => {
+      toast.error(`상세 정보 크롤링 실패: ${error.message}`);
+    },
+  });
 
-    // 언어 정보 업데이트 완료 처리
-    useEffect(() => {
-        if (languageStatus.data?.status === 'COMPLETED') {
-            toast.success(
-                `언어 정보 업데이트 완료: ${languageStatus.data.successCount}개 성공, ${languageStatus.data.failCount}개 실패`
-            );
-            setLanguageJobId(null);
-        } else if (languageStatus.data?.status === 'FAILED') {
-            toast.error(`언어 정보 업데이트 실패: ${languageStatus.data.errorMessage || '알 수 없는 오류'}`);
-            setLanguageJobId(null);
-        }
-    }, [languageStatus.data]);
+  const languageCrawler = useCrawler({
+    type: 'language',
+    pollInterval: 2000,
+    onComplete: (state) => {
+      toast.success(
+        `언어 정보 업데이트 완료: ${state.successCount}개 성공, ${state.failCount}개 실패`
+      );
+    },
+    onError: (error) => {
+      toast.error(`언어 정보 업데이트 실패: ${error.message}`);
+    },
+  });
 
-    const handleCollectMetadata = async (e: React.FormEvent) => {
-        e.preventDefault();
-        const resolvedStart = start || suggestedStart;
-        if (!resolvedStart || !end) {
-            setErrors({
-                start: resolvedStart ? undefined : '시작 문제 ID를 입력해주세요.',
-                end: end ? undefined : '종료 문제 ID를 입력해주세요.',
-            });
-            return;
-        }
+  // 메타데이터 수집 시작
+  const handleCollectMetadata = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const resolvedStart = start || suggestedStart;
+    if (!resolvedStart || !end) {
+      setErrors({
+        start: resolvedStart ? undefined : '시작 문제 ID를 입력해주세요.',
+        end: end ? undefined : '종료 문제 ID를 입력해주세요.',
+      });
+      return;
+    }
 
-        const startNum = Number(resolvedStart);
-        const endNum = Number(end);
+    const startNum = Number(resolvedStart);
+    const endNum = Number(end);
 
-        if (isNaN(startNum) || isNaN(endNum) || startNum < 1 || endNum < 1 || startNum > endNum) {
-            setErrors({ start: '유효한 범위를 입력해주세요.', end: '유효한 범위를 입력해주세요.' });
-            return;
-        }
+    if (isNaN(startNum) || isNaN(endNum) || startNum < 1 || endNum < 1 || startNum > endNum) {
+      setErrors({ start: '유효한 범위를 입력해주세요.', end: '유효한 범위를 입력해주세요.' });
+      return;
+    }
 
-        const confirmed = window.confirm(
-            `문제 ID ${startNum}부터 ${endNum}까지의 메타데이터를 수집하시겠습니까?\n\n` +
-                `총 ${endNum - startNum + 1}개 문제를 수집합니다.\n` +
-                `이 작업은 시간이 오래 걸릴 수 있습니다.`
-        );
+    const params: CollectMetadataRequest = { start: startNum, end: endNum };
+    setMetadataParams(params);
 
-        if (!confirmed) {
-            return;
-        }
+    const confirmed = window.confirm(
+      `문제 ID ${startNum}부터 ${endNum}까지의 메타데이터를 수집하시겠습니까?\n\n` +
+        `총 ${endNum - startNum + 1}개 문제를 수집합니다.\n` +
+        `이 작업은 시간이 오래 걸릴 수 있습니다.\n\n` +
+        `중단되어도 같은 범위로 다시 호출하면 이어서 진행됩니다.`
+    );
 
-        try {
-            const result = await collectMetadataMutation.mutateAsync({ start: startNum, end: endNum });
-            setMetadataJobId(result.jobId);
-            toast.success('메타데이터 수집 작업이 시작되었습니다.');
-            setErrors({});
-        } catch (error) {
-            if (error instanceof Error) {
-                toast.error(`수집 시작 실패: ${error.message}`);
-            } else {
-                toast.error('수집 시작에 실패했습니다.');
-            }
-        }
+    if (!confirmed) {
+      setMetadataParams(null);
+      return;
+    }
+
+    try {
+      await metadataCrawler.start(params);
+      toast.success('메타데이터 수집 작업이 시작되었습니다.');
+      setErrors({});
+    } catch (error) {
+      setMetadataParams(null);
+      if (error instanceof Error) {
+        toast.error(`수집 시작 실패: ${error.message}`);
+      } else {
+        toast.error('수집 시작에 실패했습니다.');
+      }
+    }
+  };
+
+  // 메타데이터 수집 재시작 (이어하기)
+  const handleRestartMetadata = async () => {
+    if (!metadataParams) {
+      toast.error('재시작할 작업 정보가 없습니다.');
+      return;
+    }
+
+    try {
+      await metadataCrawler.restart(metadataParams);
+      toast.success('메타데이터 수집이 checkpoint부터 이어서 진행됩니다.');
+    } catch (error) {
+      if (error instanceof Error) {
+        toast.error(`재시작 실패: ${error.message}`);
+      } else {
+        toast.error('재시작에 실패했습니다.');
+      }
+    }
+  };
+
+  // 상세 정보 크롤링 시작
+  const handleCollectDetails = async () => {
+    if (
+      !confirm(
+        '문제 상세 정보 크롤링을 시작하시겠습니까?\n\n' +
+          '시간이 오래 걸릴 수 있습니다.\n' +
+          '중단되어도 다시 호출하면 이어서 진행됩니다.'
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await detailsCrawler.start();
+      toast.success('상세 정보 크롤링이 시작되었습니다.');
+    } catch (error) {
+      if (error instanceof Error) {
+        toast.error(`크롤링 시작 실패: ${error.message}`);
+      } else {
+        toast.error('크롤링 시작에 실패했습니다.');
+      }
+    }
+  };
+
+  // 언어 정보 업데이트 시작
+  const handleUpdateLanguage = async () => {
+    if (
+      !confirm(
+        '모든 문제의 언어 정보를 업데이트하시겠습니까?\n\n' +
+          '이 작업은 시간이 오래 걸릴 수 있습니다.\n' +
+          '(문제 수에 따라 수 분 ~ 수십 분 소요)\n\n' +
+          '중단되어도 다시 호출하면 이어서 진행됩니다.'
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await languageCrawler.start();
+      toast.success('언어 정보 업데이트 작업이 시작되었습니다.');
+    } catch (error) {
+      if (error instanceof Error) {
+        toast.error(`업데이트 시작 실패: ${error.message}`);
+      } else {
+        toast.error('언어 정보 업데이트 시작에 실패했습니다.');
+      }
+    }
+  };
+
+  // 진행 상황 표시 컴포넌트
+  const ProgressDisplay: FC<{
+    state: ReturnType<typeof useCrawler>['state'];
+    title: string;
+    type: 'metadata' | 'details' | 'language';
+  }> = ({ state, title, type }) => {
+    if (state.status === 'IDLE') {
+      return null;
+    }
+
+    // 현재 처리 중인 문제 ID 추정 (메타데이터 수집의 경우)
+    const getCurrentProblemId = () => {
+      if (type === 'metadata' && state.startProblemId && state.processedCount > 0) {
+        // 시작 번호 + 처리된 개수 - 1 = 마지막 처리된 번호
+        const lastProcessedId = state.startProblemId + state.processedCount - 1;
+        return lastProcessedId;
+      }
+      return null;
     };
 
-    const handleCollectDetails = async () => {
-        if (!confirm('문제 상세 정보 크롤링을 시작하시겠습니까? 시간이 오래 걸릴 수 있습니다.')) {
-            return;
-        }
-
-        try {
-            await collectDetailsMutation.mutateAsync();
-            toast.success('문제 상세 정보 크롤링이 완료되었습니다.');
-        } catch {
-            toast.error('크롤링에 실패했습니다.');
-        }
-    };
-
-    const handleUpdateLanguage = async () => {
-        const confirmed = window.confirm(
-            '모든 문제의 언어 정보를 업데이트하시겠습니까?\n\n' +
-                '이 작업은 시간이 오래 걸릴 수 있습니다.\n' +
-                '(문제 수에 따라 수 분 ~ 수십 분 소요)'
-        );
-
-        if (!confirmed) {
-            return;
-        }
-
-        try {
-            const result = await updateLanguageMutation.mutateAsync();
-            setLanguageJobId(result.jobId);
-            toast.success('언어 정보 업데이트 작업이 시작되었습니다.');
-        } catch (error) {
-            if (error instanceof Error) {
-                toast.error(`업데이트 시작 실패: ${error.message}`);
-            } else {
-                toast.error('언어 정보 업데이트 시작에 실패했습니다.');
-            }
-        }
-    };
+    const currentProblemId = getCurrentProblemId();
 
     return (
-        <div className="space-y-6">
-            {/* 문제 통계 대시보드 */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 border border-gray-200 dark:border-gray-700">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">문제 수집 현황</h2>
-                {isStatsLoading ? (
-                    <div className="flex items-center justify-center py-8">
-                        <Spinner />
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-3 gap-4">
-                        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
-                            <div className="flex items-center gap-2 mb-2">
-                                <BookOpen className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                                <p className="text-sm font-medium text-blue-600 dark:text-blue-400">수집된 문제 수</p>
-                            </div>
-                            <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                                {stats?.totalCount.toLocaleString() ?? 0}개
-                            </p>
-                        </div>
-                        <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border border-green-200 dark:border-green-800">
-                            <div className="flex items-center gap-2 mb-2">
-                                <Minus className="w-5 h-5 text-green-600 dark:text-green-400" />
-                                <p className="text-sm font-medium text-green-600 dark:text-green-400">최소 문제 ID</p>
-                            </div>
-                            <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                                {stats?.minProblemId ? `${stats.minProblemId}번` : '-'}
-                            </p>
-                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                제일 빠른 문제 번호
-                            </p>
-                        </div>
-                        <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-800">
-                            <div className="flex items-center gap-2 mb-2">
-                                <Maximize className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                                <p className="text-sm font-medium text-purple-600 dark:text-purple-400">최대 문제 ID</p>
-                            </div>
-                            <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                                {stats?.maxProblemId ? `${stats.maxProblemId}번` : '-'}
-                            </p>
-                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                제일 느린 문제 번호
-                            </p>
-                        </div>
-                    </div>
-                )}
-            </div>
-
-            {/* 메타데이터 수집 */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 border border-gray-200 dark:border-gray-700">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">문제 메타데이터 수집</h2>
-                <form onSubmit={handleCollectMetadata} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                        <Input
-                            label="시작 문제 ID"
-                            type="number"
-                            value={start}
-                            onChange={(e) => {
-                                setStart(e.target.value);
-                                setErrors((prev) => ({ ...prev, start: undefined }));
-                            }}
-                            placeholder={suggestedStart || '예: 1000'}
-                            min={1}
-                            required
-                            error={errors.start}
-                        />
-                        <Input
-                            label="종료 문제 ID"
-                            type="number"
-                            value={end}
-                            onChange={(e) => {
-                                setEnd(e.target.value);
-                                setErrors((prev) => ({ ...prev, end: undefined }));
-                            }}
-                            placeholder="예: 1100"
-                            min={1}
-                            required
-                            error={errors.end}
-                        />
-                    </div>
-                    <Button
-                        type="submit"
-                        variant="primary"
-                        isLoading={collectMetadataMutation.isPending}
-                        disabled={!!metadataJobId}
-                    >
-                        {collectMetadataMutation.isPending ? '작업 시작 중...' : '메타데이터 수집 시작'}
-                    </Button>
-                </form>
-
-                {/* 진행 상황 표시 */}
-                {metadataJobId && metadataStatus.data && (
-                    <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                        <div className="mb-2">
-                            <div className="flex items-center justify-between mb-1">
-                                <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
-                                    진행률: {metadataStatus.data.progressPercentage}%
-                                </span>
-                                <span className="text-xs text-blue-600 dark:text-blue-400">
-                                    {metadataStatus.data.processedCount}/{metadataStatus.data.totalCount}
-                                </span>
-                            </div>
-                            <div className="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-2">
-                                <div
-                                    className="bg-blue-600 dark:bg-blue-400 h-2 rounded-full transition-all duration-300"
-                                    style={{ width: `${metadataStatus.data.progressPercentage}%` }}
-                                />
-                            </div>
-                        </div>
-                        <div className="text-xs text-blue-600 dark:text-blue-400 space-y-1">
-                            {metadataStatus.data.startProblemId && metadataStatus.data.endProblemId && (
-                                <p>
-                                    범위: {metadataStatus.data.startProblemId} ~ {metadataStatus.data.endProblemId}
-                                </p>
-                            )}
-                            <p>
-                                성공: {metadataStatus.data.successCount}개 | 실패: {metadataStatus.data.failCount}개
-                            </p>
-                            {metadataStatus.data.estimatedRemainingSeconds && (
-                                <p>
-                                    예상 남은 시간: 약{' '}
-                                    {Math.floor(metadataStatus.data.estimatedRemainingSeconds / 60)}분
-                                </p>
-                            )}
-                            <p className="mt-2 text-blue-700 dark:text-blue-300 font-medium">
-                                이 작업은 시간이 오래 걸릴 수 있습니다. 페이지를 닫지 마세요.
-                            </p>
-                        </div>
-                    </div>
-                )}
-
-                {metadataStatus.data?.status === 'COMPLETED' && (
-                    <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                        <p className="text-sm text-green-700 dark:text-green-300 font-medium">
-                            ✅ 수집 완료: {metadataStatus.data.successCount}개 성공, {metadataStatus.data.failCount}개
-                            실패
-                        </p>
-                    </div>
-                )}
-
-                {metadataStatus.data?.status === 'FAILED' && (
-                    <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                        <p className="text-sm text-red-700 dark:text-red-300 font-medium">
-                            ❌ 수집 실패: {metadataStatus.data.errorMessage || '알 수 없는 오류'}
-                        </p>
-                    </div>
-                )}
-            </div>
-
-            {/* 상세 정보 크롤링 */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 border border-gray-200 dark:border-gray-700">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">문제 상세 정보 크롤링</h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                    DB에서 descriptionHtml이 null인 문제들의 상세 정보를 백준 사이트에서 크롤링하여 업데이트합니다.
-                </p>
-                <Button onClick={handleCollectDetails} variant="primary" isLoading={collectDetailsMutation.isPending}>
-                    상세 정보 크롤링 시작
-                </Button>
-            </div>
-
-            {/* 언어 정보 최신화 */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 border border-gray-200 dark:border-gray-700">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                    <Languages className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                    문제 언어 정보 최신화
-                </h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                    DB에 저장된 모든 문제의 언어 정보를 재판별하여 업데이트합니다. 기존 크롤링 데이터는 유지하고
-                    language 필드만 업데이트합니다.
-                    <br />
-                    <span className="text-xs text-gray-500 dark:text-gray-500 mt-1 block">
-                        (소요 시간: 문제 수에 따라 수 분 ~ 수십 분)
-                    </span>
-                </p>
-                <Button
-                    onClick={handleUpdateLanguage}
-                    variant="primary"
-                    isLoading={updateLanguageMutation.isPending}
-                    disabled={!!languageJobId}
-                    className="flex items-center gap-2"
-                >
-                    {updateLanguageMutation.isPending ? (
-                        <>
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            작업 시작 중...
-                        </>
-                    ) : (
-                        <>
-                            <Languages className="w-4 h-4" />
-                            언어 정보 최신화 시작
-                        </>
-                    )}
-                </Button>
-
-                {/* 진행 상황 표시 */}
-                {languageJobId && languageStatus.data && (
-                    <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                        <div className="mb-2">
-                            <div className="flex items-center justify-between mb-1">
-                                <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
-                                    진행률: {languageStatus.data.progressPercentage}%
-                                </span>
-                                <span className="text-xs text-blue-600 dark:text-blue-400">
-                                    {languageStatus.data.processedCount}/{languageStatus.data.totalCount}
-                                </span>
-                            </div>
-                            <div className="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-2">
-                                <div
-                                    className="bg-blue-600 dark:bg-blue-400 h-2 rounded-full transition-all duration-300"
-                                    style={{ width: `${languageStatus.data.progressPercentage}%` }}
-                                />
-                            </div>
-                        </div>
-                        <div className="text-xs text-blue-600 dark:text-blue-400 space-y-1">
-                            <p>
-                                성공: {languageStatus.data.successCount}개 | 실패: {languageStatus.data.failCount}개
-                            </p>
-                            {languageStatus.data.estimatedRemainingSeconds && (
-                                <p>
-                                    예상 남은 시간: 약{' '}
-                                    {Math.floor(languageStatus.data.estimatedRemainingSeconds / 60)}분
-                                </p>
-                            )}
-                            <p className="mt-2 text-blue-700 dark:text-blue-300 font-medium">
-                                이 작업은 시간이 오래 걸릴 수 있습니다. 페이지를 닫지 마세요.
-                            </p>
-                        </div>
-                    </div>
-                )}
-
-                {languageStatus.data?.status === 'COMPLETED' && (
-                    <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                        <p className="text-sm text-green-700 dark:text-green-300 font-medium">
-                            ✅ 업데이트 완료: {languageStatus.data.successCount}개 성공, {languageStatus.data.failCount}
-                            개 실패
-                        </p>
-                    </div>
-                )}
-
-                {languageStatus.data?.status === 'FAILED' && (
-                    <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                        <p className="text-sm text-red-700 dark:text-red-300 font-medium">
-                            ❌ 업데이트 실패: {languageStatus.data.errorMessage || '알 수 없는 오류'}
-                        </p>
-                    </div>
-                )}
-            </div>
+      <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+        <div className="mb-2">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+              {title} 진행률: {state.progress}%
+            </span>
+            <span className="text-xs text-blue-600 dark:text-blue-400">
+              {state.processedCount}/{state.totalCount}
+            </span>
+          </div>
+          <div className="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-2">
+            <div
+              className="bg-blue-600 dark:bg-blue-400 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${state.progress}%` }}
+            />
+          </div>
         </div>
+        <div className="text-xs text-blue-600 dark:text-blue-400 space-y-1">
+          {/* 메타데이터 수집: 범위 및 현재 처리 번호 */}
+          {type === 'metadata' && state.startProblemId && state.endProblemId && (
+            <>
+              <p className="font-medium">
+                처리 범위: {state.startProblemId}번 ~ {state.endProblemId}번
+              </p>
+              {currentProblemId && (
+                <p className="text-blue-700 dark:text-blue-300 font-semibold">
+                  현재 처리 중: {currentProblemId}번 (마지막 처리된 번호)
+                </p>
+              )}
+              {state.startProblemId && (
+                <p>시작 번호: {state.startProblemId}번부터</p>
+              )}
+            </>
+          )}
+          {/* 상세 정보 크롤링: 처리된 개수 기반 정보 */}
+          {type === 'details' && (
+            <>
+              <p className="font-medium">
+                처리 대상: descriptionHtml이 null인 문제 {state.totalCount}개
+              </p>
+              {state.processedCount > 0 && (
+                <p className="text-blue-700 dark:text-blue-300 font-semibold">
+                  처리 완료: {state.processedCount}개
+                </p>
+              )}
+            </>
+          )}
+          {/* 언어 정보 업데이트: 처리된 개수 기반 정보 */}
+          {type === 'language' && (
+            <>
+              <p className="font-medium">
+                처리 대상: 언어 정보가 null이거나 "other"인 문제 {state.totalCount}개
+              </p>
+              {state.processedCount > 0 && (
+                <p className="text-blue-700 dark:text-blue-300 font-semibold">
+                  처리 완료: {state.processedCount}개
+                </p>
+              )}
+            </>
+          )}
+          <p>
+            성공: {state.successCount}개 | 실패: {state.failCount}개
+          </p>
+          {state.estimatedRemainingSeconds && (
+            <p>
+              예상 남은 시간: 약 {Math.floor(state.estimatedRemainingSeconds / 60)}분
+            </p>
+          )}
+          <p className="mt-2 text-blue-700 dark:text-blue-300 font-medium">
+            이 작업은 시간이 오래 걸릴 수 있습니다. 페이지를 닫지 마세요.
+          </p>
+        </div>
+      </div>
     );
-};
+  };
 
+  // 에러 표시 및 재시작 버튼 컴포넌트
+  const ErrorDisplay: FC<{
+    state: ReturnType<typeof useCrawler>['state'];
+    onRestart: () => void;
+    title: string;
+  }> = ({ state, onRestart, title }) => {
+    if (state.status !== 'FAILED') {
+      return null;
+    }
+
+    return (
+      <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+        <div className="flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm font-medium text-red-700 dark:text-red-300 mb-1">
+              {title} 실패
+            </p>
+            <p className="text-sm text-red-600 dark:text-red-400 mb-3">
+              {state.errorMessage || '알 수 없는 오류가 발생했습니다.'}
+            </p>
+            <Button
+              onClick={onRestart}
+              variant="primary"
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <RotateCw className="w-4 h-4" />
+              이어서 재시작
+            </Button>
+            <p className="mt-2 text-xs text-red-600 dark:text-red-400">
+              같은 범위로 다시 호출하면 checkpoint부터 자동으로 이어서 진행됩니다.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // 완료 표시 컴포넌트
+  const CompleteDisplay: FC<{
+    state: ReturnType<typeof useCrawler>['state'];
+    title: string;
+    type: 'metadata' | 'details' | 'language';
+  }> = ({ state, title, type }) => {
+    if (state.status !== 'COMPLETED') {
+      return null;
+    }
+
+    // 마지막 처리된 문제 ID (메타데이터 수집의 경우)
+    const getLastProcessedId = () => {
+      if (type === 'metadata' && state.endProblemId) {
+        return state.endProblemId;
+      }
+      return null;
+    };
+
+    const lastProcessedId = getLastProcessedId();
+
+    return (
+      <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+        <p className="text-sm text-green-700 dark:text-green-300 font-medium">
+          ✅ {title} 완료: {state.successCount}개 성공, {state.failCount}개 실패
+        </p>
+        {lastProcessedId && (
+          <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+            마지막 처리된 번호: {lastProcessedId}번
+          </p>
+        )}
+        {type !== 'metadata' && state.processedCount > 0 && (
+          <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+            총 {state.processedCount}개 처리 완료
+          </p>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* 문제 통계 대시보드 */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 border border-gray-200 dark:border-gray-700">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">문제 수집 현황</h2>
+        {isStatsLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <Spinner />
+          </div>
+        ) : (
+          <div className="grid grid-cols-3 gap-4">
+            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+              <div className="flex items-center gap-2 mb-2">
+                <BookOpen className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                <p className="text-sm font-medium text-blue-600 dark:text-blue-400">수집된 문제 수</p>
+              </div>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                {stats?.totalCount.toLocaleString() ?? 0}개
+              </p>
+            </div>
+            <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border border-green-200 dark:border-green-800">
+              <div className="flex items-center gap-2 mb-2">
+                <Minus className="w-5 h-5 text-green-600 dark:text-green-400" />
+                <p className="text-sm font-medium text-green-600 dark:text-green-400">최소 문제 ID</p>
+              </div>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                {stats?.minProblemId ? `${stats.minProblemId}번` : '-'}
+              </p>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">제일 빠른 문제 번호</p>
+            </div>
+            <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-800">
+              <div className="flex items-center gap-2 mb-2">
+                <Maximize className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                <p className="text-sm font-medium text-purple-600 dark:text-purple-400">최대 문제 ID</p>
+              </div>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                {stats?.maxProblemId ? `${stats.maxProblemId}번` : '-'}
+              </p>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">제일 느린 문제 번호</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 메타데이터 수집 */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 border border-gray-200 dark:border-gray-700">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">문제 메타데이터 수집</h2>
+        
+        {/* 크롤링 정보 카드 */}
+        <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">마지막 크롤링된 번호</p>
+              <p className="text-lg font-semibold text-gray-900 dark:text-white">
+                {stats?.maxProblemId ? `${stats.maxProblemId}번` : '-'}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">다음 시작 번호 (권장)</p>
+              <p className="text-lg font-semibold text-blue-600 dark:text-blue-400">
+                {suggestedStart ? `${suggestedStart}번` : '-'}
+              </p>
+            </div>
+          </div>
+          {metadataCrawler.state.status === 'RUNNING' && metadataCrawler.state.startProblemId && (
+            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">현재 작업 시작 번호</p>
+              <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                {metadataCrawler.state.startProblemId}번부터 시작
+              </p>
+            </div>
+          )}
+        </div>
+
+        <form onSubmit={handleCollectMetadata} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="시작 문제 ID"
+              type="number"
+              value={start}
+              onChange={(e) => {
+                setStart(e.target.value);
+                setErrors((prev) => ({ ...prev, start: undefined }));
+              }}
+              placeholder={suggestedStart || '예: 1000'}
+              min={1}
+              required
+              error={errors.start}
+            />
+            <Input
+              label="종료 문제 ID"
+              type="number"
+              value={end}
+              onChange={(e) => {
+                setEnd(e.target.value);
+                setErrors((prev) => ({ ...prev, end: undefined }));
+              }}
+              placeholder="예: 1100"
+              min={1}
+              required
+              error={errors.end}
+            />
+          </div>
+          <Button
+            type="submit"
+            variant="primary"
+            isLoading={metadataCrawler.isLoading}
+            disabled={metadataCrawler.state.status === 'RUNNING'}
+          >
+            {metadataCrawler.isLoading
+              ? '작업 시작 중...'
+              : metadataCrawler.state.status === 'RUNNING'
+                ? '작업 진행 중...'
+                : '메타데이터 수집 시작'}
+          </Button>
+        </form>
+
+        <ProgressDisplay
+          state={metadataCrawler.state}
+          title="메타데이터 수집"
+          type="metadata"
+        />
+        <ErrorDisplay
+          state={metadataCrawler.state}
+          onRestart={handleRestartMetadata}
+          title="메타데이터 수집"
+        />
+        <CompleteDisplay
+          state={metadataCrawler.state}
+          title="메타데이터 수집"
+          type="metadata"
+        />
+      </div>
+
+      {/* 상세 정보 크롤링 */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 border border-gray-200 dark:border-gray-700">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">문제 상세 정보 크롤링</h2>
+        
+        {/* 크롤링 정보 카드 */}
+        <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">처리 대상</p>
+              <p className="text-lg font-semibold text-gray-900 dark:text-white">
+                descriptionHtml이 null인 문제
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">시작 번호</p>
+              {detailsCrawler.state.status === 'RUNNING' && detailsCrawler.state.startProblemId ? (
+                <p className="text-lg font-semibold text-blue-600 dark:text-blue-400">
+                  {detailsCrawler.state.startProblemId}번부터
+                </p>
+              ) : detailsCrawler.state.status === 'COMPLETED' ? (
+                <p className="text-lg font-semibold text-green-600 dark:text-green-400">
+                  완료됨
+                </p>
+              ) : (
+                <p className="text-lg font-semibold text-gray-400 dark:text-gray-500">
+                  작업 시작 후 표시
+                </p>
+              )}
+            </div>
+          </div>
+          {detailsCrawler.state.status === 'RUNNING' && detailsCrawler.state.processedCount > 0 && (
+            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">현재 진행 상황</p>
+              <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                {detailsCrawler.state.processedCount}개 처리 완료
+              </p>
+            </div>
+          )}
+        </div>
+
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          DB에서 descriptionHtml이 null인 문제들의 상세 정보를 백준 사이트에서 크롤링하여 업데이트합니다.
+          <br />
+          <span className="text-xs text-gray-500 dark:text-gray-500 mt-1 block">
+            중단되어도 다시 호출하면 checkpoint부터 자동으로 이어서 진행됩니다.
+          </span>
+        </p>
+        <Button
+          onClick={handleCollectDetails}
+          variant="primary"
+          isLoading={detailsCrawler.isLoading}
+          disabled={detailsCrawler.state.status === 'RUNNING'}
+        >
+          {detailsCrawler.isLoading
+            ? '작업 시작 중...'
+            : detailsCrawler.state.status === 'RUNNING'
+              ? '작업 진행 중...'
+              : '상세 정보 크롤링 시작'}
+        </Button>
+
+        <ProgressDisplay
+          state={detailsCrawler.state}
+          title="상세 정보 크롤링"
+          type="details"
+        />
+        <ErrorDisplay
+          state={detailsCrawler.state}
+          onRestart={() => detailsCrawler.restart()}
+          title="상세 정보 크롤링"
+        />
+        <CompleteDisplay
+          state={detailsCrawler.state}
+          title="상세 정보 크롤링"
+          type="details"
+        />
+      </div>
+
+      {/* 언어 정보 최신화 */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 border border-gray-200 dark:border-gray-700">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+          <Languages className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+          문제 언어 정보 최신화
+        </h2>
+        
+        {/* 크롤링 정보 카드 */}
+        <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">처리 대상</p>
+              <p className="text-lg font-semibold text-gray-900 dark:text-white">
+                언어 정보가 null이거나 "other"인 문제
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">시작 번호</p>
+              {languageCrawler.state.status === 'RUNNING' && languageCrawler.state.startProblemId ? (
+                <p className="text-lg font-semibold text-blue-600 dark:text-blue-400">
+                  {languageCrawler.state.startProblemId}번부터
+                </p>
+              ) : languageCrawler.state.status === 'COMPLETED' ? (
+                <p className="text-lg font-semibold text-green-600 dark:text-green-400">
+                  완료됨
+                </p>
+              ) : (
+                <p className="text-lg font-semibold text-gray-400 dark:text-gray-500">
+                  작업 시작 후 표시
+                </p>
+              )}
+            </div>
+          </div>
+          {languageCrawler.state.status === 'RUNNING' && languageCrawler.state.processedCount > 0 && (
+            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">현재 진행 상황</p>
+              <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                {languageCrawler.state.processedCount}개 처리 완료
+              </p>
+            </div>
+          )}
+        </div>
+
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          DB에 저장된 모든 문제의 언어 정보를 재판별하여 업데이트합니다. 기존 크롤링 데이터는 유지하고
+          language 필드만 업데이트합니다.
+          <br />
+          <span className="text-xs text-gray-500 dark:text-gray-500 mt-1 block">
+            (소요 시간: 문제 수에 따라 수 분 ~ 수십 분)
+            <br />
+            중단되어도 다시 호출하면 checkpoint부터 자동으로 이어서 진행됩니다.
+          </span>
+        </p>
+        <Button
+          onClick={handleUpdateLanguage}
+          variant="primary"
+          isLoading={languageCrawler.isLoading}
+          disabled={languageCrawler.state.status === 'RUNNING'}
+          className="flex items-center gap-2"
+        >
+          {languageCrawler.isLoading ? (
+            <>
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              작업 시작 중...
+            </>
+          ) : languageCrawler.state.status === 'RUNNING' ? (
+            <>
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              작업 진행 중...
+            </>
+          ) : (
+            <>
+              <Languages className="w-4 h-4" />
+              언어 정보 최신화 시작
+            </>
+          )}
+        </Button>
+
+        <ProgressDisplay
+          state={languageCrawler.state}
+          title="언어 정보 업데이트"
+          type="language"
+        />
+        <ErrorDisplay
+          state={languageCrawler.state}
+          onRestart={() => languageCrawler.restart()}
+          title="언어 정보 업데이트"
+        />
+        <CompleteDisplay
+          state={languageCrawler.state}
+          title="언어 정보 업데이트"
+          type="language"
+        />
+      </div>
+    </div>
+  );
+};

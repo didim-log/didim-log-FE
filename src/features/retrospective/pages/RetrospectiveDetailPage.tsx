@@ -285,4 +285,3 @@ export const RetrospectiveDetailPage: FC = () => {
         </Layout>
     );
 };
-

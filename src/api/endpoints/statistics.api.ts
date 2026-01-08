@@ -26,6 +26,3 @@ export const statisticsApi = {
         return response.data;
     },
 };
-
-
-

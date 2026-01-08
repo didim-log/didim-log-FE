@@ -184,5 +184,3 @@ export const SignupFinalizePage: FC = () => {
         </div>
     );
 };
-
-

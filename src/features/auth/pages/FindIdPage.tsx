@@ -165,5 +165,3 @@ export const FindIdPage: FC = () => {
         </div>
     );
 };
-
-

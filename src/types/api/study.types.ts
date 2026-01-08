@@ -13,17 +13,3 @@ export interface SolutionSubmitResponse {
     currentTier: string;
     currentTierLevel: number;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-

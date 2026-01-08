@@ -323,5 +323,3 @@ export const useLanguageUpdateStatus = (jobId: string | null) => {
         },
     });
 };
-
-

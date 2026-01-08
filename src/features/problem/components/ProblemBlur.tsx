@@ -50,5 +50,3 @@ export const ProblemBlur: FC<ProblemBlurProps> = ({ isBlurred, onStart }) => {
         </div>
     );
 };
-
-

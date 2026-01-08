@@ -237,5 +237,3 @@ export const AdminLogManagement: FC = () => {
         </div>
     );
 };
-
-

@@ -10,5 +10,3 @@ export interface UpdateProfileRequest {
     newPassword?: string | null;
     primaryLanguage?: PrimaryLanguage | null;
 }
-
-

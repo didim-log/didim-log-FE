@@ -33,5 +33,3 @@ describe('deriveServerRoot', () => {
         expect(deriveServerRoot('https://example.com/api/v1', { isProd: true })).toBe('https://example.com');
     });
 });
-
-

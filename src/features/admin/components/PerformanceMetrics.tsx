@@ -240,5 +240,3 @@ export const PerformanceMetrics: FC = () => {
         </div>
     );
 };
-
-

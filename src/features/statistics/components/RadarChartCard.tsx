@@ -52,4 +52,3 @@ export const RadarChartCard: FC<RadarChartCardProps> = ({ data }) => {
         </div>
     );
 };
-

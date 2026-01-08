@@ -143,4 +143,3 @@ function executeSwift(code: string, input: string): string {
     void input
     return 'Swift 실행은 서버에서 처리해야 합니다.'
 }
-

@@ -39,7 +39,6 @@ export const FeedbackManagement: FC = () => {
         setPage(newPage);
     };
 
-
     if (isLoading) {
         return <Spinner />;
     }
@@ -174,4 +173,3 @@ export const FeedbackManagement: FC = () => {
         </div>
     );
 };
-

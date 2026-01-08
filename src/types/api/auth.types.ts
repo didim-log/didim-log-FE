@@ -91,5 +91,3 @@ export interface SignupFinalizeRequest {
     bojId?: string | null;
     isAgreedToTerms: boolean;
 }
-
-

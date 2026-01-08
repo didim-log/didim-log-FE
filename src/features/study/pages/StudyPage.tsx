@@ -424,4 +424,3 @@ export const StudyPage: FC = () => {
         </Layout>
     );
 };
-

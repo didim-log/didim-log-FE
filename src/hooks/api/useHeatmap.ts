@@ -14,15 +14,3 @@ export const useHeatmapByYear = (year?: number) => {
         staleTime: 5 * 60 * 1000, // 5분
     });
 };
-
-
-
-
-
-
-
-
-
-
-
-

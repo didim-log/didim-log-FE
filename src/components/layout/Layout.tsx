@@ -34,4 +34,3 @@ export const Layout: FC<LayoutProps> = ({ children }) => {
         </div>
     );
 };
-

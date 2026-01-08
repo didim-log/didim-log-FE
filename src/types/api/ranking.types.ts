@@ -19,17 +19,3 @@ export interface LeaderboardResponse {
     consecutiveSolveDays: number;
     profileImageUrl: string | null;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-

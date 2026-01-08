@@ -62,4 +62,3 @@ export interface StaticTemplateRequest {
     errorMessage?: string | null;
     solveTime?: string | null; // 풀이 소요 시간 (예: "15m 30s" 또는 초 단위 문자열)
 }
-

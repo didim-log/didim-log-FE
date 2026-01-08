@@ -37,4 +37,3 @@ export interface AiUsageResponse {
 export interface LogFeedbackResponse {
     message: string;
 }
-

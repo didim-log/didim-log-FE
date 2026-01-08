@@ -56,6 +56,3 @@ export const BojVerifyErrorGuide: FC<BojVerifyErrorGuideProps> = ({ guide }) => 
         </div>
     );
 };
-
-
-

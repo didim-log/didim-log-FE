@@ -37,7 +37,3 @@ export const memberApi = {
         await apiClient.patch('/members/onboarding/reset');
     },
 };
-
-
-
-

@@ -121,4 +121,3 @@ export const StatsChartModal: FC<StatsChartModalProps> = ({ isOpen, onClose, dat
         </div>
     );
 };
-

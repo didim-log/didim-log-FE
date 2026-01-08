@@ -90,15 +90,3 @@ export const formatTimeToClock = (totalSeconds: number): string => {
     }
     return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 };
-
-
-
-
-
-
-
-
-
-
-
-

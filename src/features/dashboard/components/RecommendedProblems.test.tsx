@@ -82,5 +82,3 @@ describe('RecommendedProblems', () => {
         expect(html).not.toContain('아직 분석할 데이터가 부족해요!');
     });
 });
-
-

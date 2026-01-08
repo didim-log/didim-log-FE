@@ -14,17 +14,3 @@ export const studyApi = {
         return response.data;
     },
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-

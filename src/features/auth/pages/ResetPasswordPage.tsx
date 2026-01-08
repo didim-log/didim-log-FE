@@ -181,5 +181,3 @@ export const ResetPasswordPage: FC = () => {
         </div>
     );
 };
-
-

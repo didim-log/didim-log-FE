@@ -98,5 +98,3 @@ describe('getBojVerifyErrorViewModel', () => {
         expect(result.guideKey).toBe('BOJ_CODE_MISMATCH');
     });
 });
-
-

@@ -102,4 +102,3 @@ export const useStaticTemplate = () => {
         mutationFn: (data: StaticTemplateRequest) => retrospectiveApi.getStaticTemplate(data),
     });
 };
-

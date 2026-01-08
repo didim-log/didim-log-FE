@@ -94,4 +94,3 @@ export default function QuoteWidget({ quote, onRefresh }: QuoteWidgetProps) {
         </Card>
     )
 }
-

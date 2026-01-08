@@ -133,4 +133,3 @@ export const SignupWizard: FC<SignupWizardProps> = ({
         </div>
     );
 };
-

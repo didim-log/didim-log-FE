@@ -46,5 +46,3 @@ export const Timer: FC<TimerProps> = ({ isRunning, onTimeUpdate }) => {
         </span>
     );
 };
-
-

@@ -274,4 +274,3 @@ export const BojVerifyStep: FC<BojVerifyStepProps> = ({ onNext, onBack, duplicat
         </div>
     );
 };
-

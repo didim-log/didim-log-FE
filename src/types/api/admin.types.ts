@@ -234,5 +234,3 @@ export interface AdminAuditLogRequest {
     startDate?: string; // ISO 8601 형식
     endDate?: string; // ISO 8601 형식
 }
-
-

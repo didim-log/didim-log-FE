@@ -62,5 +62,3 @@ describe('toastApiError', () => {
         expect(toastErrorMock).toHaveBeenCalledWith('요청이 너무 많습니다.');
     });
 });
-
-

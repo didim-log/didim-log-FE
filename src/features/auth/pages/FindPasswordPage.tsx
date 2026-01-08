@@ -175,5 +175,3 @@ export const FindPasswordPage: FC = () => {
         </div>
     );
 };
-
-

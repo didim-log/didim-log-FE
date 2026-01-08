@@ -18,5 +18,3 @@ export const OAuthCallbackPage: FC = () => {
 
     return <Spinner />;
 };
-
-

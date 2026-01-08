@@ -74,5 +74,3 @@ export const parseOAuthSignupState = (value: unknown): OAuthSignupState | null =
 
     return { email, provider, providerId, profileImage };
 };
-
-

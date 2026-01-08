@@ -119,6 +119,3 @@ export const NoticeListPage: FC = () => {
         </Layout>
     );
 };
-
-
-

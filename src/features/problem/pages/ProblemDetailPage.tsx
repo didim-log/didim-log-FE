@@ -60,5 +60,3 @@ export const ProblemDetailPage: FC = () => {
         </Layout>
     );
 };
-
-
