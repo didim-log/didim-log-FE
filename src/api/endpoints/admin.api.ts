@@ -13,7 +13,6 @@ import type {
     FeedbackPageResponse,
     AdminDashboardStatsResponse,
     CollectMetadataRequest,
-    CollectResponse,
     MaintenanceModeRequest,
     MaintenanceModeResponse,
     PerformanceMetricsResponse,
@@ -206,8 +205,8 @@ export const adminApi = {
     /**
      * 문제 상세 정보 크롤링
      */
-    collectDetails: async (): Promise<CollectResponse> => {
-        const response = await apiClient.post<CollectResponse>('/admin/problems/collect-details');
+    collectDetails: async (): Promise<{ message: string }> => {
+        const response = await apiClient.post<{ message: string }>('/admin/problems/collect-details');
         return response.data;
     },
 

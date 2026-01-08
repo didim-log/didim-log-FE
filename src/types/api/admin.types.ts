@@ -62,26 +62,10 @@ export interface CollectMetadataRequest {
     end: number;
 }
 
-/**
- * @deprecated 비동기 처리로 변경됨. JobStartResponse 사용
- */
-export interface CollectResponse {
-    message: string;
-    range?: string;
-}
-
 export interface ProblemStatsResponse {
     totalCount: number;
     minProblemId: number | null;
     maxProblemId: number | null;
-}
-
-/**
- * @deprecated 비동기 처리로 변경됨. JobStartResponse 사용
- */
-export interface UpdateLanguageResponse {
-    message: string;
-    updatedCount: number;
 }
 
 /**
