@@ -3,8 +3,7 @@ import { toast } from 'sonner'
 import { Button } from '../ui/Button'
 import type { FeedbackType } from '../../types/api/feedback.types'
 import { useCreateFeedback } from '../../hooks/api/useFeedback'
-import type { AxiosError } from 'axios'
-import { getErrorMessage, type ApiErrorResponse } from '../../utils/errorHandler'
+import { getErrorMessage } from '../../types/api/common.types'
 
 interface FeedbackFormProps {
     onSuccess?: () => void
@@ -53,10 +52,7 @@ export default function FeedbackForm({ onSuccess }: FeedbackFormProps) {
                 onSuccess()
             }
         } catch (err) {
-            const error = err as AxiosError<ApiErrorResponse>
-            const errorMessage = error.response?.data
-                ? getErrorMessage(error.response.data)
-                : '피드백 등록에 실패했습니다.'
+            const errorMessage = getErrorMessage(err)
             toast.error(errorMessage)
         }
     }
