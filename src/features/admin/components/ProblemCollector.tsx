@@ -3,7 +3,7 @@
  * Resumable Crawling 기능 지원
  */
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import type { FC } from 'react';
 import { useCrawler } from '../../../hooks/useCrawler';
 import { useProblemStats } from '../../../hooks/api/useAdmin';
@@ -12,6 +12,7 @@ import { Input } from '../../../components/ui/Input';
 import { Spinner } from '../../../components/ui/Spinner';
 import { BookOpen, Minus, Maximize, Languages, RotateCw, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import type { CollectMetadataRequest } from '../../../types/api/admin.types';
 
 export const ProblemCollector: FC = () => {
@@ -209,9 +210,29 @@ export const ProblemCollector: FC = () => {
 
     const currentProblemId = getCurrentProblemId();
 
+    // 그래프 데이터 준비 (시간 경과에 따른 진행률)
+    const chartData = useMemo(() => {
+      const history = state.progressHistory || [];
+      if (history.length === 0) {
+        return [];
+      }
+
+      const startTime = history[0]?.timestamp || Date.now();
+      return history.map((point) => {
+        const elapsedSeconds = Math.floor((point.timestamp - startTime) / 1000);
+        const minutes = Math.floor(elapsedSeconds / 60);
+        const seconds = elapsedSeconds % 60;
+        return {
+          time: `${minutes}:${seconds.toString().padStart(2, '0')}`,
+          progress: point.progress,
+          processed: point.processedCount,
+        };
+      });
+    }, [state.progressHistory]);
+
     return (
       <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-        <div className="mb-2">
+        <div className="mb-4">
           <div className="flex items-center justify-between mb-1">
             <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
               {title} 진행률: {state.progress}%
@@ -227,6 +248,55 @@ export const ProblemCollector: FC = () => {
             />
           </div>
         </div>
+
+        {/* 진행률 그래프 */}
+        {chartData.length > 0 && (
+          <div className="mb-4">
+            <h4 className="text-xs font-medium text-blue-700 dark:text-blue-300 mb-2">
+              진행률 추이
+            </h4>
+            <div className="h-32 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#94a3b8" className="opacity-30" />
+                  <XAxis
+                    dataKey="time"
+                    tick={{ fontSize: 10 }}
+                    stroke="#64748b"
+                    className="dark:stroke-gray-400"
+                  />
+                  <YAxis
+                    domain={[0, 100]}
+                    tick={{ fontSize: 10 }}
+                    stroke="#64748b"
+                    className="dark:stroke-gray-400"
+                    tickFormatter={(value) => `${value}%`}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '6px',
+                      fontSize: '12px',
+                    }}
+                    formatter={(value: number | undefined) => {
+                      if (value === undefined) return ['0%', '진행률'];
+                      return [`${value}%`, '진행률'];
+                    }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="progress"
+                    stroke="#3b82f6"
+                    strokeWidth={2}
+                    dot={{ r: 3 }}
+                    activeDot={{ r: 5 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
         <div className="text-xs text-blue-600 dark:text-blue-400 space-y-1">
           {/* 메타데이터 수집: 범위 및 현재 처리 번호 */}
           {type === 'metadata' && state.startProblemId && state.endProblemId && (
@@ -237,6 +307,13 @@ export const ProblemCollector: FC = () => {
               {currentProblemId && (
                 <p className="text-blue-700 dark:text-blue-300 font-semibold">
                   현재 처리 중: {currentProblemId}번 (마지막 처리된 번호)
+                </p>
+              )}
+              {state.lastCheckpointId && (
+                <p className="text-xs text-gray-600 dark:text-gray-400">
+                  마지막 checkpoint: {typeof state.lastCheckpointId === 'number' 
+                    ? `${state.lastCheckpointId}번` 
+                    : state.lastCheckpointId}
                 </p>
               )}
               {state.startProblemId && (
@@ -307,6 +384,13 @@ export const ProblemCollector: FC = () => {
             <p className="text-sm text-red-600 dark:text-red-400 mb-3">
               {state.errorMessage || '알 수 없는 오류가 발생했습니다.'}
             </p>
+            {state.lastCheckpointId && (
+              <p className="text-xs text-blue-600 dark:text-blue-400 mb-2">
+                마지막 처리 위치: {typeof state.lastCheckpointId === 'number' 
+                  ? `${state.lastCheckpointId}번` 
+                  : state.lastCheckpointId}
+              </p>
+            )}
             <Button
               onClick={onRestart}
               variant="primary"
@@ -314,10 +398,14 @@ export const ProblemCollector: FC = () => {
               className="flex items-center gap-2"
             >
               <RotateCw className="w-4 h-4" />
-              이어서 재시작
+              {state.lastCheckpointId 
+                ? `재시작 (${typeof state.lastCheckpointId === 'number' ? state.lastCheckpointId + 1 : 'checkpoint'}번부터)`
+                : '이어서 재시작'}
             </Button>
             <p className="mt-2 text-xs text-red-600 dark:text-red-400">
-              같은 범위로 다시 호출하면 checkpoint부터 자동으로 이어서 진행됩니다.
+              {state.lastCheckpointId 
+                ? 'checkpoint부터 자동으로 이어서 진행됩니다.'
+                : '같은 범위로 다시 호출하면 checkpoint부터 자동으로 이어서 진행됩니다.'}
             </p>
           </div>
         </div>
@@ -521,6 +609,10 @@ export const ProblemCollector: FC = () => {
                 <p className="text-lg font-semibold text-green-600 dark:text-green-400">
                   완료됨
                 </p>
+              ) : stats?.minNullDescriptionHtmlProblemId ? (
+                <p className="text-lg font-semibold text-blue-600 dark:text-blue-400">
+                  {stats.minNullDescriptionHtmlProblemId}번부터 (null인 문제 최소 번호)
+                </p>
               ) : (
                 <p className="text-lg font-semibold text-gray-400 dark:text-gray-500">
                   작업 시작 후 표시
@@ -600,6 +692,10 @@ export const ProblemCollector: FC = () => {
               ) : languageCrawler.state.status === 'COMPLETED' ? (
                 <p className="text-lg font-semibold text-green-600 dark:text-green-400">
                   완료됨
+                </p>
+              ) : stats?.minNullLanguageProblemId ? (
+                <p className="text-lg font-semibold text-blue-600 dark:text-blue-400">
+                  {stats.minNullLanguageProblemId}번부터 (null/other인 문제 최소 번호)
                 </p>
               ) : (
                 <p className="text-lg font-semibold text-gray-400 dark:text-gray-500">
