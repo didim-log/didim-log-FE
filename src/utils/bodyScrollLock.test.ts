@@ -50,3 +50,4 @@ describe('lockBodyScroll', () => {
         expect(env.bodyStyle.overflow).toBe('');
     });
 });
+

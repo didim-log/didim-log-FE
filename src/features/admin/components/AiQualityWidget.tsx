@@ -167,3 +167,4 @@ export const AiQualityWidget: React.FC = () => {
         </div>
     );
 };
+

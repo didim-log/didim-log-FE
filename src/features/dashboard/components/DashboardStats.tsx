@@ -7,6 +7,7 @@ import { RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Responsi
 import { useStatistics } from '../../../hooks/api/useStatistics';
 import { Spinner } from '../../../components/ui/Spinner';
 import { BookOpen, Clock, Target } from 'lucide-react';
+import { formatDuration } from '../../../utils/dateUtils';
 
 // Mock 데이터 (API에 데이터가 없을 때 사용)
 const mockCategoryData = [
@@ -54,12 +55,16 @@ export const DashboardStats: FC = () => {
         // 총 회고 수는 totalRetrospectives 사용
         const totalRetrospectives = statistics.totalRetrospectives || mockMetrics.totalRetrospectives;
 
-        // 평균 풀이 시간과 성공률은 현재 API 응답에 포함되지 않아 임시값을 사용합니다.
-        // (백엔드에서 제공되면 statistics 값을 사용하도록 변경)
+        // 평균 풀이 시간은 statistics.averageSolveTime 사용 (초 단위)
+        const averageSolveTime = statistics.averageSolveTime ?? 0;
+
+        // 성공률은 statistics.successRate 사용
+        const successRate = statistics.successRate ?? mockMetrics.successRate;
+
         return {
             totalRetrospectives,
-            averageSolveTime: mockMetrics.averageSolveTime,
-            successRate: mockMetrics.successRate,
+            averageSolveTime,
+            successRate,
         };
     };
 
@@ -114,8 +119,7 @@ export const DashboardStats: FC = () => {
                                 평균 풀이 시간
                             </p>
                             <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                                {metrics.averageSolveTime}
-                                <span className="text-sm text-gray-600 dark:text-gray-400 ml-1">분</span>
+                                {formatDuration(metrics.averageSolveTime)}
                             </p>
                         </div>
                         <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">

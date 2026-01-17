@@ -21,3 +21,4 @@ describe('validation.getPasswordPolicyDetails', () => {
         expect(validation.getPasswordPolicyDetails('Abcdef1-').hasSpecial).toBe(true);
     });
 });
+

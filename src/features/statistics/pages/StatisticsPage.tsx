@@ -13,7 +13,7 @@ import { WeaknessAnalysisCard } from '../components/WeaknessAnalysisCard';
 import { Spinner } from '../../../components/ui/Spinner';
 import { Layout } from '../../../components/layout/Layout';
 import { BookOpen, FileText, Clock, Target } from 'lucide-react';
-import { formatTimeFromSeconds } from '../../../utils/dateUtils';
+import { formatDuration } from '../../../utils/dateUtils';
 
 export const StatisticsPage: FC = () => {
     const navigate = useNavigate();
@@ -100,7 +100,7 @@ export const StatisticsPage: FC = () => {
                             />
                             <StatCard
                                 title="평균 풀이 시간"
-                                value={formatTimeFromSeconds(statistics.averageSolveTime ?? 0)}
+                                value={formatDuration(statistics.averageSolveTime ?? 0)}
                                 icon={Clock}
                                 iconColor="text-purple-600 dark:text-purple-400"
                                 bgColor="bg-purple-100 dark:bg-purple-900/30"

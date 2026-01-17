@@ -12,3 +12,4 @@ export const useRandomQuote = () => {
         staleTime: 5 * 60 * 1000, // 5분
     });
 };
+

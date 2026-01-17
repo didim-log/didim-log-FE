@@ -109,3 +109,4 @@ export const __resetBodyScrollLockForTest = () => {
     lockCount = 0;
     snapshot = null;
 };
+

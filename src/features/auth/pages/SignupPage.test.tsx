@@ -27,3 +27,4 @@ describe('SignupPage', () => {
         expect(html).not.toContain('회원가입 마무리');
     });
 });
+

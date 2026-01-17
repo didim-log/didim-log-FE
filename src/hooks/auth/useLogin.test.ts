@@ -53,3 +53,4 @@ describe('toLoginError', () => {
         expect(loginError.message).toBe('boom');
     });
 });
+
