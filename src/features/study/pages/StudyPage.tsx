@@ -7,7 +7,6 @@ import type { FC } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useProblemDetail } from '../../../hooks/api/useProblem';
 import { useSubmitSolution } from '../../../hooks/api/useStudy';
-import { useStaticTemplate } from '../../../hooks/api/useRetrospective';
 import { logApi } from '../../../api/endpoints/log.api';
 import { CodeEditor } from '../components/CodeEditor';
 import { Timer } from '../components/Timer';
@@ -53,7 +52,6 @@ export const StudyPage: FC = () => {
     const { completePhase } = useOnboardingStore();
     const { data: problem, isLoading, error } = useProblemDetail(problemId || '');
     const submitSolutionMutation = useSubmitSolution();
-    const staticTemplateMutation = useStaticTemplate();
 
     const [code, setCode] = useState('');
     const [language, setLanguage] = useState('text'); // 초기값은 'text', useEffect에서 업데이트
@@ -205,20 +203,10 @@ export const StudyPage: FC = () => {
                 return `${minutes}분 ${remainingSeconds}초`;
             };
 
-            // 정적 템플릿 가져오기
-            const templateResult = await staticTemplateMutation.mutateAsync({
-                code,
-                problemId,
-                isSuccess,
-                errorMessage: isSuccess ? null : '제출 실패',
-                solveTime: timeTaken > 0 ? formatSolveTime(timeTaken) : null,
-            });
-
-            // 회고 작성 페이지로 이동 (템플릿과 함께)
+            // 회고 작성 페이지로 이동
             navigate('/retrospectives/write', {
                 state: {
                     problemId,
-                    template: templateResult.template,
                     isSuccess,
                     status: isSuccess ? 'SOLVED' : 'FAIL', // 명시적 status 전달
                     code,
@@ -228,7 +216,7 @@ export const StudyPage: FC = () => {
                 },
             });
         } catch {
-            // 템플릿 없이 회고 작성 페이지로 이동
+            // 에러 발생 시에도 회고 작성 페이지로 이동
             navigate('/retrospectives/write', {
                 state: {
                     problemId,

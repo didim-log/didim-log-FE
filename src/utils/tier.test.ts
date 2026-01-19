@@ -34,13 +34,9 @@ describe('Solved.ac tier mapping', () => {
 
         // tierLevel이 유효하지 않은 경우 (rating으로 fallback)
         expect(resolveSolvedAcTierLevel({ tierLevel: -1, rating: 30 })).toBe(1); // rating으로 계산
-        expect(resolveSolvedAcTierLevel({ tierLevel: 32, rating: 90 })).toBe(3); // rating으로 계산
-
-        // tierLevel이 없고 rating만 있는 경우
+        expect(resolveSolvedAcTierLevel({ tierLevel: 32, rating: 90 })).toBe(3); // rating으로 계산        // tierLevel이 없고 rating만 있는 경우
         expect(resolveSolvedAcTierLevel({ rating: 30 })).toBe(1); // Bronze V
-        expect(resolveSolvedAcTierLevel({ rating: 90 })).toBe(3); // Bronze III
-
-        // 둘 다 없는 경우
+        expect(resolveSolvedAcTierLevel({ rating: 90 })).toBe(3); // Bronze III        // 둘 다 없는 경우
         expect(resolveSolvedAcTierLevel({})).toBe(0); // Unrated
     });
 });
