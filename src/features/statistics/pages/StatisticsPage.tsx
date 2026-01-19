@@ -3,6 +3,7 @@
  * Activity Heatmap 제거: 렌더링 성능 및 레이아웃 안정성 개선
  */
 
+import { useMemo } from 'react';
 import type { FC } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStatistics } from '../../../hooks/api/useStatistics';
@@ -22,7 +23,7 @@ export const StatisticsPage: FC = () => {
     // 레이더 차트 데이터 준비
     // 백엔드에서 이미 집계된 categoryStats를 사용하여 레이더 차트 데이터 생성
     // CRITICAL: 모든 hooks는 early return 전에 호출되어야 함 (React Hooks 규칙)
-    const radarData = (() => {
+    const radarData = useMemo(() => {
         if (!statistics?.categoryStats || statistics.categoryStats.length === 0) {
             return [];
         }
@@ -37,7 +38,7 @@ export const StatisticsPage: FC = () => {
             category: item.category,
             value: maxCount > 0 ? Math.round((item.count / maxCount) * 100) : 0,
         }));
-    })();
+    }, [statistics?.categoryStats]);
 
     if (isLoading) {
         return (
@@ -80,8 +81,8 @@ export const StatisticsPage: FC = () => {
                     </div>
                     {/* CSS Grid 레이아웃: 12열 그리드 */}
                     <div className="grid grid-cols-12 gap-4">
-                        {/* Row 1: KPI Cards (Span 12) */}
-                        <div className="col-span-12 grid grid-cols-4 gap-3">
+                        {/* Row 1: KPI Cards (Span 12) - 모바일: 2열, 데스크톱: 4열 */}
+                        <div className="col-span-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                             <StatCard
                                 title="총 풀이 수"
                                 value={statistics.totalSolved ?? 0}

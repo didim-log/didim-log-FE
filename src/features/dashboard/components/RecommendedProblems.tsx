@@ -2,7 +2,7 @@
  * 추천 문제 카드 컴포넌트
  */
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import type { FC } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
@@ -102,14 +102,14 @@ export const RecommendedProblems: FC<RecommendedProblemsProps> = ({ count = 4, c
 
 
     // 스크롤 위치에 따라 화살표 버튼 표시/숨김
-    const updateArrowVisibility = () => {
+    const updateArrowVisibility = useCallback(() => {
         const container = scrollContainerRef.current;
         if (!container) return;
 
         const { scrollLeft, scrollWidth, clientWidth } = container;
         setShowLeftArrow(scrollLeft > 0);
         setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 1); // 1px 여유를 두어 부동소수점 오차 방지
-    };
+    }, []);
 
     // 스크롤 이벤트 리스너
     useEffect(() => {
@@ -132,7 +132,7 @@ export const RecommendedProblems: FC<RecommendedProblemsProps> = ({ count = 4, c
             container.removeEventListener('scroll', updateArrowVisibility);
             resizeObserver.disconnect();
         };
-    }, []);
+    }, [updateArrowVisibility]);
 
     // 선택된 카테고리가 변경되면 해당 버튼으로 스크롤
     useEffect(() => {
@@ -151,22 +151,22 @@ export const RecommendedProblems: FC<RecommendedProblemsProps> = ({ count = 4, c
         }
         // 스크롤 후 화살표 상태 업데이트
         setTimeout(updateArrowVisibility, 300); // 스크롤 애니메이션 완료 후 업데이트
-    }, [selectedCategory]);
+    }, [selectedCategory, updateArrowVisibility]);
 
     // 좌우 스크롤 함수
-    const scrollLeft = () => {
+    const scrollLeft = useCallback(() => {
         const container = scrollContainerRef.current;
         if (container) {
             container.scrollBy({ left: -200, behavior: 'smooth' });
         }
-    };
+    }, []);
 
-    const scrollRight = () => {
+    const scrollRight = useCallback(() => {
         const container = scrollContainerRef.current;
         if (container) {
             container.scrollBy({ left: 200, behavior: 'smooth' });
         }
-    };
+    }, []);
 
     const renderContent = () => {
         if (isLoading) {
