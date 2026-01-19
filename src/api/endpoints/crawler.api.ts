@@ -3,6 +3,7 @@
  * Resumable Crawling 기능 지원
  */
 
+import type { AxiosError } from 'axios';
 import { apiClient } from '../client';
 import type { CollectMetadataRequest, JobStartResponse, JobStatusResponse } from '../../types/api/admin.types';
 
@@ -30,8 +31,9 @@ export const crawlerApi = {
         timeout: 10000, // 상태 조회는 빠르므로 10초면 충분
       });
       return response.data;
-    } catch (error: any) {
-      if (error.response?.status === 404) {
+    } catch (error) {
+      const axiosError = error as AxiosError;
+      if (axiosError.response?.status === 404) {
         return null; // 작업을 찾을 수 없음 (24시간 후 자동 삭제)
       }
       throw error;

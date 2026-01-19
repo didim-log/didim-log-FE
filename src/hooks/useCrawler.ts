@@ -293,9 +293,10 @@ export const useCrawler = (options: UseCrawlerOptions): UseCrawlerReturn => {
           jobId: result.jobId,
         }));
         startPolling(result.jobId);
-      } catch (error: any) {
+      } catch (error) {
         // 타임아웃 처리: jobId가 있으면 상태 조회하여 checkpoint 확인
-        const isTimeout = error.code === 'ECONNABORTED' || error.message?.includes('timeout');
+        const axiosError = error as { code?: string; message?: string };
+        const isTimeout = axiosError.code === 'ECONNABORTED' || axiosError.message?.includes('timeout');
         
         if (isTimeout && error.response?.data?.jobId) {
           // 타임아웃 발생했지만 jobId를 받은 경우

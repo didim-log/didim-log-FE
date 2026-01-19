@@ -279,9 +279,10 @@ export const ProblemCollector: FC = () => {
                       borderRadius: '6px',
                       fontSize: '12px',
                     }}
-                    formatter={(value: number | undefined) => {
-                      if (value === undefined) return ['0%', '진행률'];
-                      return [`${value}%`, '진행률'];
+                    formatter={(value: unknown) => {
+                      const numValue = typeof value === 'number' ? value : undefined;
+                      if (numValue === undefined) return ['0%', '진행률'];
+                      return [`${numValue}%`, '진행률'];
                     }}
                   />
                   <Line

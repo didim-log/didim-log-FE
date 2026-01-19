@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { getErrorMessage, isApiError } from '../../../types/api/common.types';
 import { Copy, Trash2, Edit } from 'lucide-react';
 import { formatKST } from '../../../utils/dateUtils';
+import { RETROSPECTIVE_OLD_DAYS } from '../../../utils/constants';
 
 export const RetrospectiveDetailPage: FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -136,7 +137,7 @@ export const RetrospectiveDetailPage: FC = () => {
         const kstCreatedAt = new Date(createdAt.toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
         const kstNow = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
         const daysDiff = Math.floor((kstNow.getTime() - kstCreatedAt.getTime()) / (1000 * 60 * 60 * 24));
-        return daysDiff >= 180;
+        return daysDiff >= RETROSPECTIVE_OLD_DAYS;
     };
 
     return (

@@ -10,6 +10,14 @@ import { BookOpen, Clock, Target } from 'lucide-react';
 import { formatDuration } from '../../../utils/dateUtils';
 
 // Mock 데이터 (API에 데이터가 없을 때 사용)
+import {
+    DASHBOARD_TOP_CATEGORIES_COUNT,
+    DASHBOARD_RADAR_MAX_VALUE,
+    DASHBOARD_MOCK_TOTAL_RETROSPECTIVES,
+    DASHBOARD_MOCK_AVERAGE_SOLVE_TIME,
+    DASHBOARD_MOCK_SUCCESS_RATE,
+} from '../../../utils/constants';
+
 const mockCategoryData = [
     { category: 'BFS', value: 80 },
     { category: 'DP', value: 60 },
@@ -19,9 +27,9 @@ const mockCategoryData = [
 ];
 
 const mockMetrics = {
-    totalRetrospectives: 42,
-    averageSolveTime: 35, // 분
-    successRate: 72, // 퍼센트
+    totalRetrospectives: DASHBOARD_MOCK_TOTAL_RETROSPECTIVES,
+    averageSolveTime: DASHBOARD_MOCK_AVERAGE_SOLVE_TIME, // 분
+    successRate: DASHBOARD_MOCK_SUCCESS_RATE, // 퍼센트
 };
 
 export const DashboardStats: FC = () => {
@@ -31,14 +39,14 @@ export const DashboardStats: FC = () => {
     // 백엔드에서 이미 집계된 categoryStats 사용
     const prepareRadarData = () => {
         if (statistics?.categoryStats && statistics.categoryStats.length > 0) {
-            // 상위 5개 카테고리 추출 (백엔드에서 이미 정렬되어 있음)
-            const top5 = statistics.categoryStats.slice(0, 5);
+            // 상위 카테고리 추출 (백엔드에서 이미 정렬되어 있음)
+            const topCategories = statistics.categoryStats.slice(0, DASHBOARD_TOP_CATEGORIES_COUNT);
 
-            // 최대값 기준으로 100점 만점으로 정규화
-            const maxCount = top5.length > 0 ? Math.max(...top5.map((item) => item.count)) : 1;
-            return top5.map((item) => ({
+            // 최대값 기준으로 정규화
+            const maxCount = topCategories.length > 0 ? Math.max(...topCategories.map((item) => item.count)) : 1;
+            return topCategories.map((item) => ({
                 category: item.category,
-                value: maxCount > 0 ? Math.round((item.count / maxCount) * 100) : 0,
+                value: maxCount > 0 ? Math.round((item.count / maxCount) * DASHBOARD_RADAR_MAX_VALUE) : 0,
             }));
         }
         return mockCategoryData;
