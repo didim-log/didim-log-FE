@@ -2,7 +2,7 @@
  * 회고 에디터 컴포넌트
  */
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { FC } from 'react';
 import type { RetrospectiveRequest, ProblemResult } from '../../../types/api/retrospective.types';
 import { TagInput } from '../../../components/ui/TagInput';
@@ -12,10 +12,10 @@ const MAX_CONTENT_LENGTH = 5000;
 const AI_ANALYSIS_LIMIT = 2000;
 const RETENTION_DAYS = 180;
 
+
 interface RetrospectiveEditorProps {
     initialContent?: string;
     initialSummary?: string;
-    initialResultType?: string;
     initialSolvedCategory?: string;
     onSubmit: (data: RetrospectiveRequest) => void;
     isLoading?: boolean;
@@ -26,7 +26,6 @@ interface RetrospectiveEditorProps {
 export const RetrospectiveEditor: FC<RetrospectiveEditorProps> = ({
     initialContent = '',
     initialSummary = '',
-    initialResultType = '',
     initialSolvedCategory = '',
     onSubmit,
     isLoading = false,
@@ -35,12 +34,27 @@ export const RetrospectiveEditor: FC<RetrospectiveEditorProps> = ({
 }) => {
     const [content, setContent] = useState(initialContent);
     const [summary, setSummary] = useState(initialSummary);
-    const [resultType, setResultType] = useState(initialResultType);
     const [solvedCategories, setSolvedCategories] = useState<string[]>(
         initialSolvedCategory ? initialSolvedCategory.split(',').filter(Boolean) : []
     );
     const [errors, setErrors] = useState<{ content?: string; summary?: string }>({});
     const [hasUserTypedSummary, setHasUserTypedSummary] = useState(false);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    // initialContent가 변경되면 내부 content state 강제 업데이트 (템플릿 타입 변경 시 등)
+    useEffect(() => {
+        // 템플릿 타입 변경 등으로 initialContent가 변경되면 강제로 덮어쓰기
+        // initialContent와 현재 content가 다를 때만 업데이트
+        // 문자열 비교 시 trim()을 사용하지 않아 정확한 비교를 수행
+        if (initialContent !== content) {
+            // initialContent가 유효한 값이면 업데이트
+            if (initialContent !== undefined && initialContent !== null) {
+                setContent(initialContent);
+                // 부모 컴포넌트에도 변경사항 알림
+                onContentChange?.(initialContent);
+            }
+        }
+    }, [initialContent]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // summary 입력 핸들러: 사용자가 입력했음을 표시
     const handleSummaryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -77,10 +91,11 @@ export const RetrospectiveEditor: FC<RetrospectiveEditorProps> = ({
         // solvedCategories 배열을 쉼표로 구분된 문자열로 변환 (API는 단일 문자열을 받음)
         const solvedCategoryString = solvedCategories.length > 0 ? solvedCategories.join(', ') : null;
 
+        // resultType은 제거되었으므로 null로 전달 (백엔드에서 isSuccess 기반으로 처리)
         onSubmit({
             content: content.trim(),
             summary: summary.trim(),
-            resultType: (resultType || null) as ProblemResult | null,
+            resultType: null, // 풀이 결과는 이미 성공/실패로 결정되어 있으므로 null
             solvedCategory: solvedCategoryString,
         });
     };
@@ -106,23 +121,6 @@ export const RetrospectiveEditor: FC<RetrospectiveEditorProps> = ({
             </div>
 
             <div>
-                <label htmlFor="resultType" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    풀이 결과 (선택)
-                </label>
-                <select
-                    id="resultType"
-                    value={resultType}
-                    onChange={(e) => setResultType(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                    <option value="">선택하지 않음</option>
-                    <option value="SUCCESS">성공</option>
-                    <option value="FAIL">실패</option>
-                    <option value="TIME_OVER">시간 초과</option>
-                </select>
-            </div>
-
-            <div>
                 <TagInput
                     value={solvedCategories}
                     onChange={setSolvedCategories}
@@ -140,7 +138,9 @@ export const RetrospectiveEditor: FC<RetrospectiveEditorProps> = ({
                 <label htmlFor="content" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     회고 내용 <span className="text-red-500">*</span>
                 </label>
+
                 <textarea
+                    ref={textareaRef}
                     id="content"
                     value={content}
                     onChange={(e) => {
