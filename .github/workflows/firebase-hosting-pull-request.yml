@@ -21,6 +21,14 @@ jobs:
 
       - run: npm ci
 
+      # 빌드 전 캐시 및 이전 빌드 산출물 정리
+      - name: Clean build artifacts and cache
+        run: |
+          echo "🧹 Cleaning build artifacts and cache..."
+          rm -rf dist
+          rm -rf node_modules/.vite
+          echo "✅ Cleanup completed"
+
       # 1. 빌드 시 환경 변수 주입 (중요!)
       # - 실제 API 주소는 레포에 하드코딩하지 않고 GitHub Secrets로만 관리합니다.
       - run: npm run build
