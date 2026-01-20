@@ -3,7 +3,7 @@
  */
 
 import { useMemo, useState } from 'react';
-import type { FC } from 'react';
+import type { FC, FormEvent } from 'react';
 import { Trash2, Copy, Check } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
@@ -80,7 +80,7 @@ export const NoticeManagement: FC = () => {
         return `${id.slice(0, 8)}...${id.slice(-4)}`;
     };
 
-    const handleCreate = async (e: React.FormEvent) => {
+    const handleCreate = async (e: FormEvent) => {
         e.preventDefault();
         if (!title.trim()) {
             setCreateErrors({ title: '제목을 입력해주세요.' });

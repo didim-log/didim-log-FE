@@ -71,6 +71,44 @@ export const formatTimeFromSeconds = (seconds: number | null | undefined): strin
 };
 
 /**
+ * 초 단위 시간을 "X분 Y초" 또는 "XX초" 형식으로 포맷팅합니다.
+ * 사용자 친화적인 한글 형식으로 표시하며, 소수점은 반올림 처리됩니다.
+ * 
+ * @param seconds - 초 단위 시간 (소수점 포함 가능)
+ * @returns 포맷된 시간 문자열 (예: "35초", "1분 5초", "0초"). 유효하지 않은 값인 경우 "0초" 반환
+ * 
+ * @example
+ * formatDuration(34.83) // "35초"
+ * formatDuration(65.5) // "1분 6초"
+ * formatDuration(0) // "0초"
+ * formatDuration(-1) // "0초"
+ */
+export const formatDuration = (seconds: number): string => {
+    if (!Number.isFinite(seconds) || seconds < 0) {
+        return '0초';
+    }
+
+    const roundedSeconds = Math.round(seconds);
+
+    if (roundedSeconds === 0) {
+        return '0초';
+    }
+
+    if (roundedSeconds < 60) {
+        return `${roundedSeconds}초`;
+    }
+
+    const minutes = Math.floor(roundedSeconds / 60);
+    const remainingSeconds = roundedSeconds % 60;
+
+    if (remainingSeconds === 0) {
+        return `${minutes}분`;
+    }
+
+    return `${minutes}분 ${remainingSeconds}초`;
+};
+
+/**
  * 초 단위 시간을 시계 형식("HH:MM:SS" 또는 "MM:SS")으로 포맷팅합니다.
  * 
  * @param totalSeconds - 초 단위 시간
@@ -90,3 +128,4 @@ export const formatTimeToClock = (totalSeconds: number): string => {
     }
     return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 };
+

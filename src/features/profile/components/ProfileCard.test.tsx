@@ -37,3 +37,4 @@ describe('ProfileCard', () => {
         expect(html).not.toContain('Bronze V');
     });
 });
+

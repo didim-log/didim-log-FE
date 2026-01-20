@@ -3,7 +3,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import type { FC } from 'react';
+import type { FC, ChangeEvent, FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useLogin } from '../../../hooks/auth/useLogin';
 import { Button } from '../../../components/ui/Button';
@@ -112,7 +112,7 @@ export const LoginPage: FC = () => {
         return bojIdValidation.valid && password.trim().length >= 8;
     };
 
-    const handleBojIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleBojIdChange = (e: ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
         // 영문, 숫자, 언더스코어만 허용
         if (value === '' || /^[a-zA-Z0-9_]*$/.test(value)) {
@@ -121,7 +121,7 @@ export const LoginPage: FC = () => {
         setServerError(null);
     };
 
-    const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handlePasswordChange = (e: ChangeEvent<HTMLInputElement>) => {
         const newValue = e.target.value;
         setPassword(newValue);
         setServerError(null);
@@ -140,7 +140,7 @@ export const LoginPage: FC = () => {
         setTouched((prev) => ({ ...prev, [field]: true }));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
         // 상태 업데이트 전에 연타로 중복 호출되는 것을 막기 위한 동기 락
         if (submitLockRef.current) {

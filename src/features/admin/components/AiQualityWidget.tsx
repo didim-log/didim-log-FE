@@ -2,11 +2,12 @@
  * AI 품질 모니터링 위젯
  */
 
+import type { FC } from 'react';
 import { useAiQualityStats } from '../../../hooks/api/useAdmin';
 import { Spinner } from '../../../components/ui/Spinner';
 import { Link } from 'react-router-dom';
 
-export const AiQualityWidget: React.FC = () => {
+export const AiQualityWidget: FC = () => {
     const { data: stats, isLoading, error } = useAiQualityStats();
 
     if (isLoading) {
@@ -167,3 +168,4 @@ export const AiQualityWidget: React.FC = () => {
         </div>
     );
 };
+

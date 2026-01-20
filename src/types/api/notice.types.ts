@@ -31,3 +31,4 @@ export interface NoticeUpdateRequest {
     content?: string | null;
     isPinned?: boolean | null;
 }
+

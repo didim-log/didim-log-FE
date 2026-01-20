@@ -3,7 +3,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import type { FC } from 'react';
+import type { FC, FormEvent } from 'react';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { validation } from '../../../utils/validation';
@@ -122,7 +122,7 @@ export const SignupFormStep: FC<SignupFormStepProps> = ({
         setPasswordPolicy(validation.getPasswordPolicyDetails(password));
     }, [password]);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
         setErrors({});
 

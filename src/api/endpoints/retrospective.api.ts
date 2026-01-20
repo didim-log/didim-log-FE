@@ -11,7 +11,6 @@ import type {
     BookmarkToggleResponse,
     TemplateRequest,
     TemplateResponse,
-    StaticTemplateRequest,
 } from '../../types/api/retrospective.types';
 
 export const retrospectiveApi = {
@@ -82,14 +81,6 @@ export const retrospectiveApi = {
      */
     getTemplate: async (params: TemplateRequest): Promise<TemplateResponse> => {
         const response = await apiClient.get<TemplateResponse>('/retrospectives/template', { params });
-        return response.data;
-    },
-
-    /**
-     * 정적 템플릿 조회
-     */
-    getStaticTemplate: async (data: StaticTemplateRequest): Promise<TemplateResponse> => {
-        const response = await apiClient.post<TemplateResponse>('/retrospectives/template/static', data);
         return response.data;
     },
 };

@@ -4,7 +4,7 @@
  */
 
 import { useState, useRef } from 'react';
-import type { KeyboardEvent } from 'react';
+import type { KeyboardEvent, ChangeEvent } from 'react';
 import type { FC } from 'react';
 import { X, Trash2 } from 'lucide-react';
 import { ALGORITHM_CATEGORIES, getCategoryLabel } from '../../utils/constants';
@@ -109,7 +109,7 @@ export const TagInput: FC<TagInputProps> = ({
     };
 
     // 입력 값 변경 핸들러
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
         setInputValue(e.target.value);
         setHighlightedIndex(-1);
         if (e.target.value.trim()) {

@@ -4,7 +4,7 @@
  */
 
 import { useState, useRef, useEffect } from 'react';
-import type { FC } from 'react';
+import type { FC, KeyboardEvent } from 'react';
 import { X } from 'lucide-react';
 import { ALGORITHM_CATEGORIES, getCategoryLabel } from '../../utils/constants';
 
@@ -81,7 +81,7 @@ export const CreatableMultiSelect: FC<CreatableMultiSelectProps> = ({
         }
     };
 
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
             const valueToAdd = (customValue || searchTerm).trim();
             if (valueToAdd) {

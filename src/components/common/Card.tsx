@@ -1,6 +1,7 @@
+import type { HTMLAttributes } from 'react'
 import { cn } from '../../utils/cn'
 
-interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
+interface CardProps extends HTMLAttributes<HTMLDivElement> {
     hoverable?: boolean
 }
 
@@ -23,3 +24,4 @@ export default function Card({
         </div>
     )
 }
+

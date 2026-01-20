@@ -38,3 +38,22 @@ export const getCategoryLabel = (value: string): string => {
     const category = ALGORITHM_CATEGORIES.find((cat) => cat.value === value);
     return category?.label || value;
 };
+
+
+/**
+ * 애플리케이션 전역 상수
+ */
+
+// 회고 관련 상수
+export const RETROSPECTIVE_OLD_DAYS = 180; // 180일 이상 된 회고를 "오래된 회고"로 간주
+
+// 대시보드 통계 관련 상수
+export const DASHBOARD_TOP_CATEGORIES_COUNT = 5; // 상위 카테고리 개수
+export const DASHBOARD_RADAR_MAX_VALUE = 100; // 레이더 차트 최대값
+export const DASHBOARD_MOCK_TOTAL_RETROSPECTIVES = 42; // Mock 데이터: 총 회고 수
+export const DASHBOARD_MOCK_AVERAGE_SOLVE_TIME = 35; // Mock 데이터: 평균 풀이 시간 (분)
+export const DASHBOARD_MOCK_SUCCESS_RATE = 72; // Mock 데이터: 성공률 (퍼센트)
+
+// API 요청 관련 상수
+export const LOGIN_DEBOUNCE_MS = 1200; // 로그인 API 중복 요청 방지 대기 시간 (1.2초)
+export const SCROLL_DELAY_MS = 100; // 스크롤 애니메이션 지연 시간 (100ms)

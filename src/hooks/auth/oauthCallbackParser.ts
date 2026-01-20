@@ -99,3 +99,4 @@ export const parseOAuthCallbackParams = (searchParams: URLSearchParams): OAuthCa
 
     return { kind: 'login', tokens };
 };
+

@@ -14,3 +14,4 @@ export const useBodyScrollLock = ({ locked }: UseBodyScrollLockParams) => {
         return lockBodyScroll();
     }, [locked]);
 };
+

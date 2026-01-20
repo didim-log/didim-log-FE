@@ -35,3 +35,4 @@ describe('getOAuthSignupEmailViewModel', () => {
         expect(result.shouldShowGithubPrivateEmailToast).toBe(true);
     });
 });
+

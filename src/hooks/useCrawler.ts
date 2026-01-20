@@ -4,6 +4,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import type { AxiosError } from 'axios';
 import { crawlerApi } from '../api/endpoints/crawler.api';
 import type { CollectMetadataRequest, JobStatusResponse } from '../types/api/admin.types';
 
@@ -293,13 +294,14 @@ export const useCrawler = (options: UseCrawlerOptions): UseCrawlerReturn => {
           jobId: result.jobId,
         }));
         startPolling(result.jobId);
-      } catch (error: any) {
+      } catch (error) {
         // 타임아웃 처리: jobId가 있으면 상태 조회하여 checkpoint 확인
-        const isTimeout = error.code === 'ECONNABORTED' || error.message?.includes('timeout');
+        const axiosError = error as AxiosError<{ jobId?: string }>;
+        const isTimeout = axiosError.code === 'ECONNABORTED' || axiosError.message?.includes('timeout');
         
-        if (isTimeout && error.response?.data?.jobId) {
+        if (isTimeout && axiosError.response?.data?.jobId) {
           // 타임아웃 발생했지만 jobId를 받은 경우
-          const jobId = error.response.data.jobId;
+          const jobId = axiosError.response.data.jobId;
           try {
             // 상태 조회하여 lastCheckpointId 확인
             const status = await getStatusApi(jobId);

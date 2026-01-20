@@ -16,3 +16,4 @@ export const useAiUsage = () => {
         refetchOnWindowFocus: true, // 창 포커스 시 자동 갱신
     });
 };
+

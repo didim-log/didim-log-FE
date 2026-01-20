@@ -4,7 +4,7 @@
  */
 
 import { useState, useMemo } from 'react';
-import type { FC } from 'react';
+import type { FC, FormEvent } from 'react';
 import { useCrawler } from '../../../hooks/useCrawler';
 import { useProblemStats } from '../../../hooks/api/useAdmin';
 import { Button } from '../../../components/ui/Button';
@@ -72,7 +72,7 @@ export const ProblemCollector: FC = () => {
   });
 
   // 메타데이터 수집 시작
-  const handleCollectMetadata = async (e: React.FormEvent) => {
+  const handleCollectMetadata = async (e: FormEvent) => {
     e.preventDefault();
     const resolvedStart = start || suggestedStart;
     if (!resolvedStart || !end) {
@@ -279,9 +279,10 @@ export const ProblemCollector: FC = () => {
                       borderRadius: '6px',
                       fontSize: '12px',
                     }}
-                    formatter={(value: number | undefined) => {
-                      if (value === undefined) return ['0%', '진행률'];
-                      return [`${value}%`, '진행률'];
+                    formatter={(value: unknown) => {
+                      const numValue = typeof value === 'number' ? value : undefined;
+                      if (numValue === undefined) return ['0%', '진행률'];
+                      return [`${numValue}%`, '진행률'];
                     }}
                   />
                   <Line

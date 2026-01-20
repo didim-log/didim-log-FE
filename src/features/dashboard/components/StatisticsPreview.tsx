@@ -7,7 +7,7 @@ import type { FC } from 'react';
 import { useStatistics } from '../../../hooks/api/useStatistics';
 import { Spinner } from '../../../components/ui/Spinner';
 import { BookOpen, Clock, Target, TrendingUp } from 'lucide-react';
-import { formatTimeFromSeconds } from '../../../utils/dateUtils';
+import { formatDuration } from '../../../utils/dateUtils';
 
 export const StatisticsPreview: FC = () => {
     const { data: statistics, isLoading } = useStatistics();
@@ -24,7 +24,7 @@ export const StatisticsPreview: FC = () => {
 
         return {
             totalRetrospectives: statistics.totalRetrospectives ?? 0,
-            averageSolveTime: formatTimeFromSeconds(statistics.averageSolveTime ?? 0),
+            averageSolveTime: formatDuration(statistics.averageSolveTime ?? 0),
             successRate: (statistics.successRate ?? 0).toFixed(1),
         };
     };

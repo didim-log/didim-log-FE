@@ -43,9 +43,7 @@ export const useDeleteAccount = () => {
 };
 
 export const useSyncBojProfile = () => {
-    const queryClient = useQueryClient();
-
-    return useMutation({
+    const queryClient = useQueryClient();    return useMutation({
         mutationFn: () => studentApi.syncBojProfile(),
         onSuccess: async () => {
             // 대시보드 데이터 무효화 및 강제 재조회

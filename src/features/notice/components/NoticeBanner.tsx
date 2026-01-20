@@ -39,3 +39,4 @@ export const NoticeBanner: FC<NoticeBannerProps> = ({ notice }) => {
         </div>
     );
 };
+

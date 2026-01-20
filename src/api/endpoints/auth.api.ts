@@ -3,6 +3,7 @@
  */
 
 import { apiClient } from '../client';
+import { LOGIN_DEBOUNCE_MS } from '../../utils/constants';
 import type {
     SignupRequest,
     LoginRequest,
@@ -64,7 +65,7 @@ export const authApi = {
         const key = createLoginKey(data);
         const now = Date.now();
 
-        if (inFlightLogin && inFlightLogin.key === key && now - inFlightLogin.startedAt < 1200) {
+        if (inFlightLogin && inFlightLogin.key === key && now - inFlightLogin.startedAt < LOGIN_DEBOUNCE_MS) {
             return await inFlightLogin.promise;
         }
 

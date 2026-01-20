@@ -2,7 +2,7 @@
  * 마이페이지
  */
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import type { FC } from 'react';
 import { useDashboard } from '../../../hooks/api/useDashboard';
 import { useUpdateProfile, useDeleteAccount } from '../../../hooks/api/useStudent';
@@ -14,6 +14,7 @@ import { Layout } from '../../../components/layout/Layout';
 import { MyRetrospectiveCard } from '../components/MyRetrospectiveCard';
 import { ProfileCard } from '../components/ProfileCard';
 import { ProfileEditForm } from '../components/ProfileEditForm';
+import { TemplateManagementTab } from '../../../components/mypage/TemplateManagementTab';
 import { Link } from 'react-router-dom';
 import { ArrowRight, ChevronDown, ChevronUp } from 'lucide-react';
 import type { UpdateProfileRequest } from '../../../types/api/student.types';
@@ -36,7 +37,7 @@ export const ProfilePage: FC = () => {
     });
 
     // 모든 회고의 solvedCategory를 파싱하여 고유 태그 목록 생성
-    const availableCategories = (() => {
+    const availableCategories = useMemo(() => {
         if (!retrospectives?.content) return [];
 
         const categorySet = new Set<string>();
@@ -53,7 +54,7 @@ export const ProfilePage: FC = () => {
 
         // 알파벳 순으로 정렬
         return Array.from(categorySet).sort();
-    })();
+    }, [retrospectives?.content]);
 
     const [isEditing, setIsEditing] = useState(false);
     const [isDangerZoneOpen, setIsDangerZoneOpen] = useState(false);
@@ -204,6 +205,9 @@ export const ProfilePage: FC = () => {
                             </div>
                         )}
                     </div>
+
+                    {/* 템플릿 관리 섹션 */}
+                    <TemplateManagementTab />
 
                     {/* 계정 관리 (Danger Zone) - 아코디언 형태 */}
                     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-red-200 dark:border-red-900/30 overflow-hidden">

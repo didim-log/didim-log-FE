@@ -1,4 +1,5 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import type { TooltipProps } from 'recharts'
 import Card from '../common/Card'
 import type { HeatmapDataResponse } from '../../types/api/dtos'
 
@@ -6,7 +7,17 @@ interface MonthlyActivityChartProps {
     monthlyData?: HeatmapDataResponse[]
 }
 
-const CustomTooltip = ({ active, payload }: any) => {
+interface CustomTooltipProps extends TooltipProps<number, string> {
+    active?: boolean;
+    payload?: Array<{
+        payload: {
+            month: string;
+        };
+        value: number;
+    }>;
+}
+
+const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
     if (active && payload && payload.length) {
         return (
             <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">

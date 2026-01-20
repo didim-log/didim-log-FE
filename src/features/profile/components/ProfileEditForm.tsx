@@ -3,7 +3,7 @@
  */
 
 import { useState } from 'react';
-import type { FC } from 'react';
+import type { FC, FormEvent } from 'react';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { validation } from '../../../utils/validation';
@@ -52,7 +52,7 @@ export const ProfileEditForm: FC<ProfileEditFormProps> = ({
         setNicknameChecked(null);
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         setErrors({});
 

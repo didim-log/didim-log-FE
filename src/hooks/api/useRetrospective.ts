@@ -8,7 +8,6 @@ import type {
     RetrospectiveRequest,
     RetrospectiveListRequest,
     TemplateRequest,
-    StaticTemplateRequest,
 } from '../../types/api/retrospective.types';
 import { useAuthStore } from '../../stores/auth.store';
 
@@ -94,11 +93,5 @@ export const useTemplate = (params: TemplateRequest) => {
         queryFn: () => retrospectiveApi.getTemplate(params),
         enabled: !!params.problemId && !!params.resultType,
         staleTime: 10 * 60 * 1000, // 10분
-    });
-};
-
-export const useStaticTemplate = () => {
-    return useMutation({
-        mutationFn: (data: StaticTemplateRequest) => retrospectiveApi.getStaticTemplate(data),
     });
 };

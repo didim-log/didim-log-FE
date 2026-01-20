@@ -14,13 +14,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      # (선택사항) Node 버전 명시가 좋지만, 없어도 기본값으로 돌아갑니다.
-      # - uses: actions/setup-node@v4
-      #   with:
-      #     node-version: 20
-      #     cache: 'npm'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
 
       - run: npm ci
+
+      # 빌드 전 캐시 및 이전 빌드 산출물 정리
+      - name: Clean build artifacts and cache
+        run: |
+          echo "🧹 Cleaning build artifacts and cache..."
+          rm -rf dist
+          rm -rf node_modules/.vite
+          echo "✅ Cleanup completed"
 
       # 1. 빌드 시 환경 변수 주입 (중요!)
       # - 실제 API 주소는 레포에 하드코딩하지 않고 GitHub Secrets로만 관리합니다.

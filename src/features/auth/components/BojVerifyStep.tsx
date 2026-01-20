@@ -3,7 +3,7 @@
  */
 
 import { useState } from 'react';
-import type { FC } from 'react';
+import type { FC, ChangeEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
@@ -32,7 +32,7 @@ export const BojVerifyStep: FC<BojVerifyStepProps> = ({ onNext, onBack, duplicat
     const error = duplicateError ?? localError;
 
     // bojId가 변경되면 중복 에러 초기화
-    const handleBojIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleBojIdChange = (e: ChangeEvent<HTMLInputElement>) => {
         setBojId(e.target.value);
         if (duplicateError || error) {
             setLocalError(null);

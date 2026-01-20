@@ -7,8 +7,17 @@ import { RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Responsi
 import { useStatistics } from '../../../hooks/api/useStatistics';
 import { Spinner } from '../../../components/ui/Spinner';
 import { BookOpen, Clock, Target } from 'lucide-react';
+import { formatDuration } from '../../../utils/dateUtils';
 
 // Mock 데이터 (API에 데이터가 없을 때 사용)
+import {
+    DASHBOARD_TOP_CATEGORIES_COUNT,
+    DASHBOARD_RADAR_MAX_VALUE,
+    DASHBOARD_MOCK_TOTAL_RETROSPECTIVES,
+    DASHBOARD_MOCK_AVERAGE_SOLVE_TIME,
+    DASHBOARD_MOCK_SUCCESS_RATE,
+} from '../../../utils/constants';
+
 const mockCategoryData = [
     { category: 'BFS', value: 80 },
     { category: 'DP', value: 60 },
@@ -18,9 +27,9 @@ const mockCategoryData = [
 ];
 
 const mockMetrics = {
-    totalRetrospectives: 42,
-    averageSolveTime: 35, // 분
-    successRate: 72, // 퍼센트
+    totalRetrospectives: DASHBOARD_MOCK_TOTAL_RETROSPECTIVES,
+    averageSolveTime: DASHBOARD_MOCK_AVERAGE_SOLVE_TIME, // 분
+    successRate: DASHBOARD_MOCK_SUCCESS_RATE, // 퍼센트
 };
 
 export const DashboardStats: FC = () => {
@@ -30,14 +39,14 @@ export const DashboardStats: FC = () => {
     // 백엔드에서 이미 집계된 categoryStats 사용
     const prepareRadarData = () => {
         if (statistics?.categoryStats && statistics.categoryStats.length > 0) {
-            // 상위 5개 카테고리 추출 (백엔드에서 이미 정렬되어 있음)
-            const top5 = statistics.categoryStats.slice(0, 5);
+            // 상위 카테고리 추출 (백엔드에서 이미 정렬되어 있음)
+            const topCategories = statistics.categoryStats.slice(0, DASHBOARD_TOP_CATEGORIES_COUNT);
 
-            // 최대값 기준으로 100점 만점으로 정규화
-            const maxCount = top5.length > 0 ? Math.max(...top5.map((item) => item.count)) : 1;
-            return top5.map((item) => ({
+            // 최대값 기준으로 정규화
+            const maxCount = topCategories.length > 0 ? Math.max(...topCategories.map((item) => item.count)) : 1;
+            return topCategories.map((item) => ({
                 category: item.category,
-                value: maxCount > 0 ? Math.round((item.count / maxCount) * 100) : 0,
+                value: maxCount > 0 ? Math.round((item.count / maxCount) * DASHBOARD_RADAR_MAX_VALUE) : 0,
             }));
         }
         return mockCategoryData;
@@ -54,12 +63,16 @@ export const DashboardStats: FC = () => {
         // 총 회고 수는 totalRetrospectives 사용
         const totalRetrospectives = statistics.totalRetrospectives || mockMetrics.totalRetrospectives;
 
-        // 평균 풀이 시간과 성공률은 현재 API 응답에 포함되지 않아 임시값을 사용합니다.
-        // (백엔드에서 제공되면 statistics 값을 사용하도록 변경)
+        // 평균 풀이 시간은 statistics.averageSolveTime 사용 (초 단위)
+        const averageSolveTime = statistics.averageSolveTime ?? 0;
+
+        // 성공률은 statistics.successRate 사용
+        const successRate = statistics.successRate ?? mockMetrics.successRate;
+
         return {
             totalRetrospectives,
-            averageSolveTime: mockMetrics.averageSolveTime,
-            successRate: mockMetrics.successRate,
+            averageSolveTime,
+            successRate,
         };
     };
 
@@ -114,8 +127,7 @@ export const DashboardStats: FC = () => {
                                 평균 풀이 시간
                             </p>
                             <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                                {metrics.averageSolveTime}
-                                <span className="text-sm text-gray-600 dark:text-gray-400 ml-1">분</span>
+                                {formatDuration(metrics.averageSolveTime)}
                             </p>
                         </div>
                         <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
