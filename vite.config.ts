@@ -20,11 +20,15 @@ export default defineConfig({
       '@/api': path.resolve(__dirname, './src/api'),
       '@/stores': path.resolve(__dirname, './src/stores'),
       '@/constants': path.resolve(__dirname, './src/constants'),
+      // React 중복 로드 방지를 위한 명시적 alias 지정
+      'react': path.resolve(__dirname, './node_modules/react'),
+      'react-dom': path.resolve(__dirname, './node_modules/react-dom'),
     },
     dedupe: ['react', 'react-dom'],
   },
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react/jsx-runtime', 'react-is', 'recharts'],
+    include: ['react', 'react-dom', 'react/jsx-runtime', 'react/jsx-dev-runtime', 'react-is', 'recharts'],
+    force: true, // 의존성 사전 번들링 강제 재실행
     esbuildOptions: {
       // react-is의 named exports를 명시적으로 처리
       define: {
@@ -37,38 +41,18 @@ export default defineConfig({
       include: [/node_modules/],
       transformMixedEsModules: true,
     },
+    // manualChunks를 제거하여 Vite의 기본 chunk 전략 사용
+    // 이렇게 하면 React 중복 로드 문제를 완전히 방지할 수 있습니다
     rollupOptions: {
       output: {
-        manualChunks: (id) => {
-          if (id.includes('node_modules')) {
-            // React 코어는 반드시 react-vendor에만 포함 (가장 우선)
-            if (
-              id.includes('node_modules/react/') ||
-              id.includes('node_modules/react-dom/') ||
-              id.includes('node_modules/react/jsx-runtime') ||
-              id.includes('node_modules/react/jsx-dev-runtime')
-            ) {
-              return 'react-vendor'
-            }
-            // React를 사용하는 라이브러리들 (React 의존성)
-            if (
-              id.includes('node_modules/react-router') ||
-              id.includes('node_modules/react-joyride') ||
-              id.includes('node_modules/@tanstack/react-query') ||
-              id.includes('node_modules/@dnd-kit') ||
-              id.includes('node_modules/sonner') ||
-              id.includes('node_modules/@uiw/react-md-editor') ||
-              id.includes('node_modules/recharts') ||
-              id.includes('node_modules/react-syntax-highlighter') ||
-              id.includes('node_modules/react-markdown')
-            ) {
-              return 'react-vendor'
-            }
-            // 나머지 node_modules (React를 사용하지 않는 라이브러리들)
-            return 'vendor'
-          }
-        },
+        // chunk 파일명에 해시를 포함하여 캐싱 최적화
+        chunkFileNames: 'assets/[name]-[hash].js',
+        entryFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]',
       },
     },
+  },
+  preview: {
+    port: 5173,
   },
 })
