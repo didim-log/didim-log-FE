@@ -3,7 +3,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import type { FC } from 'react';
+import type { FC, FormEvent } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useProblemRecommend } from '../../../hooks/api/useProblem';
 import { Spinner } from '../../../components/ui/Spinner';
@@ -56,7 +56,7 @@ export const ProblemListPage: FC = () => {
     }, [count, category, onlyKorean, setSearchParams]);
 
     // 문제 번호 검색 핸들러
-    const handleSearch = (e: React.FormEvent) => {
+    const handleSearch = (e: FormEvent) => {
         e.preventDefault();
         const problemId = searchQuery.trim();
         if (!problemId) {

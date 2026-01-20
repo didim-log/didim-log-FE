@@ -2,7 +2,7 @@
  * 결과 표시 컴포넌트
  */
 
-import type { FC } from 'react';
+import type { FC, MouseEvent } from 'react';
 import { Button } from '../../../components/ui/Button';
 import type { SolutionSubmitResponse } from '../../../types/api/study.types';
 import { X } from 'lucide-react';
@@ -19,7 +19,7 @@ export const ResultDisplay: FC<ResultDisplayProps> = ({ result, isSuccess, onWri
         return null;
     }
 
-    const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const handleBackdropClick = (e: MouseEvent<HTMLDivElement>) => {
         // 모달 내부 클릭은 무시
         if (e.target === e.currentTarget) {
             onClose();

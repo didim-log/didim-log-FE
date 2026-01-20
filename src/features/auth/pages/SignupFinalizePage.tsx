@@ -3,7 +3,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import type { FC } from 'react';
+import type { FC, FormEvent } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { authApi } from '../../../api/endpoints/auth.api';
@@ -67,7 +67,7 @@ export const SignupFinalizePage: FC = () => {
         },
     });
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
         setErrors({});
 

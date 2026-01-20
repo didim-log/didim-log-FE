@@ -3,7 +3,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import type { FC } from 'react';
+import type { FC, FormEvent } from 'react';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { useSetMaintenanceMode } from '../../../hooks/api/useAdmin';
@@ -185,7 +185,7 @@ export const SystemSettings: FC = () => {
         }
     };
 
-    const handleCreateSuperAdmin = async (e: React.FormEvent) => {
+    const handleCreateSuperAdmin = async (e: FormEvent) => {
         e.preventDefault();
         setSuperAdminError(null);
 

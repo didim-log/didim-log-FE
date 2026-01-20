@@ -4,7 +4,7 @@
  */
 
 import { useState, useMemo } from 'react';
-import type { FC } from 'react';
+import type { FC, FormEvent } from 'react';
 import { useCrawler } from '../../../hooks/useCrawler';
 import { useProblemStats } from '../../../hooks/api/useAdmin';
 import { Button } from '../../../components/ui/Button';
@@ -72,7 +72,7 @@ export const ProblemCollector: FC = () => {
   });
 
   // 메타데이터 수집 시작
-  const handleCollectMetadata = async (e: React.FormEvent) => {
+  const handleCollectMetadata = async (e: FormEvent) => {
     e.preventDefault();
     const resolvedStart = start || suggestedStart;
     if (!resolvedStart || !end) {

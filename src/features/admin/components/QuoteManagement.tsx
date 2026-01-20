@@ -3,7 +3,7 @@
  */
 
 import { useState } from 'react';
-import type { FC } from 'react';
+import type { FC, FormEvent } from 'react';
 import { useAdminQuotes, useCreateQuote, useDeleteQuote } from '../../../hooks/api/useAdmin';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
@@ -20,7 +20,7 @@ export const QuoteManagement: FC = () => {
     const createMutation = useCreateQuote();
     const deleteMutation = useDeleteQuote();
 
-    const handleCreate = async (e: React.FormEvent) => {
+    const handleCreate = async (e: FormEvent) => {
         e.preventDefault();
         if (!content.trim()) {
             setErrors({ content: '명언 내용을 입력해주세요.' });

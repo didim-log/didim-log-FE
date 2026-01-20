@@ -3,7 +3,7 @@
  */
 
 import { useState } from 'react';
-import type { FC } from 'react';
+import type { FC, FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authApi } from '../../../api/endpoints/auth.api';
 import { Button } from '../../../components/ui/Button';
@@ -22,7 +22,7 @@ export const FindPasswordPage: FC = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         
         if (!email.trim()) {
