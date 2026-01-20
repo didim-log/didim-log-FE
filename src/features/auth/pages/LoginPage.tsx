@@ -3,7 +3,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import type { FC } from 'react';
+import type { FC, ChangeEvent, FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useLogin } from '../../../hooks/auth/useLogin';
 import { Button } from '../../../components/ui/Button';
