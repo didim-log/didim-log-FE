@@ -71,6 +71,13 @@
 8. `chore: 의존성 패키지 업데이트`
    - React 19 업그레이드 및 관련 패키지 업데이트
 
+9. `docs: PR 요약 문서 추가`
+   - PR 작성을 위한 요약 문서 추가
+
+10. `fix: 빌드 오류 수정`
+    - useCrawler.ts: error 타입을 AxiosError로 명시적 처리
+    - RetrospectiveEditor.tsx: 사용하지 않는 ProblemResult import 제거
+
 ## ✅ 검증 완료
 
 - [x] TypeScript 컴파일 오류 없음
