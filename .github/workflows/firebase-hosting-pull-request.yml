@@ -14,11 +14,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      # (선택사항) Node 버전 명시가 좋지만, 없어도 기본값으로 돌아갑니다.
-      # - uses: actions/setup-node@v4
-      #   with:
-      #     node-version: 20
-      #     cache: 'npm'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
 
       - run: npm ci
 

@@ -21,6 +21,7 @@ export default defineConfig({
       '@/stores': path.resolve(__dirname, './src/stores'),
       '@/constants': path.resolve(__dirname, './src/constants'),
     },
+    dedupe: ['react', 'react-dom'],
   },
   optimizeDeps: {
     include: ['react', 'react-dom', 'react/jsx-runtime', 'react-is', 'recharts'],
