@@ -19,7 +19,7 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    include: ['react-is', 'recharts'],
+    include: ['react', 'react-dom', 'react/jsx-runtime', 'react-is', 'recharts'],
     esbuildOptions: {
       // react-is의 named exports를 명시적으로 처리
       define: {
@@ -28,19 +28,32 @@ export default defineConfig({
     },
   },
   build: {
+    commonjsOptions: {
+      include: [/node_modules/],
+      transformMixedEsModules: true,
+    },
     rollupOptions: {
       output: {
         manualChunks: (id) => {
           if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
+            // React 코어와 React를 사용하는 모든 라이브러리를 react-vendor로 분리
+            // 이렇게 하면 React가 단일 인스턴스로만 존재하여 중복 번들링 문제 방지
+            if (
+              id.includes('node_modules/react/') ||
+              id.includes('node_modules/react-dom/') ||
+              id.includes('node_modules/react-router') ||
+              id.includes('node_modules/react-joyride') ||
+              id.includes('node_modules/@tanstack/react-query') ||
+              id.includes('node_modules/@dnd-kit') ||
+              id.includes('node_modules/sonner') ||
+              id.includes('node_modules/@uiw/react-md-editor') ||
+              id.includes('node_modules/recharts') ||
+              id.includes('node_modules/react-syntax-highlighter') ||
+              id.includes('node_modules/react-markdown')
+            ) {
               return 'react-vendor'
             }
-            if (id.includes('@uiw/react-md-editor') || id.includes('recharts') || id.includes('lucide-react')) {
-              return 'ui-vendor'
-            }
-            if (id.includes('canvas-confetti') || id.includes('sonner') || id.includes('@tanstack/react-query') || id.includes('axios')) {
-              return 'utils-vendor'
-            }
+            // 나머지 node_modules (React를 사용하지 않는 라이브러리들)
             return 'vendor'
           }
         },
