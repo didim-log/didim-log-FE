@@ -1,10 +1,11 @@
 import { Loader2 } from 'lucide-react'
+import type { ButtonHTMLAttributes } from 'react'
 import { cn } from '../../utils/cn'
 
 type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'danger' | 'ghost'
 type ButtonSize = 'sm' | 'md' | 'lg'
 
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     variant?: ButtonVariant
     size?: ButtonSize
     fullWidth?: boolean

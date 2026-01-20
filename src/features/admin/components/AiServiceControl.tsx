@@ -4,13 +4,14 @@
  */
 
 import { useState } from 'react';
+import type { FC } from 'react';
 import { useAiStatus, useUpdateAiStatus, useUpdateAiLimits } from '../../../hooks/api/useAdmin';
 import { Spinner } from '../../../components/ui/Spinner';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { toast } from 'sonner';
 
-export const AiServiceControl: React.FC = () => {
+export const AiServiceControl: FC = () => {
     const { data: status, isLoading, error, refetch: refetchAiStatus } = useAiStatus();
     const updateStatusMutation = useUpdateAiStatus();
     const updateLimitsMutation = useUpdateAiLimits();

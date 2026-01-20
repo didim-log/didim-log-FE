@@ -3,7 +3,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import type { FC } from 'react';
+import type { FC, ChangeEvent, FormEvent } from 'react';
 import type { RetrospectiveRequest } from '../../../types/api/retrospective.types';
 import { TagInput } from '../../../components/ui/TagInput';
 import { Info } from 'lucide-react';
@@ -57,14 +57,14 @@ export const RetrospectiveEditor: FC<RetrospectiveEditorProps> = ({
     }, [initialContent]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // summary 입력 핸들러: 사용자가 입력했음을 표시
-    const handleSummaryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleSummaryChange = (e: ChangeEvent<HTMLInputElement>) => {
         setSummary(e.target.value);
         if (!hasUserTypedSummary && e.target.value.trim()) {
             setHasUserTypedSummary(true);
         }
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
         setErrors({});
 

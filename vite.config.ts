@@ -4,7 +4,11 @@ import path from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react({
+      jsxRuntime: 'automatic', // React 17+ 자동 JSX 런타임 사용
+    }),
+  ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -36,11 +40,17 @@ export default defineConfig({
       output: {
         manualChunks: (id) => {
           if (id.includes('node_modules')) {
-            // React 코어와 React를 사용하는 모든 라이브러리를 react-vendor로 분리
-            // 이렇게 하면 React가 단일 인스턴스로만 존재하여 중복 번들링 문제 방지
+            // React 코어는 반드시 react-vendor에만 포함 (가장 우선)
             if (
               id.includes('node_modules/react/') ||
               id.includes('node_modules/react-dom/') ||
+              id.includes('node_modules/react/jsx-runtime') ||
+              id.includes('node_modules/react/jsx-dev-runtime')
+            ) {
+              return 'react-vendor'
+            }
+            // React를 사용하는 라이브러리들 (React 의존성)
+            if (
               id.includes('node_modules/react-router') ||
               id.includes('node_modules/react-joyride') ||
               id.includes('node_modules/@tanstack/react-query') ||

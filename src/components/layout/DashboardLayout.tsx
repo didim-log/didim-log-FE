@@ -1,10 +1,11 @@
+import type { ReactNode, MouseEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { LogOut, Moon, Sun, User } from 'lucide-react'
 import { Button } from '../ui/Button'
 import { useTheme } from '../../contexts/useTheme'
 
 interface DashboardLayoutProps {
-    children: React.ReactNode
+    children: ReactNode
     fullHeight?: boolean
 }
 
@@ -42,7 +43,7 @@ export default function DashboardLayout({
                         <Button
                             variant="ghost"
                             size="sm"
-                            onClick={(e: React.MouseEvent) => {
+                            onClick={(e: MouseEvent) => {
                                 e.preventDefault()
                                 e.stopPropagation()
                                 toggleTheme()
