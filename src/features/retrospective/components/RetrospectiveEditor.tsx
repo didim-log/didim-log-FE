@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import type { FC } from 'react';
-import type { RetrospectiveRequest, ProblemResult } from '../../../types/api/retrospective.types';
+import type { RetrospectiveRequest } from '../../../types/api/retrospective.types';
 import { TagInput } from '../../../components/ui/TagInput';
 import { Info } from 'lucide-react';
 
