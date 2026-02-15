@@ -1,167 +1,60 @@
-<div align="center">
+# DidimLog Frontend
+> **한 줄 소개**: 알고리즘 학습 데이터를 대시보드와 AI 회고 UI로 연결한 React/TypeScript 기반 웹 클라이언트
 
-  <img src="./public/logo.svg" width="200" height="200" alt="DidimLog Logo"/>
+## 1. 프로젝트 개요 (Overview)
+- **개발 기간**: 2025 ~ 진행 중
+- **개발 인원**: 프론트엔드 중심 개발
+- **프로젝트 목적**: 학습 데이터, 추천 문제, 회고 작성을 한 화면 흐름에서 연결해 사용자 학습 루프를 강화
+- **GitHub**: https://github.com/didim-log/didim-log-FE
 
-# DidimLog : Frontend Web Client
+## 2. 사용 기술 및 선정 이유 (Tech Stack & Decision)
 
-**"PS(Problem Solving) 알고리즘 학습의 길잡이, 디딤로그"**
+| Category | Tech Stack | Version | Decision Reason (Why?) |
+| --- | --- | --- | --- |
+| **Language** | TypeScript | 5.5+ | API 응답/도메인 타입을 강제해 런타임 오류를 사전에 줄이기 위함 |
+| **UI Framework** | React | 18.3.1 | 컴포넌트 단위 상태 분리와 재사용으로 기능 확장 속도 확보 |
+| **Build** | Vite | 5.4.x | 빠른 개발 서버와 번들 커스터마이징(`manualChunks`)으로 성능 튜닝 용이 |
+| **State/Data** | TanStack Query, Zustand | Query v5 / Zustand v4 | 서버 상태 캐싱과 전역 UI 상태를 분리해 복잡도 제어 |
+| **Styling** | Tailwind CSS | 3.4+ | 디자인 시스템을 빠르게 반영하고 일관된 스타일 유지 |
 
-  <br>
-
-디딤로그(DidimLog)의 **프론트엔드 웹 클라이언트** 저장소입니다.<br>
-사용자 친화적인 UI/UX를 통해 알고리즘 문제 풀이 경험을 시각화하고,<br>
-**AI 분석 리포트**와 **성장 지표**를 직관적인 대시보드로 제공합니다.
-
-  <br>
-
-  <img src="https://img.shields.io/badge/Project-DidimLog-0078FF?style=flat-square&logo=github" />
-  <img src="https://img.shields.io/badge/Language-TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white" />
-  <img src="https://img.shields.io/badge/Library-React%2018-61DAFB?style=flat-square&logo=react&logoColor=black" />
-  <img src="https://img.shields.io/badge/Build-Vite-646CFF?style=flat-square&logo=vite&logoColor=white" />
-  <img src="https://img.shields.io/badge/Style-Tailwind_CSS-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white" />
-
-</div>
-
-<br>
-
-## ✅ Core Features (핵심 기능)
-
-### 1) **인터랙티브 대시보드**
-- 학습 지속성(히트맵) / 알고리즘 강약점(차트) 등 시각화
-- 추천 문제 위젯(필터 포함) 제공
-
-### 2) **AI 기반 회고 에디터**
-- Markdown 기반 회고 작성
-- 코드/풀이 결과 기반 템플릿 생성 및 AI 피드백 UI 제공
-
-### 3) **문제 탐색 및 추천**
-- 카테고리 기반 추천 문제 조회
-- 카테고리 필터는 백엔드 `ProblemCategory.englishName` 규칙에 맞게 매핑하여 전송
-
-### 4) **인증 & 사용자 관리**
-- Access/Refresh Token 관리 + Silent Refresh(Interceptor)
-- Google/GitHub/Naver 소셜 로그인 및 콜백 처리(`/oauth/callback`)
-
-<br>
-
-## 🛠 Tech Stack
-
-| Category | Technology |
-| --- | --- |
-| Language | TypeScript |
-| Framework | React 18 |
-| Build Tool | Vite (rolldown-vite) |
-| Styling | Tailwind CSS |
-| State | TanStack Query |
-| Router | React Router DOM |
-| HTTP | Axios |
-| UI Utils | clsx, tailwind-merge |
-
-<br>
-
-## 🚀 Getting Started
-
-### Prerequisites
-- Node.js 18+
-- npm
-
-### 1) Install
-
-```bash
-npm install
+## 3. 시스템 아키텍처 (System Architecture)
+```mermaid
+graph TD
+  User[User] --> FE[React App]
+  FE --> API[DidimLog Backend API]
+  FE --> OAuth[OAuth Callback]
 ```
 
-### 2) Environment Setup (중요)
+- **설계 특징**:
+- `features` 중심 구조로 페이지/도메인 로직을 분리
+- `api/endpoints` + `hooks/api`로 네트워크 호출 계층화
+- 라우트 가드(`Public/Private/Admin Route`)로 접근 제어 분리
 
-이 프로젝트는 **환경 혼선을 방지**하기 위해 `VITE_API_URL`을 기준으로 API 연결을 통일합니다.
+## 4. 핵심 기능 (Key Features)
+- **대시보드 시각화**: 활동 히트맵, 통계 차트, 추천 문제 위젯 제공
+- **AI 회고 작성 UX**: Markdown 에디터와 AI 피드백 카드 연동
+- **인증 흐름**: OAuth 콜백 처리, 토큰 기반 인증 상태 유지
+- **관리자 기능**: 공지/인용구/사용자/AI 품질 관리 UI 제공
 
-- **로컬 프론트 → 로컬 백엔드**
-  - `.env.development` (프로젝트 루트, git ignore)
+## 5. 트러블 슈팅 및 성능 개선 (Troubleshooting & Refactoring)
+### 5-1. 초기 로딩 번들 비대화 대응
+- **문제(Problem)**: 시각화/에디터/마크다운 라이브러리 동시 로드로 초기 진입 성능 저하 가능성
+- **원인(Cause)**: 단일 번들로 묶일 경우 첫 진입 시 파싱/평가 비용 집중
+- **해결(Solution)**:
+  1. Vite `manualChunks`로 `react-vendor`, `data-vendor`, `markdown-vendor`, `editor-vendor` 분리
+  2. 페이지 단위 lazy loading 적용
+- **검증(Verification)**: 빌드 산출물 청크 분리 여부 확인 및 주요 화면 라우트 전환 체감 지연 비교
+- **결과(Result)**: 초기 로딩과 라우트 전환의 체감 성능 개선, 회귀 시 원인 청크 역추적 가능
 
-```properties
-VITE_API_URL=http://localhost:8080
-```
+### 5-2. 프론트-백 API 계약 불일치 리스크 완화
+- **문제(Problem)**: 카테고리/템플릿 규칙 불일치 시 요청 실패 및 UX 혼선 발생
+- **원인(Cause)**: 프론트 상수와 백엔드 enum 정책이 분산 관리될 때 변경 누락 발생
+- **해결(Solution)**:
+  1. API 규칙을 문서(`FRONTEND_UPDATE_GUIDE`)로 고정
+  2. 타입/상수/엔드포인트 레이어를 분리해 계약 변경 영향 범위 최소화
+- **검증(Verification)**: 계약 변경 시 `api/endpoints`와 `types/constants`만 수정되는지 PR 단위 점검
+- **결과(Result)**: 계약 변경 시 수정 지점이 명확해져 협업 안정성 향상, 배포 후 장애 가능성 감소
 
-- **배포 프론트 → 배포 백엔드**
-  - `.env.production` (프로젝트 루트, git ignore)
-
-```properties
-VITE_API_URL=https://YOUR_API_HOST
-```
-
-> `.env`, `.env.*`는 `.gitignore`에 의해 커밋되지 않습니다.  
-> 템플릿은 `DOCS/env/`에 있습니다: `DOCS/env/env.development.template`, `DOCS/env/env.production.template`
-
-### 3) Run
-
-```bash
-npm run dev
-```
-
-브라우저에서 `http://localhost:5173`로 접속합니다.
-
-<br>
-
-## 📦 Build & Deploy
-
-### Build
-
-```bash
-npm run build
-```
-
-### Test
-```bash
-npx vitest run
-```
-
-### Preview
-
-```bash
-npm run preview
-```
-
-### SPA Rewrite (Firebase Hosting)
-`firebase.json`에 모든 경로가 `index.html`로 rewrite 되도록 설정되어 있어 새로고침 404를 방지합니다.
-
-<br>
-
-## ⚡ UI 최적화 반영 사항
-- 페이지/기능 단위 lazy loading으로 초기 렌더링 비용을 절감했습니다.
-- Vite manual chunks로 `react-vendor`, `data-vendor`, `markdown-vendor`, `editor-vendor`를 분리했습니다.
-- 성능 측정 유틸(`src/utils/performanceProfiler.ts`)을 추가해 화면 단위 측정 기반 최적화를 적용했습니다.
-
-## 🔌 API 계약 주의사항
-- 템플릿 기본값 category는 `SUCCESS` / `FAIL`만 사용합니다. (`FAILURE` 미지원)
-- 프론트 연동 상세는 `DOCS/FRONTEND_UPDATE_GUIDE.md` 기준으로 관리합니다.
-
-## 🚢 배포 권장 순서
-- category 호환성 기준으로 **프론트 선배포 후 백엔드 배포**를 권장합니다.
-
-## 📂 Directory Structure
-
-```text
-src/
-├── api/            # Axios 인스턴스 및 API endpoint 함수
-├── components/     # 재사용 가능한 UI 컴포넌트
-├── constants/      # 상수/매핑 테이블
-├── contexts/       # Context (theme 등)
-├── features/       # 도메인 단위 기능(페이지/컴포넌트)
-├── hooks/          # Custom Hooks (React Query 포함)
-├── lib/            # 공통 라이브러리 설정(react-query 등)
-├── pages/          # 전역 페이지(예: Maintenance, OAuthCallbackPage 등)
-├── routes/         # Route guards (Private/Public/Admin)
-├── stores/         # Zustand 스토어
-├── types/          # TypeScript 타입 정의
-└── utils/          # 유틸리티
-```
-
-<br>
-
-## 📝 Related Documents
-- `DOCS/PR_GUIDE.md`
-- `DOCS/COMMIT_CONVENTION.md`
-
-<div align="center">
-Copyright © 2025 DidimLog Team. All rights reserved.
-</div>
+## 6. 프로젝트 회고 (Retrospective)
+- **배운 점**: 대시보드형 서비스는 기능 추가보다 데이터 계약과 상태 분리가 유지보수성에 더 큰 영향
+- **아쉬운 점 & 향후 계획**: 주요 화면별 Web Vitals 추적을 자동화해 성능 회귀를 CI에서 조기 감지할 계획
