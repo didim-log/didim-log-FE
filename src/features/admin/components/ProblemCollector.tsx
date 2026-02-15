@@ -194,22 +194,6 @@ export const ProblemCollector: FC = () => {
     title: string;
     type: 'metadata' | 'details' | 'language';
   }> = ({ state, title, type }) => {
-    if (state.status === 'IDLE') {
-      return null;
-    }
-
-    // 현재 처리 중인 문제 ID 추정 (메타데이터 수집의 경우)
-    const getCurrentProblemId = () => {
-      if (type === 'metadata' && state.startProblemId && state.processedCount > 0) {
-        // 시작 번호 + 처리된 개수 - 1 = 마지막 처리된 번호
-        const lastProcessedId = state.startProblemId + state.processedCount - 1;
-        return lastProcessedId;
-      }
-      return null;
-    };
-
-    const currentProblemId = getCurrentProblemId();
-
     // 그래프 데이터 준비 (시간 경과에 따른 진행률)
     const chartData = useMemo(() => {
       const history = state.progressHistory || [];
@@ -229,6 +213,16 @@ export const ProblemCollector: FC = () => {
         };
       });
     }, [state.progressHistory]);
+
+    if (state.status === 'IDLE') {
+      return null;
+    }
+
+    // 현재 처리 중인 문제 ID 추정 (메타데이터 수집의 경우)
+    const currentProblemId =
+      type === 'metadata' && state.startProblemId && state.processedCount > 0
+        ? state.startProblemId + state.processedCount - 1
+        : null;
 
     return (
       <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">

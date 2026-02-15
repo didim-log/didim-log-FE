@@ -11,7 +11,6 @@ import { Spinner } from '../../../components/ui/Spinner';
 import { Layout } from '../../../components/layout/Layout';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
-import { useAuthStore } from '../../../stores/auth.store';
 import type { RetrospectiveListRequest } from '../../../types/api/retrospective.types';
 import { toast } from 'sonner';
 import { getErrorMessage, isApiError } from '../../../types/api/common.types';
@@ -27,17 +26,17 @@ export const RetrospectiveListPage: FC = () => {
     const [solvedCategory, setSolvedCategory] = useState('');
     const [isBookmarked, setIsBookmarked] = useState<boolean | undefined>(undefined);
 
-    const { user } = useAuthStore();
     const { data, isLoading, error } = useRetrospectives(searchParams);
     const toggleBookmarkMutation = useToggleBookmark();
     const deleteMutation = useDeleteRetrospective();
+    const retrospectives = data?.content;
 
     // 모든 회고의 solvedCategory를 파싱하여 고유 태그 목록 생성
     const availableCategories = useMemo(() => {
-        if (!data?.content) return [];
+        if (!retrospectives) return [];
 
         const categorySet = new Set<string>();
-        data.content.forEach((retrospective) => {
+        retrospectives.forEach((retrospective) => {
             if (retrospective.solvedCategory) {
                 // 쉼표로 구분된 태그들을 분리하고 공백 제거
                 const tags = retrospective.solvedCategory
@@ -50,7 +49,7 @@ export const RetrospectiveListPage: FC = () => {
 
         // 알파벳 순으로 정렬
         return Array.from(categorySet).sort();
-    }, [data?.content]);
+    }, [retrospectives]);
 
     const handleToggleBookmark = (id: string) => {
         toggleBookmarkMutation.mutate(id);
@@ -201,15 +200,13 @@ export const RetrospectiveListPage: FC = () => {
                     {data && data.content.length > 0 ? (
                         <div className="space-y-4">
                             {data.content.map((retrospective) => {
-                                // 로그인한 사용자라면 삭제 버튼 표시 (실제 소유자 검증은 백엔드에서 수행)
-                                const isOwner = !!user;
                                 return (
                                     <RetrospectiveCard
                                         key={retrospective.id}
                                         retrospective={retrospective}
                                         onToggleBookmark={handleToggleBookmark}
-                                        onDelete={isOwner ? handleDelete : undefined}
-                                        isOwner={isOwner}
+                                        onDelete={retrospective.isOwner ? handleDelete : undefined}
+                                        isOwner={retrospective.isOwner}
                                     />
                                 );
                             })}

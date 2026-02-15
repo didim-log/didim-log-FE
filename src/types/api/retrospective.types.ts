@@ -17,6 +17,7 @@ export interface RetrospectiveRequest {
 export interface RetrospectiveResponse {
     id: string;
     studentId: string;
+    isOwner: boolean;
     problemId: string;
     content: string;
     summary: string | null;
@@ -34,7 +35,7 @@ export interface RetrospectiveListRequest {
     category?: string;
     solvedCategory?: string; // 풀이 전략 태그 (부분 일치 검색)
     isBookmarked?: boolean;
-    studentId?: string;
+    studentId?: string; // deprecated: 서버는 인증 사용자 기준으로 조회
     page?: number;
     size?: number;
     sort?: string;

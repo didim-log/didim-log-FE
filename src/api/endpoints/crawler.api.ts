@@ -62,8 +62,9 @@ export const crawlerApi = {
         timeout: 10000, // 상태 조회는 빠르므로 10초면 충분
       });
       return response.data;
-    } catch (error: any) {
-      if (error.response?.status === 404) {
+    } catch (error) {
+      const axiosError = error as AxiosError;
+      if (axiosError.response?.status === 404) {
         return null; // 작업을 찾을 수 없음
       }
       throw error;
@@ -92,8 +93,9 @@ export const crawlerApi = {
         timeout: 10000, // 상태 조회는 빠르므로 10초면 충분
       });
       return response.data;
-    } catch (error: any) {
-      if (error.response?.status === 404) {
+    } catch (error) {
+      const axiosError = error as AxiosError;
+      if (axiosError.response?.status === 404) {
         return null; // 작업을 찾을 수 없음
       }
       throw error;

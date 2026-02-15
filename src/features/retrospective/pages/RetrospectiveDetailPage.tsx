@@ -10,7 +10,6 @@ import { useProblemDetail } from '../../../hooks/api/useProblem';
 import { Spinner } from '../../../components/ui/Spinner';
 import { Layout } from '../../../components/layout/Layout';
 import { Button } from '../../../components/ui/Button';
-import { useAuthStore } from '../../../stores/auth.store';
 import { toast } from 'sonner';
 import { getErrorMessage, isApiError } from '../../../types/api/common.types';
 import { Copy, Trash2, Edit } from 'lucide-react';
@@ -20,7 +19,6 @@ import { RETROSPECTIVE_OLD_DAYS } from '../../../utils/constants';
 export const RetrospectiveDetailPage: FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const { user, token } = useAuthStore();
     const { data: retrospective, isLoading, error } = useRetrospective(id || '');
     const { data: problem, isLoading: isProblemLoading } = useProblemDetail(retrospective?.problemId || '');
     const deleteMutation = useDeleteRetrospective();
@@ -28,11 +26,6 @@ export const RetrospectiveDetailPage: FC = () => {
     const handleDelete = async () => {
         if (!id) {
             toast.error('회고 ID를 찾을 수 없습니다.');
-            return;
-        }
-
-        if (!token) {
-            toast.error('로그인이 필요합니다.');
             return;
         }
 
@@ -85,12 +78,7 @@ export const RetrospectiveDetailPage: FC = () => {
         );
     }
 
-    // 소유자 확인: 
-    // - user.id는 JWT의 sub (BOJ ID 또는 providerId)
-    // - retrospective.studentId는 MongoDB의 Student 엔티티 ID
-    // - 따라서 직접 비교할 수 없으므로, 로그인한 사용자면 삭제 버튼을 표시하고
-    // - 실제 소유자 검증은 백엔드에서 수행합니다 (API 명세서 참고)
-    const isAuthenticated = !!token && !!user;
+    const canManage = retrospective.isOwner;
 
     // 제목 생성: "1027번 고층 건물 성공 회고" (괄호 제거)
     const getTitle = () => {
@@ -242,7 +230,7 @@ export const RetrospectiveDetailPage: FC = () => {
                                 <Copy className="w-4 h-4" />
                                 {isOldRetrospective() ? '📝 블로그용 Markdown 복사' : 'Markdown 복사'}
                             </Button>
-                            {isAuthenticated && (
+                            {canManage && (
                                 <>
                                     <Button
                                         onClick={() => navigate(`/retrospectives/write`, {
