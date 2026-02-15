@@ -140,13 +140,12 @@ export const useSetDefaultTemplate = () => {
         mutationFn: ({ templateId, category }: { templateId: string; category: TemplateDefaultCategory }) =>
             templateApi.setDefaultTemplate(templateId, category),
         onSuccess: (_, variables) => {
-            const normalizedCategory = variables.category === 'FAILURE' ? 'FAIL' : variables.category;
             queryClient.setQueryData<Template[]>(['templates'], (current) => {
                 if (!current) {
                     return current;
                 }
                 return current.map((template) => {
-                    if (normalizedCategory === 'SUCCESS') {
+                    if (variables.category === 'SUCCESS') {
                         return {
                             ...template,
                             isDefaultSuccess: template.id === variables.templateId,
@@ -163,7 +162,7 @@ export const useSetDefaultTemplate = () => {
                     return current;
                 }
                 return current.map((template) => {
-                    if (normalizedCategory === 'SUCCESS') {
+                    if (variables.category === 'SUCCESS') {
                         return {
                             ...template,
                             isDefaultSuccess: template.id === variables.templateId,
@@ -178,18 +177,5 @@ export const useSetDefaultTemplate = () => {
             queryClient.invalidateQueries({ queryKey: ['templates'] });
             queryClient.invalidateQueries({ queryKey: ['templates', 'summaries'] });
         },
-    });
-};
-
-/**
- * 카테고리별 기본 템플릿 조회
- */
-export const useDefaultTemplate = (category: 'SUCCESS' | 'FAIL') => {
-    const { token } = useAuthStore();
-    return useQuery({
-        queryKey: ['templates', 'default', category],
-        queryFn: () => templateApi.getDefaultTemplate(category),
-        enabled: !!token,
-        staleTime: 5 * 60 * 1000, // 5분
     });
 };

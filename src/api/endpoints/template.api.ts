@@ -14,10 +14,6 @@ import type {
     TemplateDefaultCategory,
 } from '../../types/api/template.types';
 
-const normalizeDefaultCategory = (category: TemplateDefaultCategory): 'SUCCESS' | 'FAIL' => {
-    return category === 'FAILURE' ? 'FAIL' : category;
-};
-
 export const templateApi = {
     /**
      * 템플릿 목록 조회
@@ -114,46 +110,10 @@ export const templateApi = {
      * @param category SUCCESS | FAIL
      */
     setDefaultTemplate: async (templateId: string, category: TemplateDefaultCategory): Promise<Template> => {
-        const normalizedCategory = normalizeDefaultCategory(category);
         const response = await apiClient.put<Template>(
-            `/templates/${templateId}/default?category=${normalizedCategory}`
+            `/templates/${templateId}/default?category=${category}`
         );
         return response.data;
     },
 
-    /**
-     * 카테고리별 기본 템플릿 조회
-     * @param category SUCCESS | FAIL
-     */
-    getDefaultTemplate: async (category: TemplateDefaultCategory): Promise<Template | null> => {
-        const normalizedCategory = normalizeDefaultCategory(category);
-        try {
-            const response = await apiClient.get<Template>(`/templates/default?category=${normalizedCategory}`);
-            return response.data;
-        } catch (error: unknown) {
-            const status = (error as { response?: { status?: number } })?.response?.status;
-            if (status === 404) {
-                return null;
-            }
-            throw error;
-        }
-    },
-
-    /**
-     * 카테고리별 기본 템플릿 조회(요약)
-     * 404면 null 반환, 그 외 에러는 상위로 전달합니다.
-     */
-    getDefaultTemplateSummary: async (category: TemplateDefaultCategory): Promise<TemplateSummary | null> => {
-        const normalizedCategory = normalizeDefaultCategory(category);
-        try {
-            const response = await apiClient.get<TemplateSummary>(`/templates/default?category=${normalizedCategory}`);
-            return response.data;
-        } catch (error: unknown) {
-            const status = (error as { response?: { status?: number } })?.response?.status;
-            if (status === 404) {
-                return null;
-            }
-            throw error;
-        }
-    },
 };

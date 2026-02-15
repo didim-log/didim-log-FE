@@ -50,11 +50,6 @@ export default defineConfig({
           if (id.includes('@tanstack/react-query') || id.includes('axios') || id.includes('zustand')) {
             return 'data-vendor';
           }
-          if (
-            id.includes('recharts')
-          ) {
-            return 'charts-vendor';
-          }
           if (id.includes('@dnd-kit') || id.includes('@uiw/react-md-editor')) {
             return 'editor-vendor';
           }

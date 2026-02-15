@@ -67,7 +67,7 @@ const replacePlaceholdersForPreview = (content: string): string => {
             
             // 헤더 다음 부분 추출 (다음 섹션 헤더, 구분선, 문서 끝까지)
             const afterHeader = result.substring(headerEndIndex);
-            const nextSectionMatch = afterHeader.match(/(?=\n##?\s+[^#\n]|\n---|\n\*\*[^\*]|\n\[문제 링크\]|$)/);
+            const nextSectionMatch = afterHeader.match(/(?=\n##?\s+[^#\n]|\n---|\n\*\*[^*]|\n\[문제 링크\]|$)/);
             const sectionEndIndex = nextSectionMatch 
                 ? headerEndIndex + (nextSectionMatch.index || 0)
                 : result.length;
@@ -233,7 +233,7 @@ export const TemplateManagementTab: FC = () => {
                     // 자동 설정 실패는 조용히 처리 (템플릿 삭제는 이미 성공)
                 }
             }
-        } catch (error) {
+        } catch {
             toast.error('템플릿 삭제에 실패했습니다.');
         }
     };

@@ -3,7 +3,7 @@
  * 백엔드 리팩토링 반영: Mock Data 제거, 리얼 미리보기, 스마트 섹션 삽입
  */
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, memo, useRef } from 'react';
 import type { FC } from 'react';
 import {
     DndContext,
@@ -30,6 +30,7 @@ import { usePresets } from '../../hooks/api/useTemplate';
 import type { TemplateCategory } from '../../types/api/template.types';
 import { Spinner } from '../ui/Spinner';
 import { SCROLL_DELAY_MS } from '../../utils/constants';
+import { measureInputLatency } from '../../utils/performanceProfiler';
 
 /**
  * 제목 초기값 포맷 상수
@@ -46,6 +47,11 @@ const TITLE_DISPLAY_TEXT = '회고 제목';
  * 프로필 페이지 미리보기에서는 성공/실패 여부와 관계없이 중립적인 텍스트 사용
  */
 const PREVIEW_TITLE_FORMAT = '# 🏆 회고 제목';
+const SECTION_EMOJI_REGEX = /[💡🧐⏱️🎯✨📝🔑🆚🛠️📚🐛🧪🔧📝🔗💬]\s*/gu;
+const SECTION_NUMBER_PREFIX_REGEX = /^\d+\.\s*/;
+
+const removeSectionEmoji = (title: string): string => title.replace(SECTION_EMOJI_REGEX, '').trim();
+const normalizeSectionTitle = (title: string): string => removeSectionEmoji(title.replace(SECTION_NUMBER_PREFIX_REGEX, ''));
 
 export interface TemplateBlock {
     id: string;
@@ -168,7 +174,7 @@ interface SortableBlockCardProps {
     onDelete: (id: string) => void;
 }
 
-const SortableBlockCard: FC<SortableBlockCardProps> = ({
+const SortableBlockCard: FC<SortableBlockCardProps> = memo(({
     block,
     index,
     onUpdate,
@@ -275,7 +281,8 @@ const SortableBlockCard: FC<SortableBlockCardProps> = ({
             </div>
         </div>
     );
-};
+});
+SortableBlockCard.displayName = 'SortableBlockCard';
 
 export const TemplateBlockBuilder: FC<TemplateBlockBuilderProps> = ({
     initialMarkdown = '',
@@ -286,6 +293,7 @@ export const TemplateBlockBuilder: FC<TemplateBlockBuilderProps> = ({
     onSave,
     isSaving = false,
 }) => {
+    const titleInputRef = useRef<HTMLInputElement>(null);
     const [blocks, setBlocks] = useState<TemplateBlock[]>(() => {
         if (initialMarkdown) {
             const parsed = parseMarkdownToBlocks(initialMarkdown);
@@ -332,6 +340,23 @@ export const TemplateBlockBuilder: FC<TemplateBlockBuilderProps> = ({
     const [useGuideQuestion, setUseGuideQuestion] = useState<boolean>(true);
 
     const { data: presets, isLoading: isLoadingPresets, error: presetsError } = usePresets();
+
+    const presetByNormalizedTitle = useMemo(() => {
+        const map = new Map<string, NonNullable<typeof presets>[number]>();
+        if (!presets) {
+            return map;
+        }
+        presets.forEach((preset) => {
+            if (!preset?.title) {
+                return;
+            }
+            const key = normalizeSectionTitle(preset.title);
+            if (!map.has(key)) {
+                map.set(key, preset);
+            }
+        });
+        return map;
+    }, [presets]);
 
     // 프리셋 로드 오류 처리
     useEffect(() => {
@@ -389,7 +414,7 @@ export const TemplateBlockBuilder: FC<TemplateBlockBuilderProps> = ({
 
             // 이모지 제거 처리 (useEmoji가 false일 때)
             if (!useEmoji && sectionTitle) {
-                sectionTitle = sectionTitle.replace(/[💡🧐⏱️🎯✨📝🔑🆚🛠️📚🐛🧪🔧📝🔗💬]\s*/g, '').trim();
+                sectionTitle = removeSectionEmoji(sectionTitle);
             }
 
             // 번호 매기기 (useAutoNumbering이 true일 때)
@@ -415,15 +440,8 @@ export const TemplateBlockBuilder: FC<TemplateBlockBuilderProps> = ({
             }
 
             // 가이드 질문 포함 (useGuideQuestion이 true일 때만)
-            if (useGuideQuestion && sectionTitle && presets) {
-                const matchedPreset = presets.find((p) => {
-                    if (!p || !p.title) {
-                        return false;
-                    }
-                    const presetTitleWithoutEmoji = p.title.replace(/[💡🧐⏱️🎯✨📝🔑🆚🛠️📚🐛🧪🔧📝🔗💬]\s*/g, '').trim();
-                    const blockTitleWithoutEmoji = sectionTitle.replace(/^\d+\.\s*/, '').replace(/[💡🧐⏱️🎯✨📝🔑🆚🛠️📚🐛🧪🔧📝🔗💬]\s*/g, '').trim();
-                    return presetTitleWithoutEmoji === blockTitleWithoutEmoji || p.title === block.title;
-                });
+            if (useGuideQuestion && sectionTitle && presetByNormalizedTitle.size > 0) {
+                const matchedPreset = presetByNormalizedTitle.get(normalizeSectionTitle(sectionTitle));
 
                 // contentGuide가 있으면 우선 사용, 없으면 guide 사용 (백엔드 가이드 기준)
                 const guideText = matchedPreset?.contentGuide || matchedPreset?.guide;
@@ -450,7 +468,7 @@ export const TemplateBlockBuilder: FC<TemplateBlockBuilderProps> = ({
         });
 
         return markdownBlocks.join('\n\n');
-    }, [blocks, useGuideQuestion, useAutoNumbering, useEmoji, presets]);
+    }, [blocks, useGuideQuestion, useAutoNumbering, useEmoji, presetByNormalizedTitle]);
 
     // 마크다운 변경 시 부모에 알림 (무한 루프 방지를 위해 onMarkdownChange는 의존성에서 제외)
     useEffect(() => {
@@ -490,7 +508,7 @@ export const TemplateBlockBuilder: FC<TemplateBlockBuilderProps> = ({
 
             // 이모지 제거 처리
             if (!useEmoji && sectionTitle) {
-                sectionTitle = sectionTitle.replace(/[💡🧐⏱️🎯✨📝🔑🆚🛠️📚🐛🧪🔧📝🔗💬]\s*/g, '').trim();
+                sectionTitle = removeSectionEmoji(sectionTitle);
             }
 
             // 번호 매기기
@@ -511,15 +529,8 @@ export const TemplateBlockBuilder: FC<TemplateBlockBuilderProps> = ({
             }
 
             // 가이드 질문 포함
-            if (useGuideQuestion && sectionTitle && presets) {
-                const matchedPreset = presets.find((p) => {
-                    if (!p || !p.title) {
-                        return false;
-                    }
-                    const presetTitleWithoutEmoji = p.title.replace(/[💡🧐⏱️🎯✨📝🔑🆚🛠️📚🐛🧪🔧📝🔗💬]\s*/g, '').trim();
-                    const blockTitleWithoutEmoji = sectionTitle.replace(/^\d+\.\s*/, '').replace(/[💡🧐⏱️🎯✨📝🔑🆚🛠️📚🐛🧪🔧📝🔗💬]\s*/g, '').trim();
-                    return presetTitleWithoutEmoji === blockTitleWithoutEmoji || p.title === block.title;
-                });
+            if (useGuideQuestion && sectionTitle && presetByNormalizedTitle.size > 0) {
+                const matchedPreset = presetByNormalizedTitle.get(normalizeSectionTitle(sectionTitle));
 
                 // guide 필드 사용 (API 명세서와 일치)
                 const guideText = matchedPreset?.guide;
@@ -541,9 +552,9 @@ export const TemplateBlockBuilder: FC<TemplateBlockBuilderProps> = ({
             .replace(/\{\{tier\}\}/g, '문제 티어');
 
         return previewWithFriendlyText;
-    }, [blocks, useAutoNumbering, useEmoji, useGuideQuestion, presets]);
+    }, [blocks, useAutoNumbering, useEmoji, useGuideQuestion, presetByNormalizedTitle]);
 
-    const handleDragEnd = (event: DragEndEvent) => {
+    const handleDragEnd = useCallback((event: DragEndEvent) => {
         const { active, over } = event;
 
         if (!over || active.id === over.id) {
@@ -563,17 +574,20 @@ export const TemplateBlockBuilder: FC<TemplateBlockBuilderProps> = ({
             }
             return arrayMove(items, oldIndex, newIndex);
         });
-    };
+    }, [blocks]);
 
-    const handleUpdateBlock = (id: string, updates: Partial<TemplateBlock>) => {
+    const handleUpdateBlock = useCallback((id: string, updates: Partial<TemplateBlock>) => {
+        if ('title' in updates) {
+            measureInputLatency('template-builder:block-title');
+        }
         const isFirstBlock = blocks[0]?.id === id;
         if (isFirstBlock && 'title' in updates) {
             return;
         }
         setBlocks((prev) => prev.map((block) => (block.id === id ? { ...block, ...updates } : block)));
-    };
+    }, [blocks]);
 
-    const handleDeleteBlock = (id: string) => {
+    const handleDeleteBlock = useCallback((id: string) => {
         const isFirstBlock = blocks[0]?.id === id;
         if (isFirstBlock) {
             toast.error('제목 블록은 삭제할 수 없습니다.');
@@ -592,7 +606,7 @@ export const TemplateBlockBuilder: FC<TemplateBlockBuilderProps> = ({
         }
 
         setBlocks((prev) => prev.filter((block) => block.id !== id));
-    };
+    }, [blocks]);
 
     /**
      * 현재 본문에서 최대 섹션 번호를 찾아 다음 번호를 반환
@@ -624,7 +638,7 @@ export const TemplateBlockBuilder: FC<TemplateBlockBuilderProps> = ({
         
         // 이모지 제거 (useEmoji가 false일 때)
         if (!useEmoji) {
-            sectionTitle = sectionTitle.replace(/[💡🧐⏱️🎯✨📝🔑🆚🛠️📚🐛🧪🔧📝🔗💬]\s*/g, '').trim();
+            sectionTitle = removeSectionEmoji(sectionTitle);
         }
 
         // 번호 매기기
@@ -667,7 +681,7 @@ export const TemplateBlockBuilder: FC<TemplateBlockBuilderProps> = ({
                     if (!block.title) {
                         return '';
                     }
-                    return block.title.replace(/^\d+\.\s*/, '').replace(/[💡🧐⏱️🎯✨📝🔑🆚🛠️📚🐛🧪🔧📝🔗💬]\s*/g, '').trim();
+                    return normalizeSectionTitle(block.title);
                 })
                 .filter(Boolean)
         );
@@ -722,6 +736,15 @@ export const TemplateBlockBuilder: FC<TemplateBlockBuilderProps> = ({
         }, SCROLL_DELAY_MS);
     }, []);
 
+    const blockIds = useMemo(() => blocks.map((block) => block.id), [blocks]);
+    const focusTitleInput = useCallback(() => {
+        if (!titleInputRef.current) {
+            return;
+        }
+        titleInputRef.current.focus();
+        titleInputRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, []);
+
     return (
         <div 
             className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 dark:bg-opacity-70"
@@ -741,9 +764,11 @@ export const TemplateBlockBuilder: FC<TemplateBlockBuilderProps> = ({
                         <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">템플릿 편집</h2>
                         <div className="space-y-1">
                             <input
+                                ref={titleInputRef}
                                 type="text"
                                 value={templateTitle}
                                 onChange={(e) => {
+                                    measureInputLatency('template-builder:title');
                                     setTitleError('');
                                     onTemplateTitleChange(e.target.value);
                                 }}
@@ -883,7 +908,7 @@ export const TemplateBlockBuilder: FC<TemplateBlockBuilderProps> = ({
                                             if (!preset || !preset.title) {
                                                 return null;
                                             }
-                                            const presetTitleWithoutEmoji = preset.title.replace(/[💡🧐⏱️🎯✨📝🔑🆚🛠️📚🐛🧪🔧📝🔗💬]\s*/g, '').trim();
+                                            const presetTitleWithoutEmoji = normalizeSectionTitle(preset.title);
                                             const isUsed = usedPresetTitles.has(presetTitleWithoutEmoji);
                                             return (
                                                 <button
@@ -921,7 +946,7 @@ export const TemplateBlockBuilder: FC<TemplateBlockBuilderProps> = ({
                                 </h3>
                                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                                     <SortableContext
-                                        items={blocks.map((b) => b.id)}
+                                        items={blockIds}
                                         strategy={verticalListSortingStrategy}
                                     >
                                         <div className="space-y-4">
@@ -988,12 +1013,7 @@ export const TemplateBlockBuilder: FC<TemplateBlockBuilderProps> = ({
                                 if (trimmed.length === 0) {
                                     setTitleError('템플릿 이름을 입력해주세요.');
                                     toast.error('템플릿 이름을 입력해주세요.');
-                                    // 제목 입력 필드로 스크롤 및 포커스
-                                    const titleInput = document.querySelector('input[placeholder*="템플릿 이름"]') as HTMLInputElement;
-                                    if (titleInput) {
-                                        titleInput.focus();
-                                        titleInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                    }
+                                    focusTitleInput();
                                     return;
                                 }
                                 
@@ -1002,23 +1022,14 @@ export const TemplateBlockBuilder: FC<TemplateBlockBuilderProps> = ({
                                 if (isOnlyJamo) {
                                     setTitleError('자음 또는 모음만 입력할 수 없습니다.');
                                     toast.error('자음 또는 모음만 입력할 수 없습니다.');
-                                    // 제목 입력 필드로 스크롤 및 포커스
-                                    const titleInput = document.querySelector('input[placeholder*="템플릿 이름"]') as HTMLInputElement;
-                                    if (titleInput) {
-                                        titleInput.focus();
-                                        titleInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                    }
+                                    focusTitleInput();
                                     return;
                                 }
                                 
                                 // 기타 제목 에러가 있는 경우
                                 if (titleError) {
                                     toast.error(titleError);
-                                    const titleInput = document.querySelector('input[placeholder*="템플릿 이름"]') as HTMLInputElement;
-                                    if (titleInput) {
-                                        titleInput.focus();
-                                        titleInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                    }
+                                    focusTitleInput();
                                     return;
                                 }
 

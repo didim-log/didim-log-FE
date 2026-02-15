@@ -4,44 +4,75 @@
 
 /* eslint-disable react-refresh/only-export-components */
 
+import { Suspense, lazy } from 'react';
+import type { ReactElement } from 'react';
 import { createBrowserRouter, useRouteError, Link, useNavigate } from 'react-router-dom';
 import { PublicRoute } from './routes/PublicRoute';
 import { PrivateRoute } from './routes/PrivateRoute';
 import { AdminRoute } from './routes/AdminRoute';
 import { RootRedirect } from './routes/RootRedirect';
-import { LoginPage } from './features/auth/pages/LoginPage';
-import { SignupPage } from './features/auth/pages/SignupPage';
-import { OAuthCallbackPage } from './pages/auth/OAuthCallbackPage';
-import { FindIdPage } from './features/auth/pages/FindIdPage';
-import { FindPasswordPage } from './features/auth/pages/FindPasswordPage';
-import { ResetPasswordPage } from './features/auth/pages/ResetPasswordPage';
-import { DashboardPage } from './features/dashboard/pages/DashboardPage';
-import { ProfilePage } from './features/profile/pages/ProfilePage';
 
-// 문제 페이지
-import { ProblemListPage } from './features/problem/pages/ProblemListPage';
-import { ProblemDetailPage } from './features/problem/pages/ProblemDetailPage';
-import { StudyPage } from './features/study/pages/StudyPage';
+const LoginPage = lazy(() => import('./features/auth/pages/LoginPage').then((m) => ({ default: m.LoginPage })));
+const SignupPage = lazy(() => import('./features/auth/pages/SignupPage').then((m) => ({ default: m.SignupPage })));
+const OAuthCallbackPage = lazy(() =>
+    import('./pages/auth/OAuthCallbackPage').then((m) => ({ default: m.OAuthCallbackPage }))
+);
+const FindIdPage = lazy(() => import('./features/auth/pages/FindIdPage').then((m) => ({ default: m.FindIdPage })));
+const FindPasswordPage = lazy(() =>
+    import('./features/auth/pages/FindPasswordPage').then((m) => ({ default: m.FindPasswordPage }))
+);
+const ResetPasswordPage = lazy(() =>
+    import('./features/auth/pages/ResetPasswordPage').then((m) => ({ default: m.ResetPasswordPage }))
+);
+const DashboardPage = lazy(() =>
+    import('./features/dashboard/pages/DashboardPage').then((m) => ({ default: m.DashboardPage }))
+);
+const ProfilePage = lazy(() => import('./features/profile/pages/ProfilePage').then((m) => ({ default: m.ProfilePage })));
+const ProblemListPage = lazy(() =>
+    import('./features/problem/pages/ProblemListPage').then((m) => ({ default: m.ProblemListPage }))
+);
+const ProblemDetailPage = lazy(() =>
+    import('./features/problem/pages/ProblemDetailPage').then((m) => ({ default: m.ProblemDetailPage }))
+);
+const StudyPage = lazy(() => import('./features/study/pages/StudyPage').then((m) => ({ default: m.StudyPage })));
+const RetrospectiveListPage = lazy(() =>
+    import('./features/retrospective/pages/RetrospectiveListPage').then((m) => ({ default: m.RetrospectiveListPage }))
+);
+const RetrospectiveDetailPage = lazy(() =>
+    import('./features/retrospective/pages/RetrospectiveDetailPage').then((m) => ({ default: m.RetrospectiveDetailPage }))
+);
+const RetrospectiveWritePage = lazy(() =>
+    import('./features/retrospective/pages/RetrospectiveWritePage').then((m) => ({ default: m.RetrospectiveWritePage }))
+);
+const StatisticsPage = lazy(() =>
+    import('./features/statistics/pages/StatisticsPage').then((m) => ({ default: m.StatisticsPage }))
+);
+const RankingPage = lazy(() => import('./features/ranking/pages/RankingPage').then((m) => ({ default: m.RankingPage })));
+const NoticeListPage = lazy(() =>
+    import('./features/notice/pages/NoticeListPage').then((m) => ({ default: m.NoticeListPage }))
+);
+const NoticeDetailPage = lazy(() =>
+    import('./features/notice/pages/NoticeDetailPage').then((m) => ({ default: m.NoticeDetailPage }))
+);
+const MaintenancePage = lazy(() =>
+    import('./pages/MaintenancePage').then((m) => ({ default: m.MaintenancePage }))
+);
+const AdminDashboardPage = lazy(() =>
+    import('./features/admin/pages/AdminDashboardPage').then((m) => ({ default: m.AdminDashboardPage }))
+);
+const AdminUsersPage = lazy(() =>
+    import('./features/admin/pages/AdminUsersPage').then((m) => ({ default: m.AdminUsersPage }))
+);
 
-// 회고 페이지
-import { RetrospectiveListPage } from './features/retrospective/pages/RetrospectiveListPage';
-import { RetrospectiveDetailPage } from './features/retrospective/pages/RetrospectiveDetailPage';
-import { RetrospectiveWritePage } from './features/retrospective/pages/RetrospectiveWritePage';
+const RouteFallback = () => (
+    <div className="flex items-center justify-center min-h-[30vh]">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-300 border-t-blue-500" />
+    </div>
+);
 
-// 통계, 랭킹
-import { StatisticsPage } from './features/statistics/pages/StatisticsPage';
-import { RankingPage } from './features/ranking/pages/RankingPage';
-
-// 공지사항
-import { NoticeListPage } from './features/notice/pages/NoticeListPage';
-import { NoticeDetailPage } from './features/notice/pages/NoticeDetailPage';
-
-// Maintenance 페이지
-import { MaintenancePage } from './pages/MaintenancePage';
-
-// 관리자 페이지
-import { AdminDashboardPage } from './features/admin/pages/AdminDashboardPage';
-import { AdminUsersPage } from './features/admin/pages/AdminUsersPage';
+const withRouteSuspense = (element: ReactElement) => (
+    <Suspense fallback={<RouteFallback />}>{element}</Suspense>
+);
 
 // 에러 페이지 (404 및 런타임 에러 모두 처리)
 const ErrorPage = () => {
@@ -168,7 +199,7 @@ export const router = createBrowserRouter([
     },
     {
         path: '/login',
-        element: (
+        element: withRouteSuspense(
             <PublicRoute>
                 <LoginPage />
             </PublicRoute>
@@ -177,7 +208,7 @@ export const router = createBrowserRouter([
     },
     {
         path: '/signup', // 회원가입 페이지 경로 (LoginPage의 NOT_FOUND 에러에서 Link로 연결됨)
-        element: (
+        element: withRouteSuspense(
             <PublicRoute>
                 <SignupPage />
             </PublicRoute>
@@ -186,12 +217,12 @@ export const router = createBrowserRouter([
     },
     {
         path: '/oauth/callback',
-        element: <OAuthCallbackPage />,
+        element: withRouteSuspense(<OAuthCallbackPage />),
         errorElement: <ErrorPage />,
     },
     {
         path: '/find-id',
-        element: (
+        element: withRouteSuspense(
             <PublicRoute>
                 <FindIdPage />
             </PublicRoute>
@@ -200,7 +231,7 @@ export const router = createBrowserRouter([
     },
     {
         path: '/find-password',
-        element: (
+        element: withRouteSuspense(
             <PublicRoute>
                 <FindPasswordPage />
             </PublicRoute>
@@ -209,7 +240,7 @@ export const router = createBrowserRouter([
     },
     {
         path: '/reset-password',
-        element: (
+        element: withRouteSuspense(
             <PublicRoute>
                 <ResetPasswordPage />
             </PublicRoute>
@@ -218,7 +249,7 @@ export const router = createBrowserRouter([
     },
     {
         path: '/dashboard',
-        element: (
+        element: withRouteSuspense(
             <PrivateRoute>
                 <DashboardPage />
             </PrivateRoute>
@@ -227,7 +258,7 @@ export const router = createBrowserRouter([
     },
     {
         path: '/problems',
-        element: (
+        element: withRouteSuspense(
             <PrivateRoute>
                 <ProblemListPage />
             </PrivateRoute>
@@ -236,7 +267,7 @@ export const router = createBrowserRouter([
     },
     {
         path: '/problems/:problemId',
-        element: (
+        element: withRouteSuspense(
             <PrivateRoute>
                 <ProblemDetailPage />
             </PrivateRoute>
@@ -245,7 +276,7 @@ export const router = createBrowserRouter([
     },
     {
         path: '/study/:problemId',
-        element: (
+        element: withRouteSuspense(
             <PrivateRoute>
                 <StudyPage />
             </PrivateRoute>
@@ -254,7 +285,7 @@ export const router = createBrowserRouter([
     },
     {
         path: '/retrospectives',
-        element: (
+        element: withRouteSuspense(
             <PrivateRoute>
                 <RetrospectiveListPage />
             </PrivateRoute>
@@ -263,7 +294,7 @@ export const router = createBrowserRouter([
     },
     {
         path: '/retrospectives/:id',
-        element: (
+        element: withRouteSuspense(
             <PrivateRoute>
                 <RetrospectiveDetailPage />
             </PrivateRoute>
@@ -272,7 +303,7 @@ export const router = createBrowserRouter([
     },
     {
         path: '/retrospectives/write',
-        element: (
+        element: withRouteSuspense(
             <PrivateRoute>
                 <RetrospectiveWritePage />
             </PrivateRoute>
@@ -281,7 +312,7 @@ export const router = createBrowserRouter([
     },
     {
         path: '/statistics',
-        element: (
+        element: withRouteSuspense(
             <PrivateRoute>
                 <StatisticsPage />
             </PrivateRoute>
@@ -290,7 +321,7 @@ export const router = createBrowserRouter([
     },
     {
         path: '/ranking',
-        element: (
+        element: withRouteSuspense(
             <PrivateRoute>
                 <RankingPage />
             </PrivateRoute>
@@ -299,7 +330,7 @@ export const router = createBrowserRouter([
     },
     {
         path: '/notices',
-        element: (
+        element: withRouteSuspense(
             <PrivateRoute>
                 <NoticeListPage />
             </PrivateRoute>
@@ -308,7 +339,7 @@ export const router = createBrowserRouter([
     },
     {
         path: '/notices/:id',
-        element: (
+        element: withRouteSuspense(
             <PrivateRoute>
                 <NoticeDetailPage />
             </PrivateRoute>
@@ -317,7 +348,7 @@ export const router = createBrowserRouter([
     },
     {
         path: '/profile',
-        element: (
+        element: withRouteSuspense(
             <PrivateRoute>
                 <ProfilePage />
             </PrivateRoute>
@@ -326,7 +357,7 @@ export const router = createBrowserRouter([
     },
     {
         path: '/admin/dashboard',
-        element: (
+        element: withRouteSuspense(
             <AdminRoute>
                 <AdminDashboardPage />
             </AdminRoute>
@@ -335,7 +366,7 @@ export const router = createBrowserRouter([
     },
     {
         path: '/admin/users',
-        element: (
+        element: withRouteSuspense(
             <AdminRoute>
                 <AdminUsersPage />
             </AdminRoute>
@@ -344,7 +375,7 @@ export const router = createBrowserRouter([
     },
     {
         path: '/maintenance',
-        element: <MaintenancePage />,
+        element: withRouteSuspense(<MaintenancePage />),
         errorElement: <ErrorPage />,
     },
     {

@@ -10,6 +10,7 @@ import { Toaster } from 'sonner';
 import { queryClient } from './lib/react-query';
 import { router } from './router';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
+import { summarizePerfMetrics } from './utils/performanceProfiler';
 import './index.css';
 
 // 테마 초기화: React 렌더링 전에 동기적으로 실행
@@ -37,6 +38,13 @@ if (savedTheme) {
 export const App = () => {
     return <RouterProvider router={router} />;
 };
+
+if (typeof window !== 'undefined' && import.meta.env.DEV) {
+    (window as Window & { __printDidimPerf?: () => void }).__printDidimPerf = () => {
+        // eslint-disable-next-line no-console
+        console.log(summarizePerfMetrics());
+    };
+}
 
 createRoot(rootElement).render(
     <StrictMode>

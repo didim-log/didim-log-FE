@@ -4,7 +4,7 @@
 
 export type TemplateType = 'SYSTEM' | 'CUSTOM';
 export type TemplateCategory = 'SUCCESS' | 'FAIL' | 'BOTH';
-export type TemplateDefaultCategory = 'SUCCESS' | 'FAIL' | 'FAILURE';
+export type TemplateDefaultCategory = 'SUCCESS' | 'FAIL';
 export type SectionCategory = 'SUCCESS' | 'FAIL' | 'COMMON';
 
 export interface Template {
