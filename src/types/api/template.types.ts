@@ -4,6 +4,7 @@
 
 export type TemplateType = 'SYSTEM' | 'CUSTOM';
 export type TemplateCategory = 'SUCCESS' | 'FAIL' | 'BOTH';
+export type TemplateDefaultCategory = 'SUCCESS' | 'FAIL' | 'FAILURE';
 export type SectionCategory = 'SUCCESS' | 'FAIL' | 'COMMON';
 
 export interface Template {
@@ -16,6 +17,17 @@ export interface Template {
     isDefaultFail: boolean; // 실패용 기본 템플릿 여부
     createdAt: string; // ISO 8601 형식
     updatedAt: string; // ISO 8601 형식
+}
+
+export interface TemplateSummary {
+    id: string;
+    studentId: string | null;
+    title: string;
+    type: TemplateType;
+    isDefaultSuccess: boolean;
+    isDefaultFail: boolean;
+    createdAt: string;
+    updatedAt: string;
 }
 
 export interface TemplateSectionPreset {
