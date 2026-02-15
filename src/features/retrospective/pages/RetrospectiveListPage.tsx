@@ -2,7 +2,7 @@
  * 회고 목록 페이지
  */
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { FC } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useRetrospectives, useToggleBookmark, useDeleteRetrospective } from '../../../hooks/api/useRetrospective';
@@ -28,12 +28,12 @@ export const RetrospectiveListPage: FC = () => {
     const [isBookmarked, setIsBookmarked] = useState<boolean | undefined>(undefined);
 
     const { user } = useAuthStore();
-    const { data, isLoading, error, refetch } = useRetrospectives(searchParams);
+    const { data, isLoading, error } = useRetrospectives(searchParams);
     const toggleBookmarkMutation = useToggleBookmark();
     const deleteMutation = useDeleteRetrospective();
 
     // 모든 회고의 solvedCategory를 파싱하여 고유 태그 목록 생성
-    const availableCategories = (() => {
+    const availableCategories = useMemo(() => {
         if (!data?.content) return [];
 
         const categorySet = new Set<string>();
@@ -50,7 +50,7 @@ export const RetrospectiveListPage: FC = () => {
 
         // 알파벳 순으로 정렬
         return Array.from(categorySet).sort();
-    })();
+    }, [data?.content]);
 
     const handleToggleBookmark = (id: string) => {
         toggleBookmarkMutation.mutate(id);
@@ -60,9 +60,6 @@ export const RetrospectiveListPage: FC = () => {
         try {
             await deleteMutation.mutateAsync(id);
             toast.success('회고가 삭제되었습니다.');
-            // queryClient.invalidateQueries가 자동으로 목록을 새로고침하므로 refetch는 선택적
-            // 하지만 확실하게 하기 위해 refetch도 호출
-            await refetch();
         } catch (error: unknown) {
             const errorMessage = getErrorMessage(error);
             
@@ -157,23 +154,23 @@ export const RetrospectiveListPage: FC = () => {
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                     카테고리
                                 </label>
-                                <select
+                                <Input
+                                    type="text"
                                     value={solvedCategory}
                                     onChange={(e) => setSolvedCategory(e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                >
-                                    <option value="">전체</option>
-                                    {availableCategories.map((cat) => (
-                                        <option key={cat} value={cat}>
-                                            {cat}
-                                        </option>
-                                    ))}
-                                </select>
-                                {availableCategories.length === 0 && data && data.content.length > 0 && (
-                                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                        사용 가능한 태그가 없습니다
-                                    </p>
+                                    placeholder="예: BFS, DP"
+                                    list="retrospective-category-suggestions"
+                                />
+                                {availableCategories.length > 0 && (
+                                    <datalist id="retrospective-category-suggestions">
+                                        {availableCategories.map((cat) => (
+                                            <option key={cat} value={cat} />
+                                        ))}
+                                    </datalist>
                                 )}
+                                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                    제안 목록에 없어도 직접 입력해 검색할 수 있습니다.
+                                </p>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">

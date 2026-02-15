@@ -322,8 +322,7 @@ export const RetrospectiveWritePage: FC = () => {
                 setContent(templateContent);
                 setSelectedTemplateId(templateId);
                 setHasLoadedTemplate(true);
-            } catch (error) {
-                console.error('템플릿 로드 실패:', error);
+            } catch {
                 toast.error('템플릿을 불러오는 중 오류가 발생했습니다.');
                 // Fallback: 최소한의 기본 템플릿 제공 (문제 제목 포함)
                 const problemTitle = problem?.title || '문제';

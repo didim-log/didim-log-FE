@@ -44,7 +44,7 @@ export const Leaderboard: FC<LeaderboardProps> = ({ data }) => {
                     </thead>
                     <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                         {data.map((user) => (
-                            <tr key={user.nickname} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                            <tr key={`${user.rank}-${user.nickname}`} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <div className="text-sm font-semibold text-gray-900 dark:text-white">
                                         {getRankBadge(user.rank)}
