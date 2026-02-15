@@ -110,6 +110,11 @@ npm run dev
 npm run build
 ```
 
+### Test
+```bash
+npx vitest run
+```
+
 ### Preview
 
 ```bash
@@ -120,6 +125,18 @@ npm run preview
 `firebase.json`에 모든 경로가 `index.html`로 rewrite 되도록 설정되어 있어 새로고침 404를 방지합니다.
 
 <br>
+
+## ⚡ UI 최적화 반영 사항
+- 페이지/기능 단위 lazy loading으로 초기 렌더링 비용을 절감했습니다.
+- Vite manual chunks로 `react-vendor`, `data-vendor`, `markdown-vendor`, `editor-vendor`를 분리했습니다.
+- 성능 측정 유틸(`src/utils/performanceProfiler.ts`)을 추가해 화면 단위 측정 기반 최적화를 적용했습니다.
+
+## 🔌 API 계약 주의사항
+- 템플릿 기본값 category는 `SUCCESS` / `FAIL`만 사용합니다. (`FAILURE` 미지원)
+- 프론트 연동 상세는 `DOCS/FRONTEND_UPDATE_GUIDE.md` 기준으로 관리합니다.
+
+## 🚢 배포 권장 순서
+- category 호환성 기준으로 **프론트 선배포 후 백엔드 배포**를 권장합니다.
 
 ## 📂 Directory Structure
 
