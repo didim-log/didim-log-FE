@@ -24,7 +24,7 @@ export const RankingPage: FC = () => {
     // 데이터 분리: Top 3와 나머지
     const top3 = (ranking ?? []).slice(0, 3).filter((r) => r.rank <= 3);
     const restRanks = (ranking ?? []).slice(3);
-    const myRank = user?.nickname ? (ranking ?? []).find((r) => r.nickname === user.nickname) : null;
+    const myRank = user?.id ? (ranking ?? []).find((r) => r.studentId === user.id) : null;
 
     if (isLoading) {
         return (

@@ -8,7 +8,6 @@ import { Link } from 'react-router-dom';
 import type { RetrospectiveResponse } from '../../../types/api/retrospective.types';
 import { formatKST, formatTimeFromSeconds } from '../../../utils/dateUtils';
 import { getCategoryLabel } from '../../../utils/constants';
-import { useProblemDetail } from '../../../hooks/api/useProblem';
 import { stripMarkdown, truncateText } from '../../../utils/markdownUtils';
 
 interface MyRetrospectiveCardProps {
@@ -16,11 +15,9 @@ interface MyRetrospectiveCardProps {
 }
 
 export const MyRetrospectiveCard: FC<MyRetrospectiveCardProps> = ({ retrospective }) => {
-    const { data: problem } = useProblemDetail(retrospective.problemId);
-
     // 제목 생성: "1060번 좋은 수 실패 회고" (괄호 제거)
     const getTitle = () => {
-        const problemTitle = problem?.title || '문제';
+        const problemTitle = retrospective.problemTitle || '문제';
         const resultText = retrospective.solutionResult === 'SUCCESS' ? '성공' : 
                           retrospective.solutionResult === 'FAIL' ? '실패' : 
                           retrospective.solutionResult === 'TIME_OVER' ? '시간 초과' : '';

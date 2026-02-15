@@ -30,7 +30,6 @@ export const ProfilePage: FC = () => {
 
     // 내 회고 목록 조회 (solvedCategory 필터 적용)
     const { data: retrospectives, isLoading: isRetrospectivesLoading } = useRetrospectives({
-        studentId: user?.id,
         solvedCategory: selectedCategory,
         page: 1,
         size: 10,

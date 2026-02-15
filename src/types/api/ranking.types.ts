@@ -11,6 +11,7 @@ export interface RankingRequest {
 
 export interface LeaderboardResponse {
     rank: number;
+    studentId: string;
     nickname: string;
     tier: string;
     tierLevel: number;
@@ -19,4 +20,3 @@ export interface LeaderboardResponse {
     consecutiveSolveDays: number;
     profileImageUrl: string | null;
 }
-
