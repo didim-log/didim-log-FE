@@ -348,7 +348,7 @@ interface RecommendedProblemsDefaultEmptyStateProps {
 
 const RecommendedProblemsDefaultEmptyState: FC<RecommendedProblemsDefaultEmptyStateProps> = ({ buttonText, targetUrl }) => {
     return (
-        <div className="text-center py-8 px-4">
+        <div className="tour-recommend-empty text-center py-8 px-4">
             <div className="mb-4">
                 <svg
                     className="w-16 h-16 mx-auto text-gray-400 dark:text-gray-600"
@@ -371,7 +371,7 @@ const RecommendedProblemsDefaultEmptyState: FC<RecommendedProblemsDefaultEmptySt
             <div className="flex justify-center">
                 <Link
                     to={targetUrl}
-                    className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-md hover:shadow-lg"
+                    className="tour-problem-list-link inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-md hover:shadow-lg"
                 >
                     {buttonText}
                     <ArrowRight className="w-4 h-4" />
@@ -383,7 +383,7 @@ const RecommendedProblemsDefaultEmptyState: FC<RecommendedProblemsDefaultEmptySt
 
 const RecommendedProblemsUnratedEmptyState: FC = () => {
     return (
-        <div className="text-center py-8 px-4">
+        <div className="tour-recommend-empty text-center py-8 px-4">
             <div className="mb-4">
                 <svg
                     className="w-16 h-16 mx-auto text-gray-400 dark:text-gray-600"
@@ -411,7 +411,7 @@ const RecommendedProblemsUnratedEmptyState: FC = () => {
                     href={BOJ_STEP_URL}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-md hover:shadow-lg"
+                    className="tour-problem-list-link inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-md hover:shadow-lg"
                 >
                     백준 문제 풀러 가기
                     <ArrowRight className="w-4 h-4" />

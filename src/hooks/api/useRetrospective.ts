@@ -26,6 +26,7 @@ export const useCreateRetrospective = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['retrospectives'] });
             queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+            queryClient.invalidateQueries({ queryKey: ['statistics'] });
         },
     });
 };
@@ -69,6 +70,8 @@ export const useUpdateRetrospective = () => {
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ['retrospectives', variables.retrospectiveId] });
             queryClient.invalidateQueries({ queryKey: ['retrospectives', 'list'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+            queryClient.invalidateQueries({ queryKey: ['statistics'] });
         },
     });
 };
@@ -83,6 +86,8 @@ export const useDeleteRetrospective = () => {
             queryClient.invalidateQueries({ queryKey: ['retrospectives', 'list'] });
             // 개별 회고 쿼리도 무효화
             queryClient.invalidateQueries({ queryKey: ['retrospectives', retrospectiveId] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+            queryClient.invalidateQueries({ queryKey: ['statistics'] });
         },
     });
 };

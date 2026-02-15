@@ -146,7 +146,7 @@ export const AiQualityWidget: FC = () => {
                         {stats.recentNegativeLogs.map((log) => (
                             <Link
                                 key={log.id}
-                                to={`/admin/logs?logId=${log.id}`}
+                                to={`/admin/dashboard?tab=logs&logId=${encodeURIComponent(log.id)}`}
                                 className="block p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                             >
                                 <div className="flex items-start gap-3">
@@ -168,4 +168,3 @@ export const AiQualityWidget: FC = () => {
         </div>
     );
 };
-

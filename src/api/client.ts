@@ -153,9 +153,14 @@ apiClient.interceptors.response.use(
             const errorCode = error.response?.data?.code;
             // Maintenance Mode 에러인 경우 Maintenance 페이지로 리다이렉트
             if (errorCode === 'MAINTENANCE_MODE') {
-                // Public API(Notices, System Status)는 리다이렉트하지 않음
-                const isPublicApi = requestUrl.includes('notices') || requestUrl.includes('system/status');
-                if (!isPublicApi) {
+                // Public/Auth API는 리다이렉트하지 않음. 관리자도 유지보수 중 접근 허용.
+                const isRedirectExemptApi =
+                    requestUrl.includes('notices') ||
+                    requestUrl.includes('system/status') ||
+                    requestUrl.includes('auth/');
+                const isAdminUser = useAuthStore.getState().user?.role === 'ADMIN';
+
+                if (!isRedirectExemptApi && !isAdminUser) {
                     window.location.href = '/maintenance';
                     return Promise.reject(error);
                 }

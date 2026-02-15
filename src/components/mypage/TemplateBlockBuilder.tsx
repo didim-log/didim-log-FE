@@ -28,6 +28,11 @@ import { MarkdownViewer } from '../common/MarkdownViewer';
 import { toast } from 'sonner';
 import { usePresets } from '../../hooks/api/useTemplate';
 import type { TemplateCategory } from '../../types/api/template.types';
+import {
+    convertBlocksToMarkdown,
+    parseMarkdownToBlocks,
+} from './templateBlockConverter';
+import type { TemplateBlock } from './templateBlockConverter';
 import { Spinner } from '../ui/Spinner';
 import { SCROLL_DELAY_MS } from '../../utils/constants';
 import { measureInputLatency } from '../../utils/performanceProfiler';
@@ -47,18 +52,11 @@ const TITLE_DISPLAY_TEXT = '회고 제목';
  * 프로필 페이지 미리보기에서는 성공/실패 여부와 관계없이 중립적인 텍스트 사용
  */
 const PREVIEW_TITLE_FORMAT = '# 🏆 회고 제목';
-const SECTION_EMOJI_REGEX = /[💡🧐⏱️🎯✨📝🔑🆚🛠️📚🐛🧪🔧📝🔗💬]\s*/gu;
+const SECTION_EMOJI_REGEX = /(?:💡|🧐|⏱️|🎯|✨|📝|🔑|🆚|🛠️|📚|🐛|🧪|🔧|🔗|💬)\s*/gu;
 const SECTION_NUMBER_PREFIX_REGEX = /^\d+\.\s*/;
 
 const removeSectionEmoji = (title: string): string => title.replace(SECTION_EMOJI_REGEX, '').trim();
 const normalizeSectionTitle = (title: string): string => removeSectionEmoji(title.replace(SECTION_NUMBER_PREFIX_REGEX, ''));
-
-export interface TemplateBlock {
-    id: string;
-    title: string;
-    level: 'h1' | 'h2' | 'h3' | 'p';
-    isDefaultSection?: boolean; // 기본 섹션(제출한 코드, 문제 링크 등) 여부
-}
 
 interface TemplateBlockBuilderProps {
     initialMarkdown?: string;
@@ -66,102 +64,11 @@ interface TemplateBlockBuilderProps {
     onTemplateTitleChange: (title: string) => void;
     onMarkdownChange: (markdown: string) => void;
     onClose: () => void;
-    onSave: (markdown: string, options?: { usageCategory?: TemplateCategory | 'BOTH'; setAsDefault?: boolean }) => void;
+    onSave: (
+        markdown: string,
+        options?: { defaultMode?: 'NONE' | TemplateCategory | 'BOTH' }
+    ) => void;
     isSaving?: boolean;
-}
-
-/**
- * 마크다운을 블록 배열로 파싱
- */
-function parseMarkdownToBlocks(markdown: string): TemplateBlock[] {
-    if (!markdown.trim()) {
-        return [{ id: crypto.randomUUID(), title: TITLE_DISPLAY_TEXT, level: 'h1' }];
-    }
-
-    const blocks: TemplateBlock[] = [];
-    const lines = markdown.split('\n');
-    let currentBlock: TemplateBlock | null = null;
-
-    for (const line of lines) {
-        // H1, H2, H3 헤더 감지
-        const h1Match = line.match(/^#\s+(.+)$/);
-        const h2Match = line.match(/^##\s+(.+)$/);
-        const h3Match = line.match(/^###\s+(.+)$/);
-        const boldMatch = line.match(/^\*\*(.+)\*\*$/);
-
-        if (h1Match) {
-            if (currentBlock) {
-                blocks.push(currentBlock);
-            }
-            currentBlock = {
-                id: crypto.randomUUID(),
-                title: h1Match[1].trim(),
-                level: 'h1',
-            };
-        } else if (h2Match) {
-            if (currentBlock) {
-                blocks.push(currentBlock);
-            }
-            const title = h2Match[1].trim();
-            // 기본 섹션인지 확인
-            const isDefaultSection = title === '제출한 코드';
-            currentBlock = {
-                id: crypto.randomUUID(),
-                title,
-                level: 'h2',
-                isDefaultSection,
-            };
-        } else if (h3Match) {
-            if (currentBlock) {
-                blocks.push(currentBlock);
-            }
-            currentBlock = {
-                id: crypto.randomUUID(),
-                title: h3Match[1].trim(),
-                level: 'h3',
-            };
-        } else if (boldMatch) {
-            if (currentBlock) {
-                blocks.push(currentBlock);
-            }
-            currentBlock = {
-                id: crypto.randomUUID(),
-                title: boldMatch[1].trim(),
-                level: 'p',
-            };
-        }
-    }
-
-    if (currentBlock) {
-        blocks.push(currentBlock);
-    }
-
-    // 파싱된 블록이 없으면 기본 제목 블록 반환
-    if (blocks.length === 0) {
-        return [{ id: crypto.randomUUID(), title: TITLE_DISPLAY_TEXT, level: 'h1' }];
-    }
-
-    // 첫 번째 블록이 H1이 아니거나 제목 포맷이 아니면 제목 추가
-    if (blocks[0].level !== 'h1' || (!blocks[0].title.includes('{{problemId}}') && blocks[0].title !== TITLE_DISPLAY_TEXT)) {
-        blocks.unshift({ id: crypto.randomUUID(), title: TITLE_DISPLAY_TEXT, level: 'h1' });
-    }
-
-    return blocks;
-}
-
-/**
- * 블록 배열을 마크다운으로 변환
- */
-function convertBlocksToMarkdown(blocks: TemplateBlock[]): string {
-    return blocks
-        .map((block) => {
-            if (block.level === 'h1') return `# ${block.title}`;
-            if (block.level === 'h2') return `## ${block.title}`;
-            if (block.level === 'h3') return `### ${block.title}`;
-            if (block.level === 'p') return `**${block.title}**`;
-            return `## ${block.title}`;
-        })
-        .join('\n\n');
 }
 
 /**
@@ -261,6 +168,27 @@ const SortableBlockCard: FC<SortableBlockCardProps> = memo(({
                             </select>
                         </div>
                     </div>
+
+                    {!isFirstBlock && !block.isDefaultSection && (
+                        <div>
+                            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                섹션 내용
+                            </label>
+                            <textarea
+                                value={block.content ?? ''}
+                                onChange={(e) => onUpdate(block.id, { content: e.target.value })}
+                                placeholder="섹션 내용을 입력하세요. (여러 줄 가능)"
+                                rows={4}
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+                            />
+                        </div>
+                    )}
+
+                    {!isFirstBlock && block.isDefaultSection && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                            기본 섹션 내용은 회고 작성 시 자동으로 유지됩니다.
+                        </p>
+                    )}
                 </div>
 
                 {!isFirstBlock && !block.isDefaultSection && (
@@ -296,20 +224,21 @@ export const TemplateBlockBuilder: FC<TemplateBlockBuilderProps> = ({
     const titleInputRef = useRef<HTMLInputElement>(null);
     const [blocks, setBlocks] = useState<TemplateBlock[]>(() => {
         if (initialMarkdown) {
-            const parsed = parseMarkdownToBlocks(initialMarkdown);
+            const parsed = parseMarkdownToBlocks(initialMarkdown, TITLE_DISPLAY_TEXT);
             // 첫 번째 블록의 표시 텍스트를 "회고 제목"으로 변경
             if (parsed.length > 0 && parsed[0].level === 'h1') {
                 parsed[0] = { ...parsed[0], title: TITLE_DISPLAY_TEXT };
             }
             // 기본 섹션이 없으면 추가 (제출한 코드, 문제 링크/티어)
-            const hasCodeSection = parsed.some(block => block.title.includes('제출한 코드'));
-            const hasMetaSection = parsed.some(block => block.title.includes('문제 링크') || block.title.includes('Generated by'));
+            const hasCodeSection = /##\s*제출한\s*코드/i.test(initialMarkdown);
+            const hasMetaSection = /\[문제 링크\]\(/i.test(initialMarkdown) || /Generated by DidimLog/i.test(initialMarkdown);
             
             if (!hasCodeSection) {
                 parsed.push({ 
                     id: crypto.randomUUID(), 
                     title: '제출한 코드', 
                     level: 'h2',
+                    content: '```kotlin\n여기에 코드를 작성하세요.\n```',
                     isDefaultSection: true 
                 });
             }
@@ -318,6 +247,7 @@ export const TemplateBlockBuilder: FC<TemplateBlockBuilderProps> = ({
                     id: crypto.randomUUID(), 
                     title: '문제 링크 및 메타 정보', 
                     level: 'p',
+                    content: '---\n\n[문제 링크]({{link}}) | 티어: {{tier}}\n\nGenerated by DidimLog',
                     isDefaultSection: true 
                 });
             }
@@ -326,14 +256,26 @@ export const TemplateBlockBuilder: FC<TemplateBlockBuilderProps> = ({
         // 새 템플릿 생성 시 기본 블록 추가
         return [
             { id: crypto.randomUUID(), title: TITLE_DISPLAY_TEXT, level: 'h1' },
-            { id: crypto.randomUUID(), title: '제출한 코드', level: 'h2', isDefaultSection: true },
-            { id: crypto.randomUUID(), title: '문제 링크 및 메타 정보', level: 'p', isDefaultSection: true },
+            {
+                id: crypto.randomUUID(),
+                title: '제출한 코드',
+                level: 'h2',
+                content: '```kotlin\n여기에 코드를 작성하세요.\n```',
+                isDefaultSection: true,
+            },
+            {
+                id: crypto.randomUUID(),
+                title: '문제 링크 및 메타 정보',
+                level: 'p',
+                content: '---\n\n[문제 링크]({{link}}) | 티어: {{tier}}\n\nGenerated by DidimLog',
+                isDefaultSection: true,
+            },
         ];
     });
 
     const [isSuccessChecked, setIsSuccessChecked] = useState<boolean>(true);
     const [isFailChecked, setIsFailChecked] = useState<boolean>(false);
-    const [setAsDefault, setSetAsDefault] = useState<boolean>(false);
+    const [defaultMode, setDefaultMode] = useState<'NONE' | TemplateCategory | 'BOTH'>('NONE');
     const [titleError, setTitleError] = useState<string>('');
     const [useAutoNumbering, setUseAutoNumbering] = useState<boolean>(false);
     const [useEmoji, setUseEmoji] = useState<boolean>(true);
@@ -364,20 +306,6 @@ export const TemplateBlockBuilder: FC<TemplateBlockBuilderProps> = ({
             console.error('[TemplateBlockBuilder] 프리셋 로드 오류:', presetsError);
         }
     }, [presetsError]);
-
-    // usageCategory 계산 (저장 시 사용)
-    const usageCategory = useMemo(() => {
-        if (isSuccessChecked && isFailChecked) {
-            return 'BOTH';
-        }
-        if (isSuccessChecked) {
-            return 'SUCCESS';
-        }
-        if (isFailChecked) {
-            return 'FAIL';
-        }
-        return 'SUCCESS'; // 기본값
-    }, [isSuccessChecked, isFailChecked]);
 
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -437,6 +365,11 @@ export const TemplateBlockBuilder: FC<TemplateBlockBuilderProps> = ({
                 section = `**${sectionTitle || '섹션 제목'}**`;
             } else {
                 section = `## ${sectionTitle || '섹션 제목'}`;
+            }
+
+            const contentBody = block.content?.trim();
+            if (contentBody) {
+                section += `\n\n${contentBody}`;
             }
 
             // 가이드 질문 포함 (useGuideQuestion이 true일 때만)
@@ -526,6 +459,11 @@ export const TemplateBlockBuilder: FC<TemplateBlockBuilderProps> = ({
                 section = `**${sectionTitle || '섹션 제목'}**`;
             } else {
                 section = `## ${sectionTitle || '섹션 제목'}`;
+            }
+
+            const contentBody = block.content?.trim();
+            if (contentBody) {
+                section += `\n\n${contentBody}`;
             }
 
             // 가이드 질문 포함
@@ -649,10 +587,13 @@ export const TemplateBlockBuilder: FC<TemplateBlockBuilderProps> = ({
         }
 
         // 새 블록 생성
+        const matchedPreset = filteredPresets.find((preset) => preset.title === presetTitle);
+        const presetContent = matchedPreset?.contentGuide || matchedPreset?.guide || '';
         const newBlock: TemplateBlock = {
             id: crypto.randomUUID(),
             title: sectionTitle,
             level: 'h2',
+            content: presetContent,
         };
 
         // 가이드 질문은 미리보기에서만 표시되므로 여기서는 블록만 추가
@@ -666,6 +607,7 @@ export const TemplateBlockBuilder: FC<TemplateBlockBuilderProps> = ({
             id: crypto.randomUUID(),
             title: '',
             level: 'h2',
+            content: '',
         };
         setBlocks((prev) => [...prev, newBlock]);
         scrollToBottom();
@@ -798,9 +740,9 @@ export const TemplateBlockBuilder: FC<TemplateBlockBuilderProps> = ({
                             )}
                         </div>
 
-                        {/* 용도 선택 */}
+                        {/* 프리셋 필터 */}
                         <div className="space-y-2">
-                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300 block">용도:</span>
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300 block">프리셋 필터:</span>
                             <div className="flex flex-col gap-2">
                                 <label className="flex items-center gap-2 cursor-pointer">
                                     <input
@@ -988,17 +930,23 @@ export const TemplateBlockBuilder: FC<TemplateBlockBuilderProps> = ({
 
                 {/* 푸터 */}
                 <div className="p-6 border-t border-gray-200 dark:border-gray-700 space-y-3">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                            type="checkbox"
-                            checked={setAsDefault}
-                            onChange={(e) => setSetAsDefault(e.target.checked)}
-                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                        />
-                        <span className="text-sm text-gray-700 dark:text-gray-300">
-                            이 템플릿을 주 템플릿으로 지정하겠습니까?
-                        </span>
-                    </label>
+                    <div className="space-y-1">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            저장 후 기본 템플릿 적용
+                        </label>
+                        <select
+                            value={defaultMode}
+                            onChange={(e) =>
+                                setDefaultMode(e.target.value as 'NONE' | TemplateCategory | 'BOTH')
+                            }
+                            className="w-full sm:w-72 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                            <option value="NONE">적용 안 함 (저장만)</option>
+                            <option value="SUCCESS">성공 회고 기본으로 적용</option>
+                            <option value="FAIL">실패 회고 기본으로 적용</option>
+                            <option value="BOTH">성공/실패 모두 기본으로 적용</option>
+                        </select>
+                    </div>
 
                     <div className="flex justify-end gap-2">
                         <Button variant="secondary" onClick={onClose} disabled={isSaving}>
@@ -1033,21 +981,13 @@ export const TemplateBlockBuilder: FC<TemplateBlockBuilderProps> = ({
                                     return;
                                 }
 
-                                // 용도 체크박스가 하나도 선택되지 않은 경우
-                                if (!isSuccessChecked && !isFailChecked) {
-                                    toast.error('성공 회고 또는 실패 회고 중 하나 이상을 선택해주세요.');
-                                    return;
-                                }
-
                                 // 블록이 없는 경우
                                 if (blocks.length === 0) {
                                     toast.error('템플릿에 최소 하나의 섹션이 필요합니다.');
                                     return;
                                 }
 
-                                // usageCategory와 setAsDefault를 그대로 전달
-                                // BOTH인 경우 부모 컴포넌트에서 SUCCESS와 FAIL 둘 다 처리
-                                onSave(markdown, { usageCategory, setAsDefault });
+                                onSave(markdown, { defaultMode });
                             }}
                             isLoading={isSaving}
                         >

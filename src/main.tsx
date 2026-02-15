@@ -41,7 +41,6 @@ export const App = () => {
 
 if (typeof window !== 'undefined' && import.meta.env.DEV) {
     (window as Window & { __printDidimPerf?: () => void }).__printDidimPerf = () => {
-        // eslint-disable-next-line no-console
         console.log(summarizePerfMetrics());
     };
 }

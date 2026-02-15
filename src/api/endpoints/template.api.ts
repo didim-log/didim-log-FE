@@ -7,6 +7,7 @@ import type {
     Template,
     TemplateSummary,
     TemplateRenderResponse,
+    TemplateRenderRequest,
     TemplatePreviewRequest,
     TemplateCreateRequest,
     TemplateUpdateRequest,
@@ -54,20 +55,15 @@ export const templateApi = {
             code?: string | null;
         }
     ): Promise<TemplateRenderResponse> => {
-        const params = new URLSearchParams({
-            problemId: problemId.toString(),
-        });
-        
-        if (options?.programmingLanguage) {
-            params.append('programmingLanguage', options.programmingLanguage);
-        }
-        
-        if (options?.code) {
-            params.append('code', options.code);
-        }
-        
-        const response = await apiClient.get<TemplateRenderResponse>(
-            `/templates/${templateId}/render?${params.toString()}`
+        const requestBody: TemplateRenderRequest = {
+            problemId,
+            programmingLanguage: options?.programmingLanguage ?? null,
+            code: options?.code ?? null,
+        };
+
+        const response = await apiClient.post<TemplateRenderResponse>(
+            `/templates/${templateId}/render`,
+            requestBody
         );
         return response.data;
     },

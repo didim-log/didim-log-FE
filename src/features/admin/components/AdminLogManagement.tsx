@@ -2,7 +2,7 @@
  * AI 리뷰 생성 로그 관리 (ADMIN)
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { FC } from 'react';
 import { useAdminLog, useAdminLogs, useCleanupLogs } from '../../../hooks/api/useAdmin';
 import { Button } from '../../../components/ui/Button';
@@ -11,18 +11,43 @@ import { Spinner } from '../../../components/ui/Spinner';
 import { toast } from 'sonner';
 import { formatKST } from '../../../utils/dateUtils';
 import { getErrorMessage } from '../../../types/api/common.types';
+import { useSearchParams } from 'react-router-dom';
 
 export const AdminLogManagement: FC = () => {
+    const [searchParams, setSearchParams] = useSearchParams();
+    const logIdParam = searchParams.get('logId') ?? '';
     const [page, setPage] = useState(1);
     const [bojId, setBojId] = useState('');
-    const [selectedLogId, setSelectedLogId] = useState<string>('');
+    const [selectedLogId, setSelectedLogId] = useState<string>(logIdParam);
 
     const { data, isLoading, error, refetch } = useAdminLogs({ bojId: bojId.trim() || undefined, page, size: 20 });
     const { data: detail, isLoading: isDetailLoading } = useAdminLog(selectedLogId);
     const cleanupLogsMutation = useCleanupLogs();
 
+    useEffect(() => {
+        setSelectedLogId(logIdParam);
+    }, [logIdParam]);
+
     const handleSearch = () => {
         setPage(1);
+    };
+
+    const openDetail = (logId: string) => {
+        setSelectedLogId(logId);
+        const nextParams = new URLSearchParams(searchParams);
+        nextParams.set('tab', 'logs');
+        nextParams.set('logId', logId);
+        setSearchParams(nextParams, { replace: true });
+    };
+
+    const closeDetail = () => {
+        setSelectedLogId('');
+        const nextParams = new URLSearchParams(searchParams);
+        nextParams.delete('logId');
+        if (!nextParams.get('tab')) {
+            nextParams.set('tab', 'logs');
+        }
+        setSearchParams(nextParams, { replace: true });
     };
 
     const handleCleanup = async (olderThanDays: number) => {
@@ -160,7 +185,7 @@ export const AdminLogManagement: FC = () => {
                                         <Button
                                             variant="outline"
                                             size="sm"
-                                            onClick={() => setSelectedLogId(log.id)}
+                                            onClick={() => openDetail(log.id)}
                                         >
                                             상세
                                         </Button>
@@ -203,7 +228,7 @@ export const AdminLogManagement: FC = () => {
                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 border border-gray-200 dark:border-gray-700">
                     <div className="flex items-center justify-between">
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">로그 상세</h3>
-                        <Button variant="outline" size="sm" onClick={() => setSelectedLogId('')}>
+                        <Button variant="outline" size="sm" onClick={closeDetail}>
                             닫기
                         </Button>
                     </div>

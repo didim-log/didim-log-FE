@@ -255,7 +255,10 @@ export const TemplateManagementTab: FC = () => {
     };
 
 
-    const handleSave = async (markdown: string, options?: { usageCategory?: 'SUCCESS' | 'FAIL' | 'BOTH'; setAsDefault?: boolean }) => {
+    const handleSave = async (
+        markdown: string,
+        options?: { defaultMode?: 'NONE' | 'SUCCESS' | 'FAIL' | 'BOTH' }
+    ) => {
         if (!formData.title.trim()) {
             toast.error('템플릿 이름을 입력해주세요.');
             return;
@@ -295,10 +298,12 @@ export const TemplateManagementTab: FC = () => {
                 toast.success('템플릿이 생성되었습니다.');
             }
 
+            const defaultMode = options?.defaultMode ?? 'NONE';
+
             // 기본값으로 설정하는 경우
-            if (options?.setAsDefault && options?.usageCategory) {
+            if (defaultMode !== 'NONE') {
                 // BOTH인 경우 성공과 실패 둘 다에 대해 기본 템플릿 설정
-                if (options.usageCategory === 'BOTH') {
+                if (defaultMode === 'BOTH') {
                     let successSet = false;
                     let failSet = false;
                     let successError: unknown = null;
@@ -345,9 +350,9 @@ export const TemplateManagementTab: FC = () => {
                     try {
                         await setDefaultMutation.mutateAsync({
                             templateId: savedTemplateId,
-                            category: options.usageCategory,
+                            category: defaultMode,
                         });
-                        toast.success(`${options.usageCategory === 'SUCCESS' ? '성공' : '실패'} 기본 템플릿으로 설정되었습니다.`);
+                        toast.success(`${defaultMode === 'SUCCESS' ? '성공' : '실패'} 기본 템플릿으로 설정되었습니다.`);
                     } catch (error) {
                         console.error('기본 템플릿 설정 실패:', error);
                         toast.error('기본 템플릿 설정에 실패했습니다.');

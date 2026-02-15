@@ -18,6 +18,7 @@ interface AiReviewCardProps {
     isSuccess?: boolean;
     problemId?: string;
     problemTitle?: string;
+    forceVisible?: boolean;
 }
 
 /**
@@ -34,7 +35,8 @@ export const AiReviewCard: FC<AiReviewCardProps> = ({
     code, 
     isSuccess, 
     problemId, 
-    problemTitle 
+    problemTitle,
+    forceVisible = false,
 }) => {
     const [review, setReview] = useState<string | null>(null);
     const [cached, setCached] = useState<boolean>(false);
@@ -242,8 +244,11 @@ export const AiReviewCard: FC<AiReviewCardProps> = ({
         }
     };
 
-    // 리뷰가 없고 (logId 또는 code)가 있는 경우: 버튼 표시
-    if (!review && (currentLogId || code)) {
+    const hasEnoughCode = Boolean(code && code.trim().length >= 10);
+    const canRequestReview = Boolean(currentLogId || hasEnoughCode);
+
+    // 리뷰가 없고 (logId/code가 있거나 온보딩 강제 노출인 경우): 버튼 표시
+    if (!review && (currentLogId || code || forceVisible)) {
         return (
             <div className="mb-6 rounded-lg border border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 p-4 shadow-sm dark:border-blue-800 dark:from-blue-900/20 dark:to-indigo-900/20">
                 <div className="flex items-center gap-3">
@@ -306,14 +311,19 @@ export const AiReviewCard: FC<AiReviewCardProps> = ({
                         )}
                         <Button
                             onClick={handleRequestAiReview}
-                            disabled={loading || isGenerating || (aiUsage && (aiUsage.usage >= aiUsage.limit || !aiUsage.isServiceEnabled))}
+                            disabled={loading || isGenerating || !canRequestReview || (aiUsage && (aiUsage.usage >= aiUsage.limit || !aiUsage.isServiceEnabled))}
                             variant="primary"
                             size="sm"
                             className="tour-ai-review-btn mt-3"
                             isLoading={loading || isGenerating}
                         >
-                            {loading || isGenerating ? 'AI 리뷰 생성 중...' : 'AI 리뷰 받기'}
+                            {loading || isGenerating ? 'AI 리뷰 생성 중...' : (canRequestReview ? 'AI 리뷰 받기' : '코드 제출 후 이용 가능')}
                         </Button>
+                        {!canRequestReview && (
+                            <p className="mt-2 text-xs text-blue-700 dark:text-blue-300">
+                                먼저 코드와 제출 결과를 남기면 AI 리뷰를 받을 수 있어요.
+                            </p>
+                        )}
                         <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
                             ⚠️ AI가 생성한 리뷰는 참고용이며, 정확하지 않을 수 있습니다.
                         </p>

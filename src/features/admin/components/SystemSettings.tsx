@@ -139,9 +139,15 @@ export const SystemSettings: FC = () => {
         }
 
         // 비활성화 시 바로 실행
-        const result = await setMaintenanceMutation.mutateAsync({ enabled: next });
-        setEnabled(result.enabled);
-        setMessage(result.message);
+        try {
+            const result = await setMaintenanceMutation.mutateAsync({ enabled: next });
+            setEnabled(result.enabled);
+            setMessage(result.message);
+            toast.success('유지보수 모드가 비활성화되었습니다.');
+        } catch (error: unknown) {
+            const errorMessage = getErrorMessage(error);
+            toast.error(errorMessage);
+        }
     };
 
     const handleMaintenanceSubmit = async () => {

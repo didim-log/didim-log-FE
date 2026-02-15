@@ -28,17 +28,18 @@ const ChartFallback = () => (
 export const StatisticsPage: FC = () => {
     const navigate = useNavigate();
     const { data: statistics, isLoading, error } = useStatistics();
+    const categoryStats = useMemo(() => statistics?.categoryStats ?? [], [statistics?.categoryStats]);
 
     // 레이더 차트 데이터 준비
     // 백엔드에서 이미 집계된 categoryStats를 사용하여 레이더 차트 데이터 생성
     // CRITICAL: 모든 hooks는 early return 전에 호출되어야 함 (React Hooks 규칙)
     const radarData = useMemo(() => {
-        if (!statistics?.categoryStats || statistics.categoryStats.length === 0) {
+        if (categoryStats.length === 0) {
             return [];
         }
 
         // 상위 8개만 사용 (레이더 차트가 너무 복잡해지지 않도록)
-        const topCategories = statistics.categoryStats.slice(0, 8);
+        const topCategories = categoryStats.slice(0, 8);
         const maxCount =
             topCategories.length > 0 ? Math.max(...topCategories.map((item) => item.count)) : 1;
 
@@ -47,7 +48,7 @@ export const StatisticsPage: FC = () => {
             category: item.category,
             value: maxCount > 0 ? Math.round((item.count / maxCount) * 100) : 0,
         }));
-    }, [statistics?.categoryStats]);
+    }, [categoryStats]);
 
     if (isLoading) {
         return (

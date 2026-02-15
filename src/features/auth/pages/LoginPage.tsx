@@ -291,12 +291,12 @@ export const LoginPage: FC = () => {
                                 onChange={handleBojIdChange}
                                 onBlur={() => handleBlur('bojId')}
                                 placeholder="백준 온라인 저지 ID"
-                                disabled={isSubmitting || isUnderMaintenance}
+                                disabled={isSubmitting}
                                 className={`w-full px-4 py-3 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 transition-all ${
                                     errors.bojId
                                         ? 'border-red-500 dark:border-red-500 focus:ring-red-500 dark:focus:ring-red-500'
                                         : 'border-gray-300 dark:border-gray-600 focus:ring-blue-500 dark:focus:ring-blue-400'
-                                } ${isSubmitting || isUnderMaintenance ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 autoComplete="username"
                             />
                             {errors.bojId && (
@@ -348,12 +348,12 @@ export const LoginPage: FC = () => {
                                 onChange={handlePasswordChange}
                                 onBlur={() => handleBlur('password')}
                                 placeholder="비밀번호를 입력하세요"
-                                disabled={isSubmitting || isUnderMaintenance}
+                                disabled={isSubmitting}
                                 className={`w-full px-4 py-3 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 transition-all ${
                                     errors.password
                                         ? 'border-red-500 dark:border-red-500 focus:ring-red-500 dark:focus:ring-red-500'
                                         : 'border-gray-300 dark:border-gray-600 focus:ring-blue-500 dark:focus:ring-blue-400'
-                                } ${isSubmitting || isUnderMaintenance ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 autoComplete="current-password"
                             />
                             {errors.password && (
@@ -424,9 +424,9 @@ export const LoginPage: FC = () => {
                         variant="primary"
                         size="lg"
                         isLoading={isSubmitting}
-                        disabled={!isFormValid() || isSubmitting || isUnderMaintenance}
+                        disabled={!isFormValid() || isSubmitting}
                         className={`w-full font-semibold transition-all duration-200 ${
-                            isFormValid() && !isSubmitting && !isUnderMaintenance
+                            isFormValid() && !isSubmitting
                                 ? 'bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white shadow-md hover:shadow-lg transform hover:-translate-y-0.5'
                                 : 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
                         }`}
@@ -461,12 +461,7 @@ export const LoginPage: FC = () => {
                     <button
                         type="button"
                         onClick={() => handleOAuthLogin('google')}
-                        disabled={isUnderMaintenance}
-                        className={`w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 transition-colors ${
-                            isUnderMaintenance
-                                ? 'opacity-50 cursor-not-allowed'
-                                : 'hover:bg-gray-50 dark:hover:bg-gray-700'
-                        }`}
+                        className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
                     >
                         <svg className="w-5 h-5" viewBox="0 0 24 24">
                             <path
@@ -492,12 +487,7 @@ export const LoginPage: FC = () => {
                     <button
                         type="button"
                         onClick={() => handleOAuthLogin('github')}
-                        disabled={isUnderMaintenance}
-                        className={`w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-900 dark:bg-gray-800 text-white transition-colors ${
-                            isUnderMaintenance
-                                ? 'opacity-50 cursor-not-allowed'
-                                : 'hover:bg-gray-800 dark:hover:bg-gray-700'
-                        }`}
+                        className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-900 dark:bg-gray-800 text-white transition-colors hover:bg-gray-800 dark:hover:bg-gray-700"
                     >
                         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                             <path
@@ -512,12 +502,7 @@ export const LoginPage: FC = () => {
                     <button
                         type="button"
                         onClick={() => handleOAuthLogin('naver')}
-                        disabled={isUnderMaintenance}
-                        className={`w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-green-500 dark:bg-green-600 text-white transition-colors ${
-                            isUnderMaintenance
-                                ? 'opacity-50 cursor-not-allowed'
-                                : 'hover:bg-green-600 dark:hover:bg-green-700'
-                        }`}
+                        className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-green-500 dark:bg-green-600 text-white transition-colors hover:bg-green-600 dark:hover:bg-green-700"
                     >
                         <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M16.273 12.845L7.376 0H0v24h7.726V11.156L16.624 24H24V0h-7.727v12.845z" />
