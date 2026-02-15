@@ -41,10 +41,35 @@ export default defineConfig({
       include: [/node_modules/],
       transformMixedEsModules: true,
     },
-    // manualChunks를 제거하여 Vite의 기본 chunk 전략 사용
-    // 이렇게 하면 React 중복 로드 문제를 완전히 방지할 수 있습니다
     rollupOptions: {
       output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) {
+            return undefined;
+          }
+          if (id.includes('@tanstack/react-query') || id.includes('axios') || id.includes('zustand')) {
+            return 'data-vendor';
+          }
+          if (
+            id.includes('recharts')
+          ) {
+            return 'charts-vendor';
+          }
+          if (id.includes('@dnd-kit') || id.includes('@uiw/react-md-editor')) {
+            return 'editor-vendor';
+          }
+          if (id.includes('react-markdown') || id.includes('react-syntax-highlighter')) {
+            return 'markdown-vendor';
+          }
+          if (
+            id.includes('/node_modules/react/') ||
+            id.includes('/node_modules/react-dom/') ||
+            id.includes('/node_modules/scheduler/')
+          ) {
+            return 'react-vendor';
+          }
+          return undefined;
+        },
         // chunk 파일명에 해시를 포함하여 캐싱 최적화
         chunkFileNames: 'assets/[name]-[hash].js',
         entryFileNames: 'assets/[name]-[hash].js',
