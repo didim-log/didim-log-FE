@@ -3,18 +3,27 @@
  * Activity Heatmap 제거: 렌더링 성능 및 레이아웃 안정성 개선
  */
 
-import { useMemo } from 'react';
+import { Suspense, lazy, useMemo } from 'react';
 import type { FC } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStatistics } from '../../../hooks/api/useStatistics';
 import { StatCard } from '../components/StatCard';
-import { CategoryAnalysisCard } from '../components/CategoryAnalysisCard';
-import { AlgorithmChart } from '../components/AlgorithmChart';
 import { WeaknessAnalysisCard } from '../components/WeaknessAnalysisCard';
 import { Spinner } from '../../../components/ui/Spinner';
 import { Layout } from '../../../components/layout/Layout';
 import { BookOpen, FileText, Clock, Target } from 'lucide-react';
 import { formatDuration } from '../../../utils/dateUtils';
+
+const CategoryAnalysisCard = lazy(() =>
+    import('../components/CategoryAnalysisCard').then((module) => ({ default: module.CategoryAnalysisCard }))
+);
+const AlgorithmChart = lazy(() =>
+    import('../components/AlgorithmChart').then((module) => ({ default: module.AlgorithmChart }))
+);
+
+const ChartFallback = () => (
+    <div className="h-[420px] rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 animate-pulse" />
+);
 
 export const StatisticsPage: FC = () => {
     const navigate = useNavigate();
@@ -120,12 +129,16 @@ export const StatisticsPage: FC = () => {
                         {/* Row 2: Main Analysis (3-column layout) - 확대된 차트 */}
                         {/* Left: Radar Chart (Span 4) */}
                         <div className="col-span-12 lg:col-span-4">
-                            <CategoryAnalysisCard radarData={radarData} />
+                            <Suspense fallback={<ChartFallback />}>
+                                <CategoryAnalysisCard radarData={radarData} />
+                            </Suspense>
                         </div>
 
                         {/* Center: Algorithm Bar Chart (Span 4) */}
                         <div className="col-span-12 lg:col-span-4">
-                            <AlgorithmChart categoryStats={statistics.categoryStats || []} />
+                            <Suspense fallback={<ChartFallback />}>
+                                <AlgorithmChart categoryStats={statistics.categoryStats || []} />
+                            </Suspense>
                         </div>
 
                         {/* Right: Weakness Analysis (Span 4) */}

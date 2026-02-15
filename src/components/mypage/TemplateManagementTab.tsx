@@ -2,14 +2,14 @@
  * 템플릿 관리 탭 컴포넌트
  */
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import type { FC } from 'react';
 import { FileText, Edit2, Trash2, Plus, ChevronUp, Eye, MoreVertical } from 'lucide-react';
 import Card from '../common/Card';
 import { Button } from '../ui/Button';
 import { toast } from 'sonner';
 import { toastApiError } from '../../utils/toastApiError';
-import { useTemplates, useCreateTemplate, useUpdateTemplate, useDeleteTemplate, useSetDefaultTemplate, useDefaultTemplate } from '../../hooks/api/useTemplate';
+import { useTemplates, useCreateTemplate, useUpdateTemplate, useDeleteTemplate, useSetDefaultTemplate } from '../../hooks/api/useTemplate';
 import { Spinner } from '../ui/Spinner';
 import type { Template, TemplateCreateRequest } from '../../types/api/template.types';
 import { MarkdownViewer } from '../common/MarkdownViewer';
@@ -67,7 +67,7 @@ const replacePlaceholdersForPreview = (content: string): string => {
             
             // 헤더 다음 부분 추출 (다음 섹션 헤더, 구분선, 문서 끝까지)
             const afterHeader = result.substring(headerEndIndex);
-            const nextSectionMatch = afterHeader.match(/(?=\n##?\s+[^#\n]|\n---|\n\*\*[^\*]|\n\[문제 링크\]|$)/);
+            const nextSectionMatch = afterHeader.match(/(?=\n##?\s+[^#\n]|\n---|\n\*\*[^*]|\n\[문제 링크\]|$)/);
             const sectionEndIndex = nextSectionMatch 
                 ? headerEndIndex + (nextSectionMatch.index || 0)
                 : result.length;
@@ -122,8 +122,6 @@ export const TemplateManagementTab: FC = () => {
     const updateMutation = useUpdateTemplate();
     const deleteMutation = useDeleteTemplate();
     const setDefaultMutation = useSetDefaultTemplate();
-    const { data: defaultSuccessTemplate } = useDefaultTemplate('SUCCESS');
-    const { data: defaultFailTemplate } = useDefaultTemplate('FAIL');
 
     const [isBuilderOpen, setIsBuilderOpen] = useState(false);
     const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
@@ -134,6 +132,30 @@ export const TemplateManagementTab: FC = () => {
         title: '',
         content: '',
     });
+
+    const {
+        customTemplates,
+        systemTemplates,
+        defaultSuccessTemplate,
+        defaultFailTemplate,
+        simpleTemplate,
+        detailTemplate,
+    } = useMemo(() => {
+        const templateList = templates || [];
+        const system = templateList.filter((template) => template.type === 'SYSTEM');
+        return {
+            customTemplates: templateList.filter((template) => template.type === 'CUSTOM'),
+            systemTemplates: system,
+            defaultSuccessTemplate: templateList.find((template) => template.isDefaultSuccess) || null,
+            defaultFailTemplate: templateList.find((template) => template.isDefaultFail) || null,
+            simpleTemplate: system.find((template) =>
+                template.title.toLowerCase().includes('simple') || template.title.includes('요약')
+            ),
+            detailTemplate: system.find((template) =>
+                template.title.toLowerCase().includes('detail') || template.title.includes('상세')
+            ),
+        };
+    }, [templates]);
 
     // 드롭다운 외부 클릭 시 닫기 (모든 훅은 early return 전에 호출되어야 함)
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -211,7 +233,7 @@ export const TemplateManagementTab: FC = () => {
                     // 자동 설정 실패는 조용히 처리 (템플릿 삭제는 이미 성공)
                 }
             }
-        } catch (error) {
+        } catch {
             toast.error('템플릿 삭제에 실패했습니다.');
         }
     };
@@ -368,14 +390,6 @@ export const TemplateManagementTab: FC = () => {
         );
     }
 
-    const customTemplates = templates?.filter((t) => t.type === 'CUSTOM') || [];
-    const systemTemplates = templates?.filter((t) => t.type === 'SYSTEM') || [];
-    
-    // Detail 템플릿 찾기 (자동 설정용)
-    const detailTemplate = systemTemplates.find((t) => 
-        t.title.toLowerCase().includes('detail') || t.title.includes('상세')
-    );
-
     return (
         <div className="space-y-6">
             {/* 템플릿 관리 헤더 */}
@@ -417,7 +431,7 @@ export const TemplateManagementTab: FC = () => {
                             <div className="flex items-center gap-2">
                                 <span className="text-green-600 dark:text-green-400 text-lg">✓</span>
                                 <span className="font-semibold text-gray-900 dark:text-gray-100">
-                                    {defaultSuccessTemplate?.title || (detailTemplate?.title || 'Detail(상세)')}
+                                    {defaultSuccessTemplate?.title || (simpleTemplate?.title || 'Simple(요약)')}
                                 </span>
                                 {(defaultSuccessTemplate?.type === 'SYSTEM' || !defaultSuccessTemplate) && (
                                     <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded text-xs">
@@ -444,7 +458,7 @@ export const TemplateManagementTab: FC = () => {
                         </div>
                     </div>
                     <p className="mt-4 text-xs text-gray-500 dark:text-gray-400">
-                        💡 기본 템플릿이 설정되지 않은 경우, 시스템 템플릿 "Detail(상세)"가 자동으로 사용됩니다.
+                        💡 기본 템플릿이 설정되지 않은 경우 성공은 "Simple(요약)", 실패는 "Detail(상세)" 시스템 템플릿이 사용됩니다.
                     </p>
                 </div>
 

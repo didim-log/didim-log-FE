@@ -5,6 +5,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { templateApi } from '../../api/endpoints/template.api';
 import type {
+    Template,
+    TemplateSummary,
+    TemplateDefaultCategory,
     TemplatePreviewRequest,
     TemplateCreateRequest,
     TemplateUpdateRequest,
@@ -22,6 +25,19 @@ export const useTemplates = () => {
         queryFn: () => templateApi.getTemplates(),
         enabled: !!token,
         staleTime: 5 * 60 * 1000, // 5분
+    });
+};
+
+/**
+ * 템플릿 요약 목록 조회 (content 제외)
+ */
+export const useTemplateSummaries = () => {
+    const { token } = useAuthStore();
+    return useQuery({
+        queryKey: ['templates', 'summaries'],
+        queryFn: () => templateApi.getTemplateSummaries(),
+        enabled: !!token,
+        staleTime: 5 * 60 * 1000,
     });
 };
 
@@ -121,22 +137,45 @@ export const useSetDefaultTemplate = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ templateId, category }: { templateId: string; category: 'SUCCESS' | 'FAIL' }) =>
+        mutationFn: ({ templateId, category }: { templateId: string; category: TemplateDefaultCategory }) =>
             templateApi.setDefaultTemplate(templateId, category),
-        onSuccess: () => {
+        onSuccess: (_, variables) => {
+            queryClient.setQueryData<Template[]>(['templates'], (current) => {
+                if (!current) {
+                    return current;
+                }
+                return current.map((template) => {
+                    if (variables.category === 'SUCCESS') {
+                        return {
+                            ...template,
+                            isDefaultSuccess: template.id === variables.templateId,
+                        };
+                    }
+                    return {
+                        ...template,
+                        isDefaultFail: template.id === variables.templateId,
+                    };
+                });
+            });
+            queryClient.setQueryData<TemplateSummary[]>(['templates', 'summaries'], (current) => {
+                if (!current) {
+                    return current;
+                }
+                return current.map((template) => {
+                    if (variables.category === 'SUCCESS') {
+                        return {
+                            ...template,
+                            isDefaultSuccess: template.id === variables.templateId,
+                        };
+                    }
+                    return {
+                        ...template,
+                        isDefaultFail: template.id === variables.templateId,
+                    };
+                });
+            });
             queryClient.invalidateQueries({ queryKey: ['templates'] });
-            queryClient.invalidateQueries({ queryKey: ['templates', 'default'] });
+            queryClient.invalidateQueries({ queryKey: ['templates', 'summaries'] });
         },
-    });
-};
-
-/**
- * 카테고리별 기본 템플릿 조회
- */
-export const useDefaultTemplate = (category: 'SUCCESS' | 'FAIL') => {
-    return useQuery({
-        queryKey: ['templates', 'default', category],
-        queryFn: () => templateApi.getDefaultTemplate(category),
-        staleTime: 5 * 60 * 1000, // 5분
     });
 };

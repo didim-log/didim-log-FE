@@ -5,11 +5,13 @@
 import { apiClient } from '../client';
 import type {
     Template,
+    TemplateSummary,
     TemplateRenderResponse,
     TemplatePreviewRequest,
     TemplateCreateRequest,
     TemplateUpdateRequest,
     TemplateSectionPreset,
+    TemplateDefaultCategory,
 } from '../../types/api/template.types';
 
 export const templateApi = {
@@ -19,6 +21,15 @@ export const templateApi = {
      */
     getTemplates: async (): Promise<Template[]> => {
         const response = await apiClient.get<Template[]>('/templates');
+        return response.data;
+    },
+
+    /**
+     * 템플릿 요약 목록 조회
+     * content를 제외한 경량 목록을 반환합니다.
+     */
+    getTemplateSummaries: async (): Promise<TemplateSummary[]> => {
+        const response = await apiClient.get<TemplateSummary[]>('/templates/summaries');
         return response.data;
     },
 
@@ -98,24 +109,11 @@ export const templateApi = {
      * @param templateId 템플릿 ID
      * @param category SUCCESS | FAIL
      */
-    setDefaultTemplate: async (templateId: string, category: 'SUCCESS' | 'FAIL'): Promise<Template> => {
+    setDefaultTemplate: async (templateId: string, category: TemplateDefaultCategory): Promise<Template> => {
         const response = await apiClient.put<Template>(
             `/templates/${templateId}/default?category=${category}`
         );
         return response.data;
     },
 
-    /**
-     * 카테고리별 기본 템플릿 조회
-     * @param category SUCCESS | FAIL
-     */
-    getDefaultTemplate: async (category: 'SUCCESS' | 'FAIL'): Promise<Template | null> => {
-        try {
-            const response = await apiClient.get<Template>(`/templates/default?category=${category}`);
-            return response.data;
-        } catch (error) {
-            // 기본 템플릿이 없으면 null 반환
-            return null;
-        }
-    },
 };

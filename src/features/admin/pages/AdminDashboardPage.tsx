@@ -2,24 +2,58 @@
  * 관리자 대시보드 페이지
  */
 
-import { useState } from 'react';
+import { Suspense, lazy, useState } from 'react';
 import type { FC } from 'react';
 import { useAdminDashboardStats } from '../../../hooks/api/useAdmin';
-import { AdminStatsChart } from '../components/AdminStatsChart';
-import { UserManagement } from '../components/UserManagement';
-import { QuoteManagement } from '../components/QuoteManagement';
-import { FeedbackManagement } from '../components/FeedbackManagement';
-import { ProblemCollector } from '../components/ProblemCollector';
-import { NoticeManagement } from '../components/NoticeManagement';
-import { PerformanceMetrics } from '../components/PerformanceMetrics';
-import { SystemSettings } from '../components/SystemSettings';
-import { AdminLogManagement } from '../components/AdminLogManagement';
-import { AiQualityWidget } from '../components/AiQualityWidget';
-import { AiServiceControl } from '../components/AiServiceControl';
-import { StorageHealthWidget } from '../components/StorageHealthWidget';
-import { AdminAuditLogWidget } from '../components/AdminAuditLogWidget';
 import { Spinner } from '../../../components/ui/Spinner';
 import { Layout } from '../../../components/layout/Layout';
+
+const AdminStatsChart = lazy(() =>
+    import('../components/AdminStatsChart').then((module) => ({ default: module.AdminStatsChart }))
+);
+const UserManagement = lazy(() =>
+    import('../components/UserManagement').then((module) => ({ default: module.UserManagement }))
+);
+const QuoteManagement = lazy(() =>
+    import('../components/QuoteManagement').then((module) => ({ default: module.QuoteManagement }))
+);
+const FeedbackManagement = lazy(() =>
+    import('../components/FeedbackManagement').then((module) => ({ default: module.FeedbackManagement }))
+);
+const ProblemCollector = lazy(() =>
+    import('../components/ProblemCollector').then((module) => ({ default: module.ProblemCollector }))
+);
+const NoticeManagement = lazy(() =>
+    import('../components/NoticeManagement').then((module) => ({ default: module.NoticeManagement }))
+);
+const PerformanceMetrics = lazy(() =>
+    import('../components/PerformanceMetrics').then((module) => ({ default: module.PerformanceMetrics }))
+);
+const SystemSettings = lazy(() =>
+    import('../components/SystemSettings').then((module) => ({ default: module.SystemSettings }))
+);
+const AdminLogManagement = lazy(() =>
+    import('../components/AdminLogManagement').then((module) => ({ default: module.AdminLogManagement }))
+);
+const AiQualityWidget = lazy(() =>
+    import('../components/AiQualityWidget').then((module) => ({ default: module.AiQualityWidget }))
+);
+const AiServiceControl = lazy(() =>
+    import('../components/AiServiceControl').then((module) => ({ default: module.AiServiceControl }))
+);
+const StorageHealthWidget = lazy(() =>
+    import('../components/StorageHealthWidget').then((module) => ({ default: module.StorageHealthWidget }))
+);
+const AdminAuditLogWidget = lazy(() =>
+    import('../components/AdminAuditLogWidget').then((module) => ({ default: module.AdminAuditLogWidget }))
+);
+
+const AdminPanelFallback = () => (
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 border border-gray-200 dark:border-gray-700">
+        <div className="h-5 w-48 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-4" />
+        <div className="h-40 bg-gray-100 dark:bg-gray-800 rounded animate-pulse" />
+    </div>
+);
 
 type TabType = 'dashboard' | 'users' | 'quotes' | 'feedbacks' | 'problems' | 'notices' | 'metrics' | 'system' | 'logs' | 'audit';
 
@@ -96,16 +130,24 @@ export const AdminDashboardPage: FC = () => {
                         {activeTab === 'dashboard' && (
                             <div className="space-y-8">
                                 {/* 통계 카드 */}
-                                <AdminStatsChart stats={stats} />
+                                <Suspense fallback={<AdminPanelFallback />}>
+                                    <AdminStatsChart stats={stats} />
+                                </Suspense>
 
                                 {/* AI 서비스 제어 위젯 */}
-                                <AiServiceControl />
+                                <Suspense fallback={<AdminPanelFallback />}>
+                                    <AiServiceControl />
+                                </Suspense>
 
                                 {/* AI 품질 모니터링 위젯 */}
-                                <AiQualityWidget />
+                                <Suspense fallback={<AdminPanelFallback />}>
+                                    <AiQualityWidget />
+                                </Suspense>
 
                                 {/* 저장 공간 관리 위젯 */}
-                                <StorageHealthWidget />
+                                <Suspense fallback={<AdminPanelFallback />}>
+                                    <StorageHealthWidget />
+                                </Suspense>
 
                                 {/* 통계 그래프 */}
                                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 border border-gray-200 dark:border-gray-700">
@@ -178,15 +220,15 @@ export const AdminDashboardPage: FC = () => {
                                 </div>
                             </div>
                         )}
-                        {activeTab === 'users' && <UserManagement />}
-                        {activeTab === 'quotes' && <QuoteManagement />}
-                        {activeTab === 'feedbacks' && <FeedbackManagement />}
-                        {activeTab === 'problems' && <ProblemCollector />}
-                        {activeTab === 'notices' && <NoticeManagement />}
-                        {activeTab === 'metrics' && <PerformanceMetrics />}
-                        {activeTab === 'system' && <SystemSettings />}
-                        {activeTab === 'logs' && <AdminLogManagement />}
-                        {activeTab === 'audit' && <AdminAuditLogWidget />}
+                        {activeTab === 'users' && <Suspense fallback={<AdminPanelFallback />}><UserManagement /></Suspense>}
+                        {activeTab === 'quotes' && <Suspense fallback={<AdminPanelFallback />}><QuoteManagement /></Suspense>}
+                        {activeTab === 'feedbacks' && <Suspense fallback={<AdminPanelFallback />}><FeedbackManagement /></Suspense>}
+                        {activeTab === 'problems' && <Suspense fallback={<AdminPanelFallback />}><ProblemCollector /></Suspense>}
+                        {activeTab === 'notices' && <Suspense fallback={<AdminPanelFallback />}><NoticeManagement /></Suspense>}
+                        {activeTab === 'metrics' && <Suspense fallback={<AdminPanelFallback />}><PerformanceMetrics /></Suspense>}
+                        {activeTab === 'system' && <Suspense fallback={<AdminPanelFallback />}><SystemSettings /></Suspense>}
+                        {activeTab === 'logs' && <Suspense fallback={<AdminPanelFallback />}><AdminLogManagement /></Suspense>}
+                        {activeTab === 'audit' && <Suspense fallback={<AdminPanelFallback />}><AdminAuditLogWidget /></Suspense>}
                     </div>
                 </div>
             </div>

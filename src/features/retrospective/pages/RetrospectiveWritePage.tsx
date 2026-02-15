@@ -6,7 +6,7 @@ import { useState, useEffect, useCallback } from 'react';
 import type { FC } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useCreateRetrospective, useUpdateRetrospective } from '../../../hooks/api/useRetrospective';
-import { useTemplates, useRenderTemplate, useDefaultTemplate } from '../../../hooks/api/useTemplate';
+import { useTemplateSummaries, useRenderTemplate } from '../../../hooks/api/useTemplate';
 import { useProblemDetail } from '../../../hooks/api/useProblem';
 import { RetrospectiveEditor } from '../components/RetrospectiveEditor';
 import { Spinner } from '../../../components/ui/Spinner';
@@ -213,7 +213,7 @@ export const RetrospectiveWritePage: FC = () => {
     const createMutation = useCreateRetrospective();
     const updateMutation = useUpdateRetrospective();
     const { completePhase } = useOnboardingStore();
-    const { data: templates } = useTemplates();
+    const { data: templates } = useTemplateSummaries();
     const renderTemplateMutation = useRenderTemplate();
 
     const isOnboarding = searchParams.get('onboarding') === 'true';
@@ -235,11 +235,7 @@ export const RetrospectiveWritePage: FC = () => {
     // 문제 상세 정보 조회
     const { data: problem, isLoading: isProblemLoading } = useProblemDetail(problemId);
 
-    /**
-     * 카테고리별 기본 템플릿 로드
-     */
     const category: 'SUCCESS' | 'FAIL' = isSuccess ? 'SUCCESS' : 'FAIL';
-    const { data: defaultTemplate } = useDefaultTemplate(category);
 
     /**
      * 템플릿 렌더링 및 에디터에 적용
@@ -354,13 +350,6 @@ export const RetrospectiveWritePage: FC = () => {
                 return;
             }
 
-            // 카테고리별 기본 템플릿이 있으면 사용
-            if (defaultTemplate) {
-                await loadTemplate(defaultTemplate.id, pid);
-                return;
-            }
-
-            // 기본 템플릿이 없으면 템플릿 목록에서 찾기
             if (!templates || templates.length === 0) {
                 return;
             }
@@ -375,13 +364,15 @@ export const RetrospectiveWritePage: FC = () => {
                 return;
             }
 
-            // 기본 템플릿이 없으면 Detail(상세) 템플릿 찾기
-            const detailTemplate = templates.find((t) => 
-                t.title.toLowerCase().includes('detail') || t.title.includes('상세')
-            );
+            const fallbackTemplate = templates.find((t) => {
+                if (category === 'SUCCESS') {
+                    return t.title.toLowerCase().includes('simple') || t.title.includes('요약');
+                }
+                return t.title.toLowerCase().includes('detail') || t.title.includes('상세');
+            });
 
-            if (detailTemplate) {
-                await loadTemplate(detailTemplate.id, pid);
+            if (fallbackTemplate) {
+                await loadTemplate(fallbackTemplate.id, pid);
                 return;
             }
 
@@ -391,7 +382,7 @@ export const RetrospectiveWritePage: FC = () => {
                 await loadTemplate(firstTemplate.id, pid);
             }
         },
-        [templates, hasLoadedTemplate, defaultTemplate, category, loadTemplate]
+        [templates, hasLoadedTemplate, category, loadTemplate]
     );
 
     // 온보딩 모드: 자동으로 폼 열기 (AI 버튼이 보이도록)
@@ -465,18 +456,14 @@ export const RetrospectiveWritePage: FC = () => {
     useEffect(() => {
         if (problemId && !hasLoadedTemplate && !retrospectiveId) {
             // 카테고리별 기본 템플릿이 로드되면 자동으로 적용
-            if (defaultTemplate) {
-                loadDefaultTemplate(problemId).catch(() => {
-                    // Template load failed
-                });
-            } else if (templates && templates.length > 0) {
+            if (templates && templates.length > 0) {
                 // 템플릿 목록이 있으면 로드 시도
                 loadDefaultTemplate(problemId).catch(() => {
                     // Template load failed
                 });
             }
         }
-    }, [problemId, hasLoadedTemplate, retrospectiveId, templates, defaultTemplate, loadDefaultTemplate]);
+    }, [problemId, hasLoadedTemplate, retrospectiveId, templates, loadDefaultTemplate]);
 
     // code가 설정된 후 이미 템플릿이 로드되었고 코드 블록이 비어있으면 코드 삽입
     useEffect(() => {

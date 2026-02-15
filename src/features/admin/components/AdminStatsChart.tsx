@@ -2,12 +2,15 @@
  * 관리자 통계 차트 컴포넌트
  */
 
-import { useState } from 'react';
+import { Suspense, lazy, useState } from 'react';
 import type { FC } from 'react';
 import { TrendingUp } from 'lucide-react';
 import type { AdminDashboardStatsResponse } from '../../../types/api/admin.types';
-import { StatsChartModal } from './StatsChartModal';
 import type { ChartDataType } from '../../../types/api/admin.types';
+
+const StatsChartModal = lazy(() =>
+    import('./StatsChartModal').then((module) => ({ default: module.StatsChartModal }))
+);
 
 interface AdminStatsChartProps {
     stats: AdminDashboardStatsResponse;
@@ -74,12 +77,14 @@ export const AdminStatsChart: FC<AdminStatsChartProps> = ({ stats }) => {
             </div>
 
             {selectedDataType && (
-                <StatsChartModal
-                    isOpen={modalOpen}
-                    onClose={() => setModalOpen(false)}
-                    dataType={selectedDataType}
-                    title={selectedTitle}
-                />
+                <Suspense fallback={null}>
+                    <StatsChartModal
+                        isOpen={modalOpen}
+                        onClose={() => setModalOpen(false)}
+                        dataType={selectedDataType}
+                        title={selectedTitle}
+                    />
+                </Suspense>
             )}
         </>
     );

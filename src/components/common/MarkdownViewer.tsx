@@ -3,19 +3,37 @@
  * GitHub Flavored Markdown 스타일의 줄바꿈을 지원합니다.
  */
 
+import { memo, useMemo } from 'react';
 import type { ComponentPropsWithoutRef, CSSProperties, FC, ReactNode } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { PrismLight as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import javascript from 'react-syntax-highlighter/dist/esm/languages/prism/javascript';
+import java from 'react-syntax-highlighter/dist/esm/languages/prism/java';
+import python from 'react-syntax-highlighter/dist/esm/languages/prism/python';
+import cpp from 'react-syntax-highlighter/dist/esm/languages/prism/cpp';
+import kotlin from 'react-syntax-highlighter/dist/esm/languages/prism/kotlin';
+import go from 'react-syntax-highlighter/dist/esm/languages/prism/go';
 
 interface MarkdownViewerProps {
     content: string;
     className?: string;
 }
 
-export const MarkdownViewer: FC<MarkdownViewerProps> = ({ content, className = '' }) => {
+SyntaxHighlighter.registerLanguage('javascript', javascript);
+SyntaxHighlighter.registerLanguage('js', javascript);
+SyntaxHighlighter.registerLanguage('java', java);
+SyntaxHighlighter.registerLanguage('python', python);
+SyntaxHighlighter.registerLanguage('py', python);
+SyntaxHighlighter.registerLanguage('cpp', cpp);
+SyntaxHighlighter.registerLanguage('c++', cpp);
+SyntaxHighlighter.registerLanguage('kotlin', kotlin);
+SyntaxHighlighter.registerLanguage('kt', kotlin);
+SyntaxHighlighter.registerLanguage('go', go);
+
+export const MarkdownViewer: FC<MarkdownViewerProps> = memo(({ content, className = '' }) => {
     type WithNode<T> = T & { node?: unknown };
     const withoutNode = <T extends { node?: unknown }>(props: T): Omit<T, 'node'> => {
         const { node, ...rest } = props;
@@ -39,7 +57,7 @@ export const MarkdownViewer: FC<MarkdownViewerProps> = ({ content, className = '
         }
     >;
 
-    const components = {
+    const components = useMemo(() => ({
         h1: (props: HeadingProps) => (
             <h1
                 className="text-3xl font-bold mt-8 mb-4 border-b border-gray-300 dark:border-gray-600 pb-2 text-gray-900 dark:text-white"
@@ -91,29 +109,27 @@ export const MarkdownViewer: FC<MarkdownViewerProps> = ({ content, className = '
             const match = /language-(\w+)/.exec(className || '');
             const language = match ? match[1] : '';
 
-            // text 언어를 실제 언어로 매핑 시도 (마크다운에서 언어 정보 추출)
             const mapLanguage = (lang: string): string => {
                 if (lang !== 'text' && lang) {
                     return lang;
                 }
-                // 마크다운 내용에서 언어 힌트를 찾기 시도
-                const content = String(children).trim();
-                if (content.includes('public class') || content.includes('import java')) {
+                const codeContent = String(children).trim();
+                if (codeContent.includes('public class') || codeContent.includes('import java')) {
                     return 'java';
                 }
-                if (content.includes('def ') || (content.includes('import ') && !content.includes('import java'))) {
+                if (codeContent.includes('def ') || (codeContent.includes('import ') && !codeContent.includes('import java'))) {
                     return 'python';
                 }
-                if (content.includes('function ') || content.includes('const ') || content.includes('let ')) {
+                if (codeContent.includes('function ') || codeContent.includes('const ') || codeContent.includes('let ')) {
                     return 'javascript';
                 }
-                if (content.includes('#include') || content.includes('using namespace')) {
+                if (codeContent.includes('#include') || codeContent.includes('using namespace')) {
                     return 'cpp';
                 }
-                if (content.includes('fun ') || content.includes('import kotlin')) {
+                if (codeContent.includes('fun ') || codeContent.includes('import kotlin')) {
                     return 'kotlin';
                 }
-                if (content.includes('package ') && content.includes('import ')) {
+                if (codeContent.includes('package ') && codeContent.includes('import ')) {
                     return 'go';
                 }
                 return 'text';
@@ -125,7 +141,6 @@ export const MarkdownViewer: FC<MarkdownViewerProps> = ({ content, className = '
                 return (
                     <div className="my-4">
                         <SyntaxHighlighter
-                            // 라이브러리 타입 정의가 엄격해서 명시적으로 캐스팅합니다.
                             style={vscDarkPlus as unknown as Record<string, CSSProperties>}
                             language={mappedLanguage}
                             PreTag="div"
@@ -152,16 +167,19 @@ export const MarkdownViewer: FC<MarkdownViewerProps> = ({ content, className = '
                 </code>
             );
         },
-    };
+    }), []);
+
+    const remarkPlugins = useMemo(() => [remarkGfm, remarkBreaks], []);
 
     return (
         <div className={`prose dark:prose-invert max-w-none ${className}`}>
             <ReactMarkdown
-                remarkPlugins={[remarkGfm, remarkBreaks]}
+                remarkPlugins={remarkPlugins}
                 components={components}
             >
                 {content}
             </ReactMarkdown>
         </div>
     );
-};
+});
+MarkdownViewer.displayName = 'MarkdownViewer';
