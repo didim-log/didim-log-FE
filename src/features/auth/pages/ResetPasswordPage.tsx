@@ -54,12 +54,12 @@ export const ResetPasswordPage: FC = () => {
         setErrors({});
 
         try {
-            await authApi.resetPassword({
+            const response = await authApi.resetPassword({
                 resetCode: resetCode.trim(),
                 newPassword: newPassword,
             });
             setIsSuccess(true);
-            toast.success('비밀번호가 성공적으로 변경되었습니다.');
+            toast.success(response.message || '비밀번호가 성공적으로 변경되었습니다.');
         } catch (err: unknown) {
             toastApiError(err, '비밀번호 변경에 실패했습니다.');
         } finally {

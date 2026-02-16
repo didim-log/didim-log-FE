@@ -18,7 +18,7 @@ import { toast } from 'sonner';
 import { getErrorMessage, isApiError } from '../../../types/api/common.types';
 import { useOnboardingStore } from '../../../stores/onboarding.store';
 import { Copy, ChevronLeft } from 'lucide-react';
-import type { RetrospectiveRequest } from '../../../types/api/retrospective.types';
+import type { ProblemResult, RetrospectiveRequest } from '../../../types/api/retrospective.types';
 import { AiReviewCard } from '../../../components/retrospective/AiReviewCard';
 
 /**
@@ -221,6 +221,7 @@ export const RetrospectiveWritePage: FC = () => {
     const [retrospectiveId, setRetrospectiveId] = useState<string | null>(null);
     const [problemId, setProblemId] = useState<string>('');
     const [isSuccess, setIsSuccess] = useState<boolean>(false);
+    const [resultType, setResultType] = useState<ProblemResult>('FAIL');
     const [content, setContent] = useState<string>('');
     const [summary, setSummary] = useState<string>('');
     const [code, setCode] = useState<string>('');
@@ -406,6 +407,13 @@ export const RetrospectiveWritePage: FC = () => {
         }
     }, [isOnboarding, isSuccess, problemId]);
 
+    useEffect(() => {
+        if (resultType === 'TIME_OVER') {
+            return;
+        }
+        setResultType(isSuccess ? 'SUCCESS' : 'FAIL');
+    }, [isSuccess, resultType]);
+
 
     useEffect(() => {
         // location.state에서 전달된 데이터 확인 (초기 상태만 반영)
@@ -441,6 +449,12 @@ export const RetrospectiveWritePage: FC = () => {
                 ? true 
                 : (success !== undefined ? success : false);
             setIsSuccess(finalIsSuccess);
+            const finalResultType: ProblemResult = stateStatus === 'TIME_OVER'
+                ? 'TIME_OVER'
+                : finalIsSuccess
+                    ? 'SUCCESS'
+                    : 'FAIL';
+            setResultType(finalResultType);
             setLogId(createdLogId ?? null);
             setCode(codeValue ?? '');
             setSolveTime(stateSolveTime ?? null);
@@ -543,10 +557,10 @@ export const RetrospectiveWritePage: FC = () => {
         }
 
         try {
-            // resultType은 isSuccess에 따라 자동 설정 (사용자 선택 제거)
+            // resultType은 화면 컨텍스트 기준으로 자동 설정 (SUCCESS/FAIL/TIME_OVER)
             const finalData: RetrospectiveRequest = {
                 ...data,
-                resultType: isSuccess ? 'SUCCESS' : 'FAIL',
+                resultType,
             };
 
             // 수정 모드인 경우

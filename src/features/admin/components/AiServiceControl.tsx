@@ -10,6 +10,7 @@ import { Spinner } from '../../../components/ui/Spinner';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { toast } from 'sonner';
+import { getErrorMessage, isApiError } from '../../../types/api/common.types';
 
 export const AiServiceControl: FC = () => {
     const { data: status, isLoading, error, refetch: refetchAiStatus } = useAiStatus();
@@ -40,6 +41,21 @@ export const AiServiceControl: FC = () => {
             return;
         }
 
+        if (globalLimit < 1 || globalLimit > 1000) {
+            toast.error('전역 일일 제한은 1~1000 사이여야 합니다.');
+            return;
+        }
+
+        if (userLimit < 1 || userLimit > 1000) {
+            toast.error('사용자 일일 제한은 1~1000 사이여야 합니다.');
+            return;
+        }
+
+        if (userLimit > globalLimit) {
+            toast.error('사용자 일일 제한은 전역 일일 제한보다 클 수 없습니다.');
+            return;
+        }
+
         try {
             await updateLimitsMutation.mutateAsync({
                 globalLimit,
@@ -49,7 +65,11 @@ export const AiServiceControl: FC = () => {
             toast.success('사용량 제한이 업데이트되었습니다.');
             // 제한 변경 후 즉시 갱신
             refetchAiStatus();
-        } catch {
+        } catch (error: unknown) {
+            if (isApiError(error) && error.response?.status === 400) {
+                toast.error(getErrorMessage(error));
+                return;
+            }
             toast.error('사용량 제한 업데이트에 실패했습니다.');
         }
     };

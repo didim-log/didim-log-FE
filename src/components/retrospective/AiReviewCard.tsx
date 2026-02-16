@@ -3,7 +3,7 @@
  * 로그의 코드에 대한 AI 한 줄 리뷰를 상단에 표시합니다.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { FC } from 'react';
 import { logApi } from '../../api/endpoints/log.api';
 import type { AiReviewResponse } from '../../types/api/log.types';
@@ -47,85 +47,56 @@ export const AiReviewCard: FC<AiReviewCardProps> = ({
     const [feedbackStatus, setFeedbackStatus] = useState<'LIKE' | 'DISLIKE' | null>(null);
     const [showDislikeModal, setShowDislikeModal] = useState<boolean>(false);
     const [submittingFeedback, setSubmittingFeedback] = useState<boolean>(false);
+    const requestInFlightRef = useRef(false);
     
     const { data: aiUsage, refetch: refetchAiUsage } = useAiUsage();
+    const MAX_RETRIES = 20;
+    const POLL_INTERVAL = 2000;
 
     // logId로 AI 리뷰 조회
-    const fetchAiReviewByLogId = async (targetLogId: string) => {
+    const fetchAiReviewByLogId = async (targetLogId: string): Promise<void> => {
         setLoading(true);
         setError(null);
-        
-        let pollInterval: ReturnType<typeof setTimeout> | null = null;
-        let retryCount = 0;
-        const MAX_RETRIES = 20;
-        const POLL_INTERVAL = 3000;
+        setIsGenerating(false);
 
-        const fetchAiReview = async (): Promise<void> => {
-            try {
+        try {
+            for (let retryCount = 0; retryCount < MAX_RETRIES; retryCount++) {
                 const response: AiReviewResponse = await logApi.getAiReview(targetLogId);
 
-                // AI 리뷰가 생성 중인지 확인
-                if (
-                    !response.cached &&
-                    response.review.includes('AI review is being generated')
-                ) {
+                if (response.inProgress) {
                     setIsGenerating(true);
-                    retryCount++;
-
-                    // 최대 재시도 횟수 초과 시 에러 표시
-                    if (retryCount >= MAX_RETRIES) {
-                        setError('AI 리뷰 생성 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.');
-                        setIsGenerating(false);
-                        setLoading(false);
-                        if (pollInterval) {
-                            clearInterval(pollInterval);
-                        }
-                        return;
-                    }
-
-                    // 3초 후 재시도
-                    pollInterval = setTimeout(fetchAiReview, POLL_INTERVAL);
-                    return;
+                    await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL));
+                    continue;
                 }
 
-                // 리뷰 완료
                 setReview(response.review);
                 setCached(response.cached);
                 setIsGenerating(false);
-                setLoading(false);
-                
-                // AI 사용량 갱신
-                refetchAiUsage();
-                
-                if (pollInterval) {
-                    clearInterval(pollInterval);
-                }
-            } catch (err: unknown) {
-                // AI 사용량 제한 관련 에러 처리
-                const errorCode = isApiError(err) ? err.response?.data?.code : undefined;
-                const errorMessage = isApiError(err) ? err.response?.data?.message : undefined;
-                
-                if (errorCode === 'AI_USER_LIMIT_EXCEEDED' || errorCode === 'AI_GLOBAL_LIMIT_EXCEEDED' || errorCode === 'AI_SERVICE_DISABLED') {
-                    const finalMessage = errorMessage || 'AI 서비스를 사용할 수 없습니다.';
-                    setError(finalMessage);
-                    toast.error(finalMessage);
-                } else {
-                    const finalMessage = err instanceof Error
-                        ? err.message
-                        : 'AI 리뷰를 불러올 수 없습니다.';
-                    setError(finalMessage);
-                }
-                
-                setIsGenerating(false);
-                setLoading(false);
-                
-                if (pollInterval) {
-                    clearInterval(pollInterval);
-                }
+                await refetchAiUsage();
+                return;
             }
-        };
 
-        fetchAiReview();
+            setError('AI 리뷰 생성 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.');
+            setIsGenerating(false);
+        } catch (err: unknown) {
+            const errorCode = isApiError(err) ? err.response?.data?.code : undefined;
+            const errorMessage = isApiError(err) ? err.response?.data?.message : undefined;
+
+            if (errorCode === 'AI_USER_LIMIT_EXCEEDED' || errorCode === 'AI_GLOBAL_LIMIT_EXCEEDED' || errorCode === 'AI_SERVICE_DISABLED') {
+                const finalMessage = errorMessage || 'AI 서비스를 사용할 수 없습니다.';
+                setError(finalMessage);
+                toast.error(finalMessage);
+            } else {
+                const finalMessage = err instanceof Error
+                    ? err.message
+                    : 'AI 리뷰를 불러올 수 없습니다.';
+                setError(finalMessage);
+            }
+
+            setIsGenerating(false);
+        } finally {
+            setLoading(false);
+        }
     };
 
     // logId가 있으면 currentLogId에만 설정 (자동 조회하지 않음)
@@ -141,6 +112,10 @@ export const AiReviewCard: FC<AiReviewCardProps> = ({
 
     // AI 리뷰 요청 (logId가 있으면 바로 조회, 없으면 로그 생성 후 조회)
     const handleRequestAiReview = async () => {
+        if (requestInFlightRef.current) {
+            return;
+        }
+        requestInFlightRef.current = true;
         setLoading(true);
         setError(null);
         setReview(null);
@@ -180,9 +155,6 @@ export const AiReviewCard: FC<AiReviewCardProps> = ({
 
             // AI 리뷰 요청
             await fetchAiReviewByLogId(targetLogId);
-            
-            // AI 사용량 갱신
-            refetchAiUsage();
         } catch (err: unknown) {
             // AI 사용량 제한 관련 에러 처리
             const errorCode = isApiError(err) ? err.response?.data?.code : undefined;
@@ -192,10 +164,12 @@ export const AiReviewCard: FC<AiReviewCardProps> = ({
                 setError(errorMessage || 'AI 서비스를 사용할 수 없습니다.');
                 toast.error(errorMessage || 'AI 서비스를 사용할 수 없습니다.');
             } else {
-                setError(errorMessage || 'AI 리뷰를 요청할 수 없습니다.');
+            setError(errorMessage || 'AI 리뷰를 요청할 수 없습니다.');
             }
             
             setLoading(false);
+        } finally {
+            requestInFlightRef.current = false;
         }
     };
 

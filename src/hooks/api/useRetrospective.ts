@@ -96,7 +96,7 @@ export const useTemplate = (params: TemplateRequest) => {
     return useQuery({
         queryKey: ['retrospectives', 'template', params],
         queryFn: () => retrospectiveApi.getTemplate(params),
-        enabled: !!params.problemId && !!params.resultType,
+        enabled: params.problemId > 0 && !!params.resultType,
         staleTime: 10 * 60 * 1000, // 10분
     });
 };

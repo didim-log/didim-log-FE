@@ -48,7 +48,7 @@ export interface BookmarkToggleResponse {
 }
 
 export interface TemplateRequest {
-    problemId: string;
+    problemId: number;
     resultType: ProblemResult;
 }
 
