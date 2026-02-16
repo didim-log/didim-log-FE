@@ -97,6 +97,7 @@ export const useCreateTemplate = () => {
         mutationFn: (data: TemplateCreateRequest) => templateApi.createTemplate(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['templates'] });
+            queryClient.invalidateQueries({ queryKey: ['templates', 'summaries'] });
         },
     });
 };
@@ -112,6 +113,7 @@ export const useUpdateTemplate = () => {
             templateApi.updateTemplate(templateId, data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['templates'] });
+            queryClient.invalidateQueries({ queryKey: ['templates', 'summaries'] });
         },
     });
 };
@@ -126,6 +128,7 @@ export const useDeleteTemplate = () => {
         mutationFn: (templateId: string) => templateApi.deleteTemplate(templateId),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['templates'] });
+            queryClient.invalidateQueries({ queryKey: ['templates', 'summaries'] });
         },
     });
 };

@@ -2,7 +2,7 @@
  * 회고 에디터 컴포넌트
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import type { FC, ChangeEvent, FormEvent } from 'react';
 import type { RetrospectiveRequest } from '../../../types/api/retrospective.types';
 import { TagInput } from '../../../components/ui/TagInput';
@@ -40,21 +40,6 @@ export const RetrospectiveEditor: FC<RetrospectiveEditorProps> = ({
     const [errors, setErrors] = useState<{ content?: string; summary?: string }>({});
     const [hasUserTypedSummary, setHasUserTypedSummary] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-    // initialContent가 변경되면 내부 content state 강제 업데이트 (템플릿 타입 변경 시 등)
-    useEffect(() => {
-        // 템플릿 타입 변경 등으로 initialContent가 변경되면 강제로 덮어쓰기
-        // initialContent와 현재 content가 다를 때만 업데이트
-        // 문자열 비교 시 trim()을 사용하지 않아 정확한 비교를 수행
-        if (initialContent !== content) {
-            // initialContent가 유효한 값이면 업데이트
-            if (initialContent !== undefined && initialContent !== null) {
-                setContent(initialContent);
-                // 부모 컴포넌트에도 변경사항 알림
-                onContentChange?.(initialContent);
-            }
-        }
-    }, [initialContent]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // summary 입력 핸들러: 사용자가 입력했음을 표시
     const handleSummaryChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -114,7 +99,7 @@ export const RetrospectiveEditor: FC<RetrospectiveEditorProps> = ({
                     placeholder="회고를 한 줄로 요약해주세요 (필수)"
                     maxLength={200}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="tour-retro-summary-input w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{summary.length}/200</p>
                 {errors.summary && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.summary}</p>}
@@ -193,7 +178,7 @@ export const RetrospectiveEditor: FC<RetrospectiveEditorProps> = ({
                         content.trim().length > MAX_CONTENT_LENGTH ||
                         !summary.trim()
                     }
-                    className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors"
+                    className="tour-retro-save-btn px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors"
                 >
                     {isLoading ? '저장 중...' : '저장'}
                 </button>

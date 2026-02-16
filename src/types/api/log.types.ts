@@ -5,6 +5,7 @@
 export interface AiReviewResponse {
     review: string;  // AI 한 줄 리뷰 또는 "AI review is being generated. Please retry shortly."
     cached: boolean; // 캐시 히트 여부
+    inProgress: boolean; // 생성 진행 중 여부 (202 Accepted)
 }
 
 export interface LogCreateRequest {

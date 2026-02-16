@@ -30,18 +30,18 @@ export const ProfilePage: FC = () => {
 
     // 내 회고 목록 조회 (solvedCategory 필터 적용)
     const { data: retrospectives, isLoading: isRetrospectivesLoading } = useRetrospectives({
-        studentId: user?.id,
         solvedCategory: selectedCategory,
         page: 1,
         size: 10,
     });
+    const retrospectiveContent = useMemo(() => retrospectives?.content ?? [], [retrospectives?.content]);
 
     // 모든 회고의 solvedCategory를 파싱하여 고유 태그 목록 생성
     const availableCategories = useMemo(() => {
-        if (!retrospectives?.content) return [];
+        if (retrospectiveContent.length === 0) return [];
 
         const categorySet = new Set<string>();
-        retrospectives.content.forEach((retrospective) => {
+        retrospectiveContent.forEach((retrospective) => {
             if (retrospective.solvedCategory) {
                 // 쉼표로 구분된 태그들을 분리하고 공백 제거
                 const tags = retrospective.solvedCategory
@@ -54,7 +54,7 @@ export const ProfilePage: FC = () => {
 
         // 알파벳 순으로 정렬
         return Array.from(categorySet).sort();
-    }, [retrospectives?.content]);
+    }, [retrospectiveContent]);
 
     const [isEditing, setIsEditing] = useState(false);
     const [isDangerZoneOpen, setIsDangerZoneOpen] = useState(false);

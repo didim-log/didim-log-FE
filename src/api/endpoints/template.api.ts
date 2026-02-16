@@ -7,12 +7,15 @@ import type {
     Template,
     TemplateSummary,
     TemplateRenderResponse,
+    TemplateRenderRequest,
     TemplatePreviewRequest,
     TemplateCreateRequest,
     TemplateUpdateRequest,
     TemplateSectionPreset,
     TemplateDefaultCategory,
 } from '../../types/api/template.types';
+
+const TEMPLATE_RENDER_TIMEOUT_MS = 12000;
 
 export const templateApi = {
     /**
@@ -54,20 +57,16 @@ export const templateApi = {
             code?: string | null;
         }
     ): Promise<TemplateRenderResponse> => {
-        const params = new URLSearchParams({
-            problemId: problemId.toString(),
-        });
-        
-        if (options?.programmingLanguage) {
-            params.append('programmingLanguage', options.programmingLanguage);
-        }
-        
-        if (options?.code) {
-            params.append('code', options.code);
-        }
-        
-        const response = await apiClient.get<TemplateRenderResponse>(
-            `/templates/${templateId}/render?${params.toString()}`
+        const requestBody: TemplateRenderRequest = {
+            problemId,
+            programmingLanguage: options?.programmingLanguage ?? null,
+            code: options?.code ?? null,
+        };
+
+        const response = await apiClient.post<TemplateRenderResponse>(
+            `/templates/${templateId}/render`,
+            requestBody,
+            { timeout: TEMPLATE_RENDER_TIMEOUT_MS }
         );
         return response.data;
     },
@@ -77,7 +76,11 @@ export const templateApi = {
      * 저장하지 않고 템플릿을 미리보기합니다.
      */
     previewTemplate: async (data: TemplatePreviewRequest): Promise<TemplateRenderResponse> => {
-        const response = await apiClient.post<TemplateRenderResponse>('/templates/preview', data);
+        const response = await apiClient.post<TemplateRenderResponse>(
+            '/templates/preview',
+            data,
+            { timeout: TEMPLATE_RENDER_TIMEOUT_MS }
+        );
         return response.data;
     },
 

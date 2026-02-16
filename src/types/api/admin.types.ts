@@ -66,8 +66,8 @@ export interface ProblemStatsResponse {
     totalCount: number;
     minProblemId: number | null;
     maxProblemId: number | null;
-    minNullDescriptionHtmlProblemId?: number | null; // descriptionHtml이 null인 문제의 최소 ID
-    minNullLanguageProblemId?: number | null; // language가 null이거나 "other"인 문제의 최소 ID
+    minNullDescriptionHtmlProblemId: number | null; // descriptionHtml이 null인 문제의 최소 ID
+    minNullLanguageProblemId: number | null; // language가 null이거나 "other"인 문제의 최소 ID
 }
 
 /**

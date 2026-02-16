@@ -19,8 +19,9 @@ export const SignupFinalizePage: FC = () => {
     const location = useLocation();
     const { setTokens, setUser } = useAuthStore();
     const { setIsNewUser } = useOnboardingStore();
+    const state = location.state as { email?: string; provider?: string; providerId?: string } | null;
 
-    const [email, setEmail] = useState('');
+    const [email, setEmail] = useState(state?.email ?? '');
     const [nickname, setNickname] = useState('');
     const [bojId, setBojId] = useState('');
     const [isAgreedToTerms, setIsAgreedToTerms] = useState(false);
@@ -31,16 +32,9 @@ export const SignupFinalizePage: FC = () => {
         terms?: string;
     }>({});
 
-    const state = location.state as { email?: string; provider?: string; providerId?: string } | null;
-
     useEffect(() => {
         if (!state) {
             navigate('/login', { replace: true });
-            return;
-        }
-
-        if (state.email) {
-            setEmail(state.email);
         }
     }, [state, navigate]);
 

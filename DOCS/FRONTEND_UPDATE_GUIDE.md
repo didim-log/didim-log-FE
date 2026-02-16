@@ -10,7 +10,7 @@
 - `GET /templates/summaries`
 - `GET /templates/presets`
 - `POST /templates/preview`
-- `GET /templates/{id}/render`
+- `POST /templates/{id}/render`
 - `POST /templates`
 - `PUT /templates/{id}`
 - `PUT /templates/{id}/default?category=SUCCESS|FAIL`

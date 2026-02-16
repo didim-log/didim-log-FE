@@ -17,7 +17,9 @@ export interface RetrospectiveRequest {
 export interface RetrospectiveResponse {
     id: string;
     studentId: string;
+    isOwner: boolean;
     problemId: string;
+    problemTitle: string | null;
     content: string;
     summary: string | null;
     createdAt: string; // ISO 8601 형식
@@ -34,7 +36,6 @@ export interface RetrospectiveListRequest {
     category?: string;
     solvedCategory?: string; // 풀이 전략 태그 (부분 일치 검색)
     isBookmarked?: boolean;
-    studentId?: string;
     page?: number;
     size?: number;
     sort?: string;
@@ -47,7 +48,7 @@ export interface BookmarkToggleResponse {
 }
 
 export interface TemplateRequest {
-    problemId: string;
+    problemId: number;
     resultType: ProblemResult;
 }
 

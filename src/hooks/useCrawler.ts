@@ -317,7 +317,7 @@ export const useCrawler = (options: UseCrawlerOptions): UseCrawlerReturn => {
               startPolling(jobId);
               return; // 에러를 throw하지 않음
             }
-          } catch (statusError) {
+          } catch {
             // 상태 조회 실패 시 일반 에러 처리
           }
         }

@@ -42,6 +42,12 @@ export interface TemplateRenderResponse {
     renderedContent: string;
 }
 
+export interface TemplateRenderRequest {
+    problemId: number;
+    programmingLanguage?: string | null;
+    code?: string | null;
+}
+
 export interface TemplatePreviewRequest {
     templateContent: string;
     problemId: number;
