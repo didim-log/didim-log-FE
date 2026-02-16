@@ -2,7 +2,7 @@
  * 문제 목록 페이지
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import type { FC, FormEvent } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useProblemRecommend } from '../../../hooks/api/useProblem';
@@ -16,6 +16,8 @@ import type { ProblemResponse } from '../../../types/api/problem.types';
 import { Search, HelpCircle } from 'lucide-react';
 import { getCategoryHierarchyHints } from '../../../constants/algorithmHierarchy';
 import { LanguageBadge } from '../../../components/common/LanguageBadge';
+import { buildRepresentativeCategories } from '../../../utils/problemCategory';
+import { getCategoryLabel } from '../../../utils/constants';
 
 export const ProblemListPage: FC = () => {
     const navigate = useNavigate();
@@ -39,6 +41,15 @@ export const ProblemListPage: FC = () => {
         category: category || undefined,
         language: onlyKorean ? 'ko' : undefined,
     });
+
+    const visibleProblems = useMemo(() => {
+        const base = problems || [];
+        if (!onlyKorean) {
+            return base;
+        }
+        // 서버 필터 누락/오탐 시 방어: language가 명확히 ko인 항목만 노출
+        return base.filter((problem) => (problem.language || '').toLowerCase() === 'ko');
+    }, [problems, onlyKorean]);
 
     // 상태 변경 시 URL 파라미터 업데이트
     useEffect(() => {
@@ -195,32 +206,49 @@ export const ProblemListPage: FC = () => {
                     </div>
 
                     {/* 문제 목록 */}
-                    {problems && problems.length > 0 ? (
+                    {visibleProblems.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {problems.map((problem: ProblemResponse) => (
-                                <Link
-                                    key={problem.id}
-                                    to={`/problems/${problem.id}`}
-                                    className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow"
-                                >
-                                    <div className="flex items-start justify-between mb-3">
-                                        <div className="flex-1">
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <p className="text-sm text-gray-600 dark:text-gray-400">#{problem.id}</p>
-                                                <LanguageBadge language={problem.language} />
+                            {visibleProblems.map((problem: ProblemResponse) => {
+                                const representative = buildRepresentativeCategories(problem.category, [], 3);
+                                const primaryCategory = representative[0]
+                                    ? getCategoryLabel(representative[0])
+                                    : problem.category;
+                                const secondaryCategories = representative
+                                    .slice(1)
+                                    .map((item) => getCategoryLabel(item));
+
+                                return (
+                                    <Link
+                                        key={problem.id}
+                                        to={`/problems/${problem.id}`}
+                                        className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow"
+                                    >
+                                        <div className="flex items-start justify-between mb-3">
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <p className="text-sm text-gray-600 dark:text-gray-400">#{problem.id}</p>
+                                                    <LanguageBadge language={problem.language} />
+                                                </div>
+                                                <h3 className="font-semibold text-gray-900 dark:text-white">{problem.title}</h3>
                                             </div>
-                                            <h3 className="font-semibold text-gray-900 dark:text-white">{problem.title}</h3>
+                                            <span className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${getTierColor(problem.difficulty)}`}>
+                                                {formatTierFromDifficulty(problem.difficulty, problem.difficultyLevel)}
+                                            </span>
                                         </div>
-                                        <span className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${getTierColor(problem.difficulty)}`}>
-                                            {formatTierFromDifficulty(problem.difficulty, problem.difficultyLevel)}
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-xs text-gray-500 dark:text-gray-400">{problem.category}</span>
-                                        <span className="text-sm text-blue-600 dark:text-blue-400">보기 →</span>
-                                    </div>
-                                </Link>
-                            ))}
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex flex-col gap-0.5">
+                                                <span className="text-xs text-gray-600 dark:text-gray-300">{primaryCategory}</span>
+                                                {secondaryCategories.length > 0 && (
+                                                    <span className="text-[11px] text-gray-400 dark:text-gray-500">
+                                                        {secondaryCategories.join(', ')}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <span className="text-sm text-blue-600 dark:text-blue-400">보기 →</span>
+                                        </div>
+                                    </Link>
+                                );
+                            })}
                         </div>
                     ) : (
                         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-12 text-center border border-gray-200 dark:border-gray-700">

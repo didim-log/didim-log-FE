@@ -2,11 +2,11 @@
  * 회고 작성 페이지
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import type { FC } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useCreateRetrospective, useUpdateRetrospective } from '../../../hooks/api/useRetrospective';
-import { useTemplateSummaries, useRenderTemplate } from '../../../hooks/api/useTemplate';
+import { useTemplateSummaries, useRenderTemplate, useTemplates } from '../../../hooks/api/useTemplate';
 import { useProblemDetail } from '../../../hooks/api/useProblem';
 import { RetrospectiveEditor } from '../components/RetrospectiveEditor';
 import { Spinner } from '../../../components/ui/Spinner';
@@ -20,6 +20,9 @@ import { useOnboardingStore } from '../../../stores/onboarding.store';
 import { Copy, ChevronLeft } from 'lucide-react';
 import type { ProblemResult, RetrospectiveRequest } from '../../../types/api/retrospective.types';
 import { AiReviewCard } from '../../../components/retrospective/AiReviewCard';
+import type { TemplateSummary } from '../../../types/api/template.types';
+import { buildRepresentativeCategories } from '../../../utils/problemCategory';
+import { getCategoryLabel } from '../../../utils/constants';
 
 /**
  * 제목 초기값 포맷 상수
@@ -213,8 +216,31 @@ export const RetrospectiveWritePage: FC = () => {
     const createMutation = useCreateRetrospective();
     const updateMutation = useUpdateRetrospective();
     const { completePhase } = useOnboardingStore();
-    const { data: templates } = useTemplateSummaries();
+    const {
+        data: templateSummaries,
+        isLoading: isTemplateSummariesLoading,
+        error: templateSummariesError,
+    } = useTemplateSummaries();
+    const { data: templatesRaw, isLoading: isTemplatesLoading } = useTemplates();
     const renderTemplateMutation = useRenderTemplate();
+    const templates = useMemo<TemplateSummary[]>(() => {
+        if (templateSummaries && templateSummaries.length > 0) {
+            return templateSummaries;
+        }
+        if (templatesRaw && templatesRaw.length > 0) {
+            return templatesRaw.map((template) => ({
+                id: template.id,
+                studentId: template.studentId,
+                title: template.title,
+                type: template.type,
+                isDefaultSuccess: template.isDefaultSuccess,
+                isDefaultFail: template.isDefaultFail,
+                createdAt: template.createdAt,
+                updatedAt: template.updatedAt,
+            }));
+        }
+        return [];
+    }, [templateSummaries, templatesRaw]);
 
     const isOnboarding = searchParams.get('onboarding') === 'true';
 
@@ -240,6 +266,11 @@ export const RetrospectiveWritePage: FC = () => {
     const { data: problem, isLoading: isProblemLoading } = useProblemDetail(problemId);
 
     const category: 'SUCCESS' | 'FAIL' = isSuccess ? 'SUCCESS' : 'FAIL';
+    const representativeCategories = useMemo(
+        () => buildRepresentativeCategories(problem?.category, problem?.tags, 8),
+        [problem?.category, problem?.tags]
+    );
+    const isMissingProblemContext = isPageStateReady && !problemId && !retrospectiveId;
 
     /**
      * 템플릿 렌더링 및 에디터에 적용
@@ -431,6 +462,9 @@ export const RetrospectiveWritePage: FC = () => {
             status?: string; // 추가: 명시적 status 전달 (SOLVED/FAIL)
         } | null;
 
+        const queryProblemId = searchParams.get('problemId') || '';
+        const queryStatus = searchParams.get('status') || '';
+
         if (state) {
             const { retrospectiveId: retroId, problemId: pid, template: temp, isSuccess: success, code: codeValue, logId: createdLogId, solveTime: stateSolveTime, language: stateLanguage, initialSummary: stateSummary, status: stateStatus } = state;
             
@@ -468,8 +502,24 @@ export const RetrospectiveWritePage: FC = () => {
                 setHasLoadedTemplate(true);
             }
         }
+        if (!state?.problemId && queryProblemId) {
+            setProblemId(queryProblemId);
+        }
+        if (!state?.status && queryStatus) {
+            const normalizedQueryStatus = queryStatus.toUpperCase();
+            if (normalizedQueryStatus === 'TIME_OVER') {
+                setIsSuccess(false);
+                setResultType('TIME_OVER');
+            } else if (normalizedQueryStatus === 'SUCCESS' || normalizedQueryStatus === 'SOLVED') {
+                setIsSuccess(true);
+                setResultType('SUCCESS');
+            } else if (normalizedQueryStatus === 'FAIL') {
+                setIsSuccess(false);
+                setResultType('FAIL');
+            }
+        }
         setIsPageStateReady(true);
-    }, [location.state]);
+    }, [location.state, searchParams]);
 
     // 문제/결과 컨텍스트가 바뀌면 이전 템플릿 상태를 무효화하여 잘못된 템플릿 잔존을 방지
     useEffect(() => {
@@ -495,14 +545,50 @@ export const RetrospectiveWritePage: FC = () => {
         }
         if (problemId && !hasLoadedTemplate && !retrospectiveId) {
             // 카테고리별 기본 템플릿이 로드되면 자동으로 적용
-            if (templates && templates.length > 0) {
+            if (templates.length > 0) {
                 // 템플릿 목록이 있으면 로드 시도
                 loadDefaultTemplate(problemId).catch(() => {
                     // Template load failed
                 });
+            } else if (!isTemplateSummariesLoading && !isTemplatesLoading) {
+                // 템플릿 목록 조회 실패/빈 결과 시 최소 기본 템플릿으로 즉시 진행 (빈 에디터 방지)
+                const problemTitle = problem?.title || '문제';
+                const resultText = isSuccess ? '해결' : '미해결';
+                const formattedTitle = formatTitle(DEFAULT_TITLE_FORMAT, {
+                    problemId,
+                    problemTitle,
+                    language,
+                    result: resultText,
+                });
+                const tierText = problem?.difficulty && problem?.difficultyLevel
+                    ? formatTierFromDifficulty(problem.difficulty, problem.difficultyLevel)
+                    : null;
+                const emergencyTemplate = ensureDefaultSections(
+                    `${formattedTitle}\n\n## 접근 방법\n\n## 복잡도 분석\n\n`,
+                    problemId,
+                    tierText
+                );
+                setContent(emergencyTemplate);
+                setHasLoadedTemplate(true);
+                if (templateSummariesError) {
+                    toast.error('템플릿 목록 조회에 실패하여 기본 템플릿을 적용했습니다.');
+                }
             }
         }
-    }, [problemId, hasLoadedTemplate, retrospectiveId, templates, loadDefaultTemplate, isPageStateReady]);
+    }, [
+        problemId,
+        hasLoadedTemplate,
+        retrospectiveId,
+        templates,
+        loadDefaultTemplate,
+        isPageStateReady,
+        isTemplateSummariesLoading,
+        isTemplatesLoading,
+        templateSummariesError,
+        problem,
+        isSuccess,
+        language,
+    ]);
 
     // code가 설정된 후 이미 템플릿이 로드되었고 코드 블록이 비어있으면 코드 삽입
     useEffect(() => {
@@ -644,18 +730,31 @@ export const RetrospectiveWritePage: FC = () => {
                                         </button>
                                         {/* 문제 번호 & 태그 */}
                                         <div className="flex items-center gap-3 flex-wrap">
-                                            {/* 태그 */}
-                                            <div className="flex items-center gap-2 flex-wrap">
-                                                <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded text-sm font-medium">
-                                                    {problem.category}
-                                                </span>
+                                                {/* 태그 */}
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded text-sm font-medium">
+                                                        {representativeCategories[0]
+                                                            ? getCategoryLabel(representativeCategories[0])
+                                                            : problem.category}
+                                                    </span>
                                                 <span className={`px-2 py-1 rounded text-sm font-medium whitespace-nowrap ${getTierColor(problem.difficulty)}`}>
                                                     {formatTierFromDifficulty(problem.difficulty, problem.difficultyLevel)}
                                                 </span>
                                                 {/* 언어 배지 */}
                                                 <LanguageBadge language={language} />
                                                 {/* 알고리즘 태그 */}
-                                                {problem.tags && problem.tags.length > 0 && (
+                                                {representativeCategories.length > 1 ? (
+                                                    <>
+                                                        {representativeCategories.slice(1, 6).map((tag, index) => (
+                                                            <span
+                                                                key={index}
+                                                                className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded text-xs"
+                                                            >
+                                                                {getCategoryLabel(tag)}
+                                                            </span>
+                                                        ))}
+                                                    </>
+                                                ) : problem.tags && problem.tags.length > 0 ? (
                                                     <>
                                                         {problem.tags.map((tag, index) => (
                                                             <span
@@ -666,7 +765,7 @@ export const RetrospectiveWritePage: FC = () => {
                                                             </span>
                                                         ))}
                                                     </>
-                                                )}
+                                                ) : null}
                                             </div>
                                         </div>
                                     </div>
@@ -716,6 +815,14 @@ export const RetrospectiveWritePage: FC = () => {
                         />
                     </div>
 
+                    {isMissingProblemContext && (
+                        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-4">
+                            <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                                문제 정보가 없어 기본 템플릿을 적용할 수 없습니다. 문제/스터디 화면에서 다시 회고 작성을 시작해주세요.
+                            </p>
+                        </div>
+                    )}
+
                     {isLoadingTemplate && (
                         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 border border-gray-200 dark:border-gray-700">
                             <div className="flex items-center justify-center py-12">
@@ -756,7 +863,7 @@ export const RetrospectiveWritePage: FC = () => {
                     )}
 
                     {/* 회고 에디터 */}
-                    {!isLoadingTemplate && (
+                    {!isLoadingTemplate && !isMissingProblemContext && (
                         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 border border-gray-200 dark:border-gray-700">
                             <RetrospectiveEditor
                                 key={editorKey}
@@ -771,16 +878,7 @@ export const RetrospectiveWritePage: FC = () => {
                                 }}
                                 isLoading={createMutation.isPending || updateMutation.isPending}
                                 onContentChange={handleContentChange}
-                                recommendedTags={problem ? (() => {
-                                    const tags = problem.tags || [];
-                                    const category = problem.category;
-                                    // category가 tags에 없으면 추가, 있으면 제외하여 중복 방지
-                                    const allTags = category && !tags.includes(category)
-                                        ? [...tags, category]
-                                        : tags;
-                                    // 중복 제거 및 빈 값 필터링
-                                    return Array.from(new Set(allTags.filter(Boolean)));
-                                })() : []}
+                                recommendedTags={representativeCategories}
                             />
                         </div>
                     )}

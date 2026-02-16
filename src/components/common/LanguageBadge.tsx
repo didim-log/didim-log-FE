@@ -18,8 +18,8 @@ const LANGUAGE_MAP: Record<string, { flag: string; label: string }> = {
 };
 
 export const LanguageBadge: FC<LanguageBadgeProps> = ({ language, className = '' }) => {
-    // language가 없으면 기본값 'ko' 사용
-    const normalizedLanguage = language || 'ko';
+    // language가 없으면 unknown으로 처리 (오탐 방지)
+    const normalizedLanguage = (language || 'other').toLowerCase();
     const languageInfo = LANGUAGE_MAP[normalizedLanguage] || LANGUAGE_MAP.other;
 
     return (

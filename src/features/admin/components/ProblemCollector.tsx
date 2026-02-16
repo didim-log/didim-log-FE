@@ -218,6 +218,18 @@ export const ProblemCollector: FC = () => {
       return null;
     }
 
+    const effectiveTotalCount =
+      state.totalCount > 0
+        ? state.totalCount
+        : type === 'metadata' && state.startProblemId && state.endProblemId
+          ? state.endProblemId - state.startProblemId + 1
+          : 0;
+    const effectiveProgress =
+      effectiveTotalCount > 0
+        ? Math.min(100, Math.floor((state.processedCount / effectiveTotalCount) * 100))
+        : state.progress;
+    const hasDeterministicProgress = effectiveTotalCount > 0;
+
     // 현재 처리 중인 문제 ID 추정 (메타데이터 수집의 경우)
     const currentProblemId =
       type === 'metadata' && state.startProblemId && state.processedCount > 0
@@ -229,16 +241,18 @@ export const ProblemCollector: FC = () => {
         <div className="mb-4">
           <div className="flex items-center justify-between mb-1">
             <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
-              {title} 진행률: {state.progress}%
+              {title} 진행률: {hasDeterministicProgress ? `${effectiveProgress}%` : '계산 중...'}
             </span>
             <span className="text-xs text-blue-600 dark:text-blue-400">
-              {state.processedCount}/{state.totalCount}
+              {state.processedCount}/{hasDeterministicProgress ? effectiveTotalCount : '?'}
             </span>
           </div>
           <div className="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-2">
             <div
-              className="bg-blue-600 dark:bg-blue-400 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${state.progress}%` }}
+              className={`bg-blue-600 dark:bg-blue-400 h-2 rounded-full transition-all duration-300 ${
+                hasDeterministicProgress ? '' : 'animate-pulse opacity-60'
+              }`}
+              style={{ width: `${hasDeterministicProgress ? effectiveProgress : 100}%` }}
             />
           </div>
         </div>
@@ -320,7 +334,7 @@ export const ProblemCollector: FC = () => {
           {type === 'details' && (
             <>
               <p className="font-medium">
-                처리 대상: descriptionHtml이 null인 문제 {state.totalCount}개
+                처리 대상: descriptionHtml이 null인 문제 {hasDeterministicProgress ? effectiveTotalCount : '집계 중'}개
               </p>
               {state.processedCount > 0 && (
                 <p className="text-blue-700 dark:text-blue-300 font-semibold">
@@ -333,7 +347,7 @@ export const ProblemCollector: FC = () => {
           {type === 'language' && (
             <>
               <p className="font-medium">
-                처리 대상: 언어 정보가 null이거나 "other"인 문제 {state.totalCount}개
+                처리 대상: 언어 정보가 null이거나 "other"인 문제 {hasDeterministicProgress ? effectiveTotalCount : '집계 중'}개
               </p>
               {state.processedCount > 0 && (
                 <p className="text-blue-700 dark:text-blue-300 font-semibold">
