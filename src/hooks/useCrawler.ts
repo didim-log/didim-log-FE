@@ -6,9 +6,14 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { AxiosError } from 'axios';
 import { crawlerApi } from '../api/endpoints/crawler.api';
-import type { CollectMetadataRequest, JobStatusResponse } from '../types/api/admin.types';
+import type {
+  CollectMetadataRequest,
+  JobStatusResponse,
+  RefreshDetailsRequest,
+} from '../types/api/admin.types';
 
-export type CrawlerType = 'metadata' | 'details' | 'language';
+export type CrawlerType = 'metadata' | 'details' | 'detailsRefresh' | 'language';
+export type CrawlerStartParams = CollectMetadataRequest | RefreshDetailsRequest;
 
 export type CrawlerStatus = 'IDLE' | 'LOADING' | 'RUNNING' | 'COMPLETED' | 'FAILED';
 
@@ -43,8 +48,8 @@ interface UseCrawlerOptions {
 
 interface UseCrawlerReturn {
   state: CrawlerState;
-  start: (params?: CollectMetadataRequest) => Promise<void>;
-  restart: (params?: CollectMetadataRequest) => Promise<void>;
+  start: (params?: CrawlerStartParams) => Promise<void>;
+  restart: (params?: CrawlerStartParams) => Promise<void>;
   stop: () => void;
   isLoading: boolean;
 }
@@ -79,6 +84,8 @@ export const useCrawler = (options: UseCrawlerOptions): UseCrawlerReturn => {
           return crawlerApi.getMetadataCollectStatus(jobId);
         case 'details':
           return crawlerApi.getDetailsCollectStatus(jobId);
+        case 'detailsRefresh':
+          return crawlerApi.getRefreshDetailsStatus(jobId);
         case 'language':
           return crawlerApi.getLanguageUpdateStatus(jobId);
         default:
@@ -90,15 +97,17 @@ export const useCrawler = (options: UseCrawlerOptions): UseCrawlerReturn => {
 
   // 작업 시작 API 선택
   const startApi = useCallback(
-    async (params?: CollectMetadataRequest): Promise<{ jobId: string }> => {
+    async (params?: CrawlerStartParams): Promise<{ jobId: string }> => {
       switch (type) {
         case 'metadata':
           if (!params) {
             throw new Error('Metadata collection requires start and end parameters');
           }
-          return crawlerApi.collectMetadata(params);
+          return crawlerApi.collectMetadata(params as CollectMetadataRequest);
         case 'details':
           return crawlerApi.collectDetails();
+        case 'detailsRefresh':
+          return crawlerApi.refreshDetails(params as RefreshDetailsRequest | undefined);
         case 'language':
           return crawlerApi.updateLanguage();
         default:
@@ -286,7 +295,7 @@ export const useCrawler = (options: UseCrawlerOptions): UseCrawlerReturn => {
 
   // 작업 시작
   const start = useCallback(
-    async (params?: CollectMetadataRequest) => {
+    async (params?: CrawlerStartParams) => {
       if (state.status === 'LOADING' || state.status === 'RUNNING') {
         return; // 이미 실행 중
       }
@@ -351,7 +360,7 @@ export const useCrawler = (options: UseCrawlerOptions): UseCrawlerReturn => {
 
   // 재시작 (이어하기)
   const restart = useCallback(
-    async (params?: CollectMetadataRequest) => {
+    async (params?: CrawlerStartParams) => {
       // 메타데이터 수집의 경우: lastCheckpointId + 1부터 시작
       if (type === 'metadata' && state.lastCheckpointId && typeof state.lastCheckpointId === 'number') {
         const checkpointStart = state.lastCheckpointId + 1;

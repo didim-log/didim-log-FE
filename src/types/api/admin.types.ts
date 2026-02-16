@@ -62,6 +62,11 @@ export interface CollectMetadataRequest {
     end: number;
 }
 
+export interface RefreshDetailsRequest {
+    start?: number;
+    end?: number;
+}
+
 export interface ProblemStatsResponse {
     totalCount: number;
     minProblemId: number | null;
