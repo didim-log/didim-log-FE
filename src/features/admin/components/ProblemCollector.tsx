@@ -105,7 +105,13 @@ export const ProblemCollector: FC = () => {
     const startNum = Number(resolvedStart);
     const endNum = Number(end);
 
-    if (isNaN(startNum) || isNaN(endNum) || startNum < 1 || endNum < 1 || startNum > endNum) {
+    if (
+      !Number.isInteger(startNum) ||
+      !Number.isInteger(endNum) ||
+      startNum < 1 ||
+      endNum < 1 ||
+      startNum > endNum
+    ) {
       setErrors({ start: '유효한 범위를 입력해주세요.', end: '유효한 범위를 입력해주세요.' });
       return;
     }
@@ -201,7 +207,13 @@ export const ProblemCollector: FC = () => {
     if (hasStart && hasEnd) {
       const startNum = Number(refreshStart);
       const endNum = Number(refreshEnd);
-      if (isNaN(startNum) || isNaN(endNum) || startNum < 1 || endNum < 1 || startNum > endNum) {
+      if (
+        !Number.isInteger(startNum) ||
+        !Number.isInteger(endNum) ||
+        startNum < 1 ||
+        endNum < 1 ||
+        startNum > endNum
+      ) {
         setRefreshErrors({ start: '유효한 범위를 입력해주세요.', end: '유효한 범위를 입력해주세요.' });
         return;
       }
@@ -254,9 +266,10 @@ export const ProblemCollector: FC = () => {
   const handleUpdateLanguage = async () => {
     if (
       !confirm(
-        '모든 문제의 언어 정보를 업데이트하시겠습니까?\n\n' +
+        '전체 문제의 언어를 다시 판별하시겠습니까?\n\n' +
           '이 작업은 시간이 오래 걸릴 수 있습니다.\n' +
           '(문제 수에 따라 수 분 ~ 수십 분 소요)\n\n' +
+          '이번 작업은 null 값만 채우는 방식이 아니라 전체 문제를 재판별합니다.\n\n' +
           '중단되어도 다시 호출하면 이어서 진행됩니다.'
       )
     ) {
@@ -305,6 +318,24 @@ export const ProblemCollector: FC = () => {
       return null;
     }
 
+    const backendStatus = state.backendStatus ?? (state.status === 'LOADING' ? 'PENDING' : null);
+    const statusLabel = backendStatus
+      ? {
+          PENDING: '대기 중',
+          RUNNING: '실행 중',
+          COMPLETED: '완료',
+          FAILED: '실패',
+        }[backendStatus]
+      : null;
+    const statusClassName = backendStatus
+      ? {
+          PENDING: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
+          RUNNING: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
+          COMPLETED: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300',
+          FAILED: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
+        }[backendStatus]
+      : '';
+
     const effectiveTotalCount =
       state.totalCount > 0
         ? state.totalCount
@@ -326,10 +357,17 @@ export const ProblemCollector: FC = () => {
     return (
       <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
         <div className="mb-4">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
-              {title} 진행률: {hasDeterministicProgress ? `${effectiveProgress}%` : '계산 중...'}
-            </span>
+          <div className="flex items-center justify-between mb-1 gap-2">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                {title} 진행률: {hasDeterministicProgress ? `${effectiveProgress}%` : '계산 중...'}
+              </span>
+              {statusLabel && (
+                <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${statusClassName}`}>
+                  {statusLabel}
+                </span>
+              )}
+            </div>
             <span className="text-xs text-blue-600 dark:text-blue-400">
               {state.processedCount}/{hasDeterministicProgress ? effectiveTotalCount : '?'}
             </span>
@@ -447,7 +485,7 @@ export const ProblemCollector: FC = () => {
           {type === 'language' && (
             <>
               <p className="font-medium">
-                처리 대상: 언어 정보가 null이거나 "other"인 문제 {hasDeterministicProgress ? effectiveTotalCount : '집계 중'}개
+                처리 대상: 전체 문제 언어 재판별 {hasDeterministicProgress ? effectiveTotalCount : '집계 중'}개
               </p>
               {state.processedCount > 0 && (
                 <p className="text-blue-700 dark:text-blue-300 font-semibold">
@@ -861,7 +899,7 @@ export const ProblemCollector: FC = () => {
             <div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">처리 대상</p>
               <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                언어 정보가 null이거나 "other"인 문제
+                전체 문제 언어 재판별
               </p>
             </div>
             <div>
@@ -874,13 +912,9 @@ export const ProblemCollector: FC = () => {
                 <p className="text-lg font-semibold text-green-600 dark:text-green-400">
                   완료됨
                 </p>
-              ) : stats?.minNullLanguageProblemId ? (
-                <p className="text-lg font-semibold text-blue-600 dark:text-blue-400">
-                  {stats.minNullLanguageProblemId}번부터 (null/other인 문제 최소 번호)
-                </p>
               ) : (
                 <p className="text-lg font-semibold text-gray-400 dark:text-gray-500">
-                  작업 시작 후 표시
+                  전체 범위 대상
                 </p>
               )}
             </div>
@@ -896,7 +930,7 @@ export const ProblemCollector: FC = () => {
         </div>
 
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-          DB에 저장된 모든 문제의 언어 정보를 재판별하여 업데이트합니다. 기존 크롤링 데이터는 유지하고
+          DB에 저장된 전체 문제를 대상으로 본문/입출력/제목 기반 언어 판별을 다시 수행합니다. 기존 크롤링 데이터는 유지하고
           language 필드만 업데이트합니다.
           <br />
           <span className="text-xs text-gray-500 dark:text-gray-500 mt-1 block">

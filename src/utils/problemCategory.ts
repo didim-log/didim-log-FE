@@ -95,3 +95,25 @@ export const buildRepresentativeCategories = (
 
     return result.slice(0, maxCount);
 };
+
+interface ProblemCategorySource {
+    category?: string | null;
+    primaryCategory?: string | null;
+    secondaryCategories?: string[] | null;
+    normalizedTags?: string[] | null;
+    tags?: string[] | null;
+}
+
+export const buildRepresentativeCategoriesFromSource = (
+    source: ProblemCategorySource,
+    maxCount = 8
+): string[] => {
+    const mergedTags = [
+        ...(source.normalizedTags ?? []),
+        ...(source.secondaryCategories ?? []),
+        ...(source.tags ?? []),
+    ];
+
+    const primary = source.primaryCategory ?? source.category ?? null;
+    return buildRepresentativeCategories(primary, mergedTags, maxCount);
+};

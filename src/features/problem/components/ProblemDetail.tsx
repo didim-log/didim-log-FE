@@ -9,7 +9,7 @@ import { Copy, ExternalLink, ChevronLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatTierFromDifficulty, getTierColor } from '../../../utils/tier';
 import type { ProblemDetailResponse } from '../../../types/api/problem.types';
-import { buildRepresentativeCategories } from '../../../utils/problemCategory';
+import { buildRepresentativeCategoriesFromSource } from '../../../utils/problemCategory';
 import { getCategoryLabel } from '../../../utils/constants';
 
 interface ProblemDetailProps {
@@ -21,8 +21,8 @@ export const ProblemDetail: FC<ProblemDetailProps> = ({ problem, isBlurred }) =>
     const navigate = useNavigate();
     const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
     const representativeCategories = useMemo(
-        () => buildRepresentativeCategories(problem.category, problem.tags, 6),
-        [problem.category, problem.tags]
+        () => buildRepresentativeCategoriesFromSource(problem, 6),
+        [problem]
     );
 
     const handleCopySampleInput = async (input: string, index: number) => {

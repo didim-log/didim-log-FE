@@ -16,7 +16,7 @@ import type { ProblemResponse } from '../../../types/api/problem.types';
 import { Search, HelpCircle } from 'lucide-react';
 import { getCategoryHierarchyHints } from '../../../constants/algorithmHierarchy';
 import { LanguageBadge } from '../../../components/common/LanguageBadge';
-import { buildRepresentativeCategories } from '../../../utils/problemCategory';
+import { buildRepresentativeCategoriesFromSource } from '../../../utils/problemCategory';
 import { getCategoryLabel } from '../../../utils/constants';
 
 export const ProblemListPage: FC = () => {
@@ -209,7 +209,7 @@ export const ProblemListPage: FC = () => {
                     {visibleProblems.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {visibleProblems.map((problem: ProblemResponse) => {
-                                const representative = buildRepresentativeCategories(problem.category, [], 3);
+                                const representative = buildRepresentativeCategoriesFromSource(problem, 3);
                                 const primaryCategory = representative[0]
                                     ? getCategoryLabel(representative[0])
                                     : problem.category;
@@ -252,7 +252,29 @@ export const ProblemListPage: FC = () => {
                         </div>
                     ) : (
                         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-12 text-center border border-gray-200 dark:border-gray-700">
-                            <p className="text-gray-600 dark:text-gray-400">추천할 문제가 없습니다.</p>
+                            <p className="text-gray-600 dark:text-gray-400">
+                                {onlyKorean
+                                    ? '한국어 본문 기준의 엄격한 필터로 인해 추천 결과가 없습니다.'
+                                    : '추천할 문제가 없습니다.'}
+                            </p>
+                            {onlyKorean && (
+                                <div className="mt-4 flex justify-center gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setOnlyKorean(false)}
+                                        className="px-3 py-2 text-sm rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                                    >
+                                        전체 언어로 다시 보기
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setCategory('')}
+                                        className="px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                                    >
+                                        카테고리 초기화
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>

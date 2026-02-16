@@ -21,7 +21,7 @@ import { Copy, ChevronLeft } from 'lucide-react';
 import type { ProblemResult, RetrospectiveRequest } from '../../../types/api/retrospective.types';
 import { AiReviewCard } from '../../../components/retrospective/AiReviewCard';
 import type { TemplateSummary } from '../../../types/api/template.types';
-import { buildRepresentativeCategories } from '../../../utils/problemCategory';
+import { buildRepresentativeCategoriesFromSource } from '../../../utils/problemCategory';
 import { getCategoryLabel } from '../../../utils/constants';
 
 /**
@@ -267,8 +267,8 @@ export const RetrospectiveWritePage: FC = () => {
 
     const category: 'SUCCESS' | 'FAIL' = isSuccess ? 'SUCCESS' : 'FAIL';
     const representativeCategories = useMemo(
-        () => buildRepresentativeCategories(problem?.category, problem?.tags, 8),
-        [problem?.category, problem?.tags]
+        () => buildRepresentativeCategoriesFromSource(problem ?? {}, 8),
+        [problem]
     );
     const isMissingProblemContext = isPageStateReady && !problemId && !retrospectiveId;
 
@@ -365,7 +365,9 @@ export const RetrospectiveWritePage: FC = () => {
                 if (requestId !== templateLoadRequestIdRef.current) {
                     return;
                 }
-                if (isApiError(error) && error.code === 'ECONNABORTED') {
+                if (isApiError(error) && error.response?.status === 404) {
+                    toast.error('선택한 템플릿을 찾을 수 없어 기본 템플릿으로 전환합니다.');
+                } else if (isApiError(error) && error.code === 'ECONNABORTED') {
                     toast.error('템플릿 로딩이 지연되어 기본 템플릿으로 전환합니다.');
                 } else {
                     toast.error('템플릿을 불러오는 중 오류가 발생했습니다.');
