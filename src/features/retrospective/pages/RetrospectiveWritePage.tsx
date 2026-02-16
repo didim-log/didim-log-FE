@@ -2,7 +2,7 @@
  * 회고 작성 페이지
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { FC } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useCreateRetrospective, useUpdateRetrospective } from '../../../hooks/api/useRetrospective';
@@ -231,6 +231,7 @@ export const RetrospectiveWritePage: FC = () => {
     const [hasLoadedTemplate, setHasLoadedTemplate] = useState(false);
     const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
     const [editorKey, setEditorKey] = useState<number>(Date.now());
+    const templateLoadRequestIdRef = useRef(0);
 
     // 문제 상세 정보 조회
     const { data: problem, isLoading: isProblemLoading } = useProblemDetail(problemId);
@@ -246,6 +247,7 @@ export const RetrospectiveWritePage: FC = () => {
                 return;
             }
 
+            const requestId = ++templateLoadRequestIdRef.current;
             setIsLoadingTemplate(true);
             try {
                 const problemIdNum = parseInt(pid, 10);
@@ -319,10 +321,16 @@ export const RetrospectiveWritePage: FC = () => {
                     templateContent = insertCodeIntoTemplate(templateContent, code, language);
                 }
 
+                if (requestId !== templateLoadRequestIdRef.current) {
+                    return;
+                }
                 setContent(templateContent);
                 setSelectedTemplateId(templateId);
                 setHasLoadedTemplate(true);
             } catch {
+                if (requestId !== templateLoadRequestIdRef.current) {
+                    return;
+                }
                 toast.error('템플릿을 불러오는 중 오류가 발생했습니다.');
                 // Fallback: 최소한의 기본 템플릿 제공 (문제 제목 포함)
                 const problemTitle = problem?.title || '문제';
@@ -337,7 +345,9 @@ export const RetrospectiveWritePage: FC = () => {
                 setContent(fallbackTemplate);
                 setHasLoadedTemplate(true);
             } finally {
-                setIsLoadingTemplate(false);
+                if (requestId === templateLoadRequestIdRef.current) {
+                    setIsLoadingTemplate(false);
+                }
             }
         },
         [renderTemplateMutation, problem, language, isSuccess, code]
@@ -353,32 +363,23 @@ export const RetrospectiveWritePage: FC = () => {
                 return;
             }
 
+            const detailFallback = templates.find((t) =>
+                t.title.toLowerCase().includes('detail') || t.title.includes('상세')
+            );
+            const simpleFallback = templates.find((t) =>
+                t.title.toLowerCase().includes('simple') || t.title.includes('요약')
+            );
+
             // 카테고리별 기본 템플릿 찾기
             const categoryTemplate = templates.find((t) => 
                 category === 'SUCCESS' ? t.isDefaultSuccess : t.isDefaultFail
             );
 
-            if (categoryTemplate) {
-                await loadTemplate(categoryTemplate.id, pid);
-                return;
-            }
-
-            const fallbackTemplate = templates.find((t) => {
-                if (category === 'SUCCESS') {
-                    return t.title.toLowerCase().includes('simple') || t.title.includes('요약');
-                }
-                return t.title.toLowerCase().includes('detail') || t.title.includes('상세');
-            });
-
-            if (fallbackTemplate) {
-                await loadTemplate(fallbackTemplate.id, pid);
-                return;
-            }
-
-            // Detail 템플릿도 없으면 첫 번째 템플릿 사용 (fallback)
-            const firstTemplate = templates[0];
-            if (firstTemplate) {
-                await loadTemplate(firstTemplate.id, pid);
+            const fallbackTemplate = category === 'SUCCESS' ? simpleFallback : detailFallback;
+            const selectedTemplate = categoryTemplate || fallbackTemplate || templates[0];
+            if (selectedTemplate) {
+                setSelectedTemplateId(selectedTemplate.id);
+                await loadTemplate(selectedTemplate.id, pid);
             }
         },
         [templates, hasLoadedTemplate, category, loadTemplate]
@@ -394,7 +395,7 @@ export const RetrospectiveWritePage: FC = () => {
 
 
     useEffect(() => {
-        // location.state에서 전달된 데이터 확인
+        // location.state에서 전달된 데이터 확인 (초기 상태만 반영)
         const state = location.state as {
             retrospectiveId?: string;
             problemId?: string;
@@ -434,22 +435,13 @@ export const RetrospectiveWritePage: FC = () => {
             setSummary(stateSummary ?? ''); // 한 줄 요약 설정
             
             // 템플릿 로드 우선순위:
-            // 1. 템플릿이 이미 있으면 즉시 사용 (수정 모드)
-            if (temp) {
+            // 1. 수정 모드에서는 기존 회고 내용을 우선 사용
+            if (temp && retroId) {
                 setContent(temp);
                 setHasLoadedTemplate(true);
             }
-            // 2. 문제 ID만 있는 경우 기본 템플릿 로드
-            else if (pid) {
-                // 기본 템플릿 로드 (templates가 로드된 후)
-                if (templates && templates.length > 0) {
-                    loadDefaultTemplate(pid).catch(() => {
-                        // Template load failed, fallback template will be used
-                    });
-                }
-            }
         }
-    }, [location.state, templates, loadDefaultTemplate]);
+    }, [location.state]);
 
     // templates가 로드된 후 또는 isSuccess 변경 시 기본 템플릿 자동 로드
     useEffect(() => {
@@ -482,23 +474,6 @@ export const RetrospectiveWritePage: FC = () => {
             }
         }
     }, [code, selectedTemplateId, problemId, hasLoadedTemplate, retrospectiveId, content, language]);
-
-    // 템플릿 목록이 로드되었지만 selectedTemplateId가 없을 때 Detail 템플릿을 기본값으로 설정
-    useEffect(() => {
-        if (templates && templates.length > 0 && !selectedTemplateId && !retrospectiveId && problemId) {
-            // Detail 템플릿 찾기
-            const detailTemplate = templates.find((t) => 
-                t.title.toLowerCase().includes('detail') || t.title.includes('상세')
-            );
-
-            if (detailTemplate) {
-                setSelectedTemplateId(detailTemplate.id);
-            } else if (templates.length > 0) {
-                // Detail 템플릿이 없으면 첫 번째 템플릿 사용 (fallback)
-                setSelectedTemplateId(templates[0].id);
-            }
-        }
-    }, [templates, selectedTemplateId, retrospectiveId, problemId]);
 
     const handleCopyMarkdown = async () => {
         if (!content.trim() || !problemId) {

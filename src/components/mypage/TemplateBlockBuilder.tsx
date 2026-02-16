@@ -29,7 +29,6 @@ import { toast } from 'sonner';
 import { usePresets } from '../../hooks/api/useTemplate';
 import type { TemplateCategory } from '../../types/api/template.types';
 import {
-    convertBlocksToMarkdown,
     parseMarkdownToBlocks,
 } from './templateBlockConverter';
 import type { TemplateBlock } from './templateBlockConverter';
@@ -316,6 +315,7 @@ export const TemplateBlockBuilder: FC<TemplateBlockBuilderProps> = ({
 
     // 블록 변경 시 마크다운 변환 (가이드 질문 포함)
     const markdown = useMemo(() => {
+        let sectionNumber = 0;
         const markdownBlocks = blocks.map((block, index) => {
             // 첫 번째 블록(제목) 처리
             if (index === 0) {
@@ -345,12 +345,9 @@ export const TemplateBlockBuilder: FC<TemplateBlockBuilderProps> = ({
                 sectionTitle = removeSectionEmoji(sectionTitle);
             }
 
-            // 번호 매기기 (useAutoNumbering이 true일 때)
-            if (useAutoNumbering && sectionTitle) {
-                // 첫 번째 블록(제목)을 제외한 인덱스를 번호로 사용
-                // index는 0부터 시작하므로, 섹션 번호는 index가 됨 (첫 번째 섹션은 index=1이므로 번호는 1)
-                const sectionNumber = index; // index=1이면 1번, index=2이면 2번, ...
-                // 기존 번호 제거 후 새 번호 추가
+            // 번호 매기기 (제목/기본 섹션 제외, 사용자 섹션만 연속 번호)
+            if (useAutoNumbering && sectionTitle && !block.isDefaultSection) {
+                sectionNumber += 1;
                 sectionTitle = `${sectionNumber}. ${sectionTitle.replace(/^\d+\.\s*/, '')}`;
             }
 
@@ -412,6 +409,7 @@ export const TemplateBlockBuilder: FC<TemplateBlockBuilderProps> = ({
     // 로컬 미리보기: 섹션 순서와 가이드 질문만 표시
     const previewContent = useMemo(() => {
         // 프로필 페이지 미리보기에서는 성공/실패 여부와 관계없이 중립적인 제목 사용
+        let previewSectionNumber = 0;
         const previewBlocks = blocks.map((block, index) => {
             if (index === 0) {
                 // 제목 블록은 미리보기용 간소화된 형식 사용
@@ -444,10 +442,10 @@ export const TemplateBlockBuilder: FC<TemplateBlockBuilderProps> = ({
                 sectionTitle = removeSectionEmoji(sectionTitle);
             }
 
-            // 번호 매기기
-            if (useAutoNumbering && sectionTitle) {
-                const currentNumber = index; // 첫 번째 블록(제목) 제외한 인덱스
-                sectionTitle = `${currentNumber}. ${sectionTitle.replace(/^\d+\.\s*/, '')}`;
+            // 번호 매기기 (제목/기본 섹션 제외, 사용자 섹션만 연속 번호)
+            if (useAutoNumbering && sectionTitle && !block.isDefaultSection) {
+                previewSectionNumber += 1;
+                sectionTitle = `${previewSectionNumber}. ${sectionTitle.replace(/^\d+\.\s*/, '')}`;
             }
 
             // 섹션 제목 생성
@@ -547,24 +545,6 @@ export const TemplateBlockBuilder: FC<TemplateBlockBuilderProps> = ({
     }, [blocks]);
 
     /**
-     * 현재 본문에서 최대 섹션 번호를 찾아 다음 번호를 반환
-     */
-    const getNextSectionNumber = (currentContent: string): number => {
-        const pattern = /^##\s*(\d+)\./gm;
-        const matches = currentContent.matchAll(pattern);
-        let maxNumber = 0;
-
-        for (const match of matches) {
-            const number = parseInt(match[1], 10);
-            if (!isNaN(number) && number > maxNumber) {
-                maxNumber = number;
-            }
-        }
-
-        return maxNumber + 1;
-    };
-
-    /**
      * 프리셋 클릭 시 스마트 섹션 삽입
      */
     const handleAddPreset = (presetTitle: string) => {
@@ -577,13 +557,6 @@ export const TemplateBlockBuilder: FC<TemplateBlockBuilderProps> = ({
         // 이모지 제거 (useEmoji가 false일 때)
         if (!useEmoji) {
             sectionTitle = removeSectionEmoji(sectionTitle);
-        }
-
-        // 번호 매기기
-        if (useAutoNumbering) {
-            const currentMarkdown = convertBlocksToMarkdown(blocks);
-            const nextNumber = getNextSectionNumber(currentMarkdown);
-            sectionTitle = `${nextNumber}. ${sectionTitle}`;
         }
 
         // 새 블록 생성
