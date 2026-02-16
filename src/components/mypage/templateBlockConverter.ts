@@ -6,6 +6,11 @@ export interface TemplateBlock {
     isDefaultSection?: boolean;
 }
 
+const AUTO_NUMBER_PREFIX_REGEX = /^\d+\.\s*/;
+
+const stripAutoNumberPrefix = (title: string): string =>
+    title.replace(AUTO_NUMBER_PREFIX_REGEX, '').trim();
+
 export const parseMarkdownToBlocks = (
     markdown: string,
     titleDisplayText: string
@@ -47,7 +52,7 @@ export const parseMarkdownToBlocks = (
             };
         } else if (h2Match) {
             pushCurrentBlock();
-            const title = h2Match[1].trim();
+            const title = stripAutoNumberPrefix(h2Match[1].trim());
             const isDefaultSection = title === '제출한 코드';
             currentBlock = {
                 id: crypto.randomUUID(),
@@ -59,14 +64,14 @@ export const parseMarkdownToBlocks = (
             pushCurrentBlock();
             currentBlock = {
                 id: crypto.randomUUID(),
-                title: h3Match[1].trim(),
+                title: stripAutoNumberPrefix(h3Match[1].trim()),
                 level: 'h3',
             };
         } else if (boldMatch) {
             pushCurrentBlock();
             currentBlock = {
                 id: crypto.randomUUID(),
-                title: boldMatch[1].trim(),
+                title: stripAutoNumberPrefix(boldMatch[1].trim()),
                 level: 'p',
             };
         } else if (currentBlock) {

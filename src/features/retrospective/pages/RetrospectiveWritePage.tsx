@@ -230,8 +230,10 @@ export const RetrospectiveWritePage: FC = () => {
     const [isLoadingTemplate, setIsLoadingTemplate] = useState(false);
     const [hasLoadedTemplate, setHasLoadedTemplate] = useState(false);
     const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+    const [isPageStateReady, setIsPageStateReady] = useState(false);
     const [editorKey, setEditorKey] = useState<number>(Date.now());
     const templateLoadRequestIdRef = useRef(0);
+    const templateContextKeyRef = useRef<string | null>(null);
 
     // 문제 상세 정보 조회
     const { data: problem, isLoading: isProblemLoading } = useProblemDetail(problemId);
@@ -327,11 +329,15 @@ export const RetrospectiveWritePage: FC = () => {
                 setContent(templateContent);
                 setSelectedTemplateId(templateId);
                 setHasLoadedTemplate(true);
-            } catch {
+            } catch (error: unknown) {
                 if (requestId !== templateLoadRequestIdRef.current) {
                     return;
                 }
-                toast.error('템플릿을 불러오는 중 오류가 발생했습니다.');
+                if (isApiError(error) && error.code === 'ECONNABORTED') {
+                    toast.error('템플릿 로딩이 지연되어 기본 템플릿으로 전환합니다.');
+                } else {
+                    toast.error('템플릿을 불러오는 중 오류가 발생했습니다.');
+                }
                 // Fallback: 최소한의 기본 템플릿 제공 (문제 제목 포함)
                 const problemTitle = problem?.title || '문제';
                 const resultText = isSuccess ? '성공' : '실패';
@@ -341,7 +347,14 @@ export const RetrospectiveWritePage: FC = () => {
                     language,
                     result: resultText,
                 });
-                const fallbackTemplate = `${formattedTitle}\n\n## 접근 방법\n\n## 복잡도 분석\n\n`;
+                const tierText = problem?.difficulty && problem?.difficultyLevel
+                    ? formatTierFromDifficulty(problem.difficulty, problem.difficultyLevel)
+                    : null;
+                const fallbackTemplate = ensureDefaultSections(
+                    `${formattedTitle}\n\n## 접근 방법\n\n## 복잡도 분석\n\n`,
+                    pid,
+                    tierText
+                );
                 setContent(fallbackTemplate);
                 setHasLoadedTemplate(true);
             } finally {
@@ -441,10 +454,31 @@ export const RetrospectiveWritePage: FC = () => {
                 setHasLoadedTemplate(true);
             }
         }
+        setIsPageStateReady(true);
     }, [location.state]);
+
+    // 문제/결과 컨텍스트가 바뀌면 이전 템플릿 상태를 무효화하여 잘못된 템플릿 잔존을 방지
+    useEffect(() => {
+        if (!problemId || retrospectiveId) {
+            return;
+        }
+        const contextKey = `${problemId}:${category}`;
+        if (templateContextKeyRef.current === contextKey) {
+            return;
+        }
+        templateContextKeyRef.current = contextKey;
+        templateLoadRequestIdRef.current += 1;
+        setIsLoadingTemplate(false);
+        setHasLoadedTemplate(false);
+        setSelectedTemplateId(null);
+        setContent('');
+    }, [problemId, category, retrospectiveId]);
 
     // templates가 로드된 후 또는 isSuccess 변경 시 기본 템플릿 자동 로드
     useEffect(() => {
+        if (!isPageStateReady) {
+            return;
+        }
         if (problemId && !hasLoadedTemplate && !retrospectiveId) {
             // 카테고리별 기본 템플릿이 로드되면 자동으로 적용
             if (templates && templates.length > 0) {
@@ -454,7 +488,7 @@ export const RetrospectiveWritePage: FC = () => {
                 });
             }
         }
-    }, [problemId, hasLoadedTemplate, retrospectiveId, templates, loadDefaultTemplate]);
+    }, [problemId, hasLoadedTemplate, retrospectiveId, templates, loadDefaultTemplate, isPageStateReady]);
 
     // code가 설정된 후 이미 템플릿이 로드되었고 코드 블록이 비어있으면 코드 삽입
     useEffect(() => {

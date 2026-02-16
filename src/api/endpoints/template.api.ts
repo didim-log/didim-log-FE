@@ -15,6 +15,8 @@ import type {
     TemplateDefaultCategory,
 } from '../../types/api/template.types';
 
+const TEMPLATE_RENDER_TIMEOUT_MS = 12000;
+
 export const templateApi = {
     /**
      * 템플릿 목록 조회
@@ -63,7 +65,8 @@ export const templateApi = {
 
         const response = await apiClient.post<TemplateRenderResponse>(
             `/templates/${templateId}/render`,
-            requestBody
+            requestBody,
+            { timeout: TEMPLATE_RENDER_TIMEOUT_MS }
         );
         return response.data;
     },
@@ -73,7 +76,11 @@ export const templateApi = {
      * 저장하지 않고 템플릿을 미리보기합니다.
      */
     previewTemplate: async (data: TemplatePreviewRequest): Promise<TemplateRenderResponse> => {
-        const response = await apiClient.post<TemplateRenderResponse>('/templates/preview', data);
+        const response = await apiClient.post<TemplateRenderResponse>(
+            '/templates/preview',
+            data,
+            { timeout: TEMPLATE_RENDER_TIMEOUT_MS }
+        );
         return response.data;
     },
 
