@@ -6,9 +6,15 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { AxiosError } from 'axios';
 import { crawlerApi } from '../api/endpoints/crawler.api';
-import type { CollectMetadataRequest, JobStatusResponse } from '../types/api/admin.types';
+import type {
+  CollectMetadataRequest,
+  JobStatus,
+  JobStatusResponse,
+  RefreshDetailsRequest,
+} from '../types/api/admin.types';
 
-export type CrawlerType = 'metadata' | 'details' | 'language';
+export type CrawlerType = 'metadata' | 'details' | 'detailsRefresh' | 'language';
+export type CrawlerStartParams = CollectMetadataRequest | RefreshDetailsRequest;
 
 export type CrawlerStatus = 'IDLE' | 'LOADING' | 'RUNNING' | 'COMPLETED' | 'FAILED';
 
@@ -20,6 +26,7 @@ export interface ProgressHistoryPoint {
 
 export interface CrawlerState {
   status: CrawlerStatus;
+  backendStatus: JobStatus | null;
   jobId: string | null;
   progress: number; // 0~100
   processedCount: number;
@@ -43,14 +50,15 @@ interface UseCrawlerOptions {
 
 interface UseCrawlerReturn {
   state: CrawlerState;
-  start: (params?: CollectMetadataRequest) => Promise<void>;
-  restart: (params?: CollectMetadataRequest) => Promise<void>;
+  start: (params?: CrawlerStartParams) => Promise<void>;
+  restart: (params?: CrawlerStartParams) => Promise<void>;
   stop: () => void;
   isLoading: boolean;
 }
 
 const initialState: CrawlerState = {
   status: 'IDLE',
+  backendStatus: null,
   jobId: null,
   progress: 0,
   processedCount: 0,
@@ -79,6 +87,8 @@ export const useCrawler = (options: UseCrawlerOptions): UseCrawlerReturn => {
           return crawlerApi.getMetadataCollectStatus(jobId);
         case 'details':
           return crawlerApi.getDetailsCollectStatus(jobId);
+        case 'detailsRefresh':
+          return crawlerApi.getRefreshDetailsStatus(jobId);
         case 'language':
           return crawlerApi.getLanguageUpdateStatus(jobId);
         default:
@@ -90,15 +100,17 @@ export const useCrawler = (options: UseCrawlerOptions): UseCrawlerReturn => {
 
   // 작업 시작 API 선택
   const startApi = useCallback(
-    async (params?: CollectMetadataRequest): Promise<{ jobId: string }> => {
+    async (params?: CrawlerStartParams): Promise<{ jobId: string }> => {
       switch (type) {
         case 'metadata':
           if (!params) {
             throw new Error('Metadata collection requires start and end parameters');
           }
-          return crawlerApi.collectMetadata(params);
+          return crawlerApi.collectMetadata(params as CollectMetadataRequest);
         case 'details':
           return crawlerApi.collectDetails();
+        case 'detailsRefresh':
+          return crawlerApi.refreshDetails(params as RefreshDetailsRequest | undefined);
         case 'language':
           return crawlerApi.updateLanguage();
         default:
@@ -136,7 +148,8 @@ export const useCrawler = (options: UseCrawlerOptions): UseCrawlerReturn => {
           const failedState: CrawlerState = {
             ...stateRef.current,
             status: 'FAILED',
-            errorMessage: '작업을 찾을 수 없습니다. 새로 시작해주세요.',
+            backendStatus: 'FAILED',
+            errorMessage: `작업 상태를 찾을 수 없습니다. (jobId: ${jobId})`,
             progressHistory: stateRef.current.progressHistory || [],
           };
           setState(failedState);
@@ -152,15 +165,27 @@ export const useCrawler = (options: UseCrawlerOptions): UseCrawlerReturn => {
         // 진행률 히스토리 업데이트 (진행률이 변경되었을 때만 추가)
         let finalState: CrawlerState | null = null;
         setState((prev) => {
+          const totalCountByRange =
+            status.startProblemId && status.endProblemId
+              ? status.endProblemId - status.startProblemId + 1
+              : 0;
+          const effectiveTotalCount = status.totalCount > 0 ? status.totalCount : totalCountByRange;
+          const computedProgress =
+            effectiveTotalCount > 0
+              ? Math.min(100, Math.floor((status.processedCount / effectiveTotalCount) * 100))
+              : status.progressPercentage;
+          const normalizedProgress = Math.max(status.progressPercentage, computedProgress);
           const currentTime = Date.now();
           const prevHistory = prev.progressHistory || [];
-          const progressChanged = prev.progress !== status.progressPercentage;
-          const newHistory = progressChanged
+          const progressChanged = prev.progress !== normalizedProgress;
+          const processedChanged = prev.processedCount !== status.processedCount;
+          const shouldAppendHistory = progressChanged || processedChanged;
+          const newHistory = shouldAppendHistory
             ? [
                 ...prevHistory,
                 {
                   timestamp: currentTime,
-                  progress: status.progressPercentage,
+                  progress: normalizedProgress,
                   processedCount: status.processedCount,
                 },
               ]
@@ -171,10 +196,11 @@ export const useCrawler = (options: UseCrawlerOptions): UseCrawlerReturn => {
 
         const newState: CrawlerState = {
           status: status.status === 'COMPLETED' ? 'COMPLETED' : status.status === 'FAILED' ? 'FAILED' : 'RUNNING',
+          backendStatus: status.status,
           jobId: status.jobId,
-          progress: status.progressPercentage,
+          progress: normalizedProgress,
           processedCount: status.processedCount,
-          totalCount: status.totalCount,
+          totalCount: effectiveTotalCount,
           successCount: status.successCount,
           failCount: status.failCount,
           estimatedRemainingSeconds: status.estimatedRemainingSeconds,
@@ -225,6 +251,7 @@ export const useCrawler = (options: UseCrawlerOptions): UseCrawlerReturn => {
           const failedState: CrawlerState = {
             ...stateRef.current,
             status: 'FAILED',
+            backendStatus: 'FAILED',
             errorMessage: `연속 ${MAX_CONSECUTIVE_ERRORS}회 상태 조회 실패: ${errorMessage}`,
             progressHistory: stateRef.current.progressHistory || [],
           };
@@ -235,6 +262,40 @@ export const useCrawler = (options: UseCrawlerOptions): UseCrawlerReturn => {
           if (onError) {
             onError(error instanceof Error ? error : new Error(errorMessage));
           }
+          return;
+        }
+
+        const axiosError = error as AxiosError<{ message?: string }>;
+        const statusCode = axiosError.response?.status;
+        if (statusCode === 404) {
+          const failedState: CrawlerState = {
+            ...stateRef.current,
+            status: 'FAILED',
+            backendStatus: 'FAILED',
+            errorMessage: `작업 상태를 찾을 수 없습니다. (jobId: ${jobId})`,
+            progressHistory: stateRef.current.progressHistory || [],
+          };
+          setState(failedState);
+          stateRef.current = failedState;
+          stop();
+          consecutiveErrorCountRef.current = 0;
+          return;
+        }
+
+        if (statusCode === 400) {
+          const failedState: CrawlerState = {
+            ...stateRef.current,
+            status: 'FAILED',
+            backendStatus: 'FAILED',
+            errorMessage:
+              axiosError.response?.data?.message ||
+              '요청 파라미터가 유효하지 않습니다. start/end 범위를 확인해주세요.',
+            progressHistory: stateRef.current.progressHistory || [],
+          };
+          setState(failedState);
+          stateRef.current = failedState;
+          stop();
+          consecutiveErrorCountRef.current = 0;
           return;
         }
 
@@ -274,7 +335,7 @@ export const useCrawler = (options: UseCrawlerOptions): UseCrawlerReturn => {
 
   // 작업 시작
   const start = useCallback(
-    async (params?: CollectMetadataRequest) => {
+    async (params?: CrawlerStartParams) => {
       if (state.status === 'LOADING' || state.status === 'RUNNING') {
         return; // 이미 실행 중
       }
@@ -282,6 +343,7 @@ export const useCrawler = (options: UseCrawlerOptions): UseCrawlerReturn => {
       setState((prev) => ({
         ...prev,
         status: 'LOADING',
+        backendStatus: 'PENDING',
         errorMessage: null,
         progressHistory: prev.progressHistory || [], // 새 작업 시작 시 히스토리 초기화 (기존 값이 없으면 빈 배열)
       }));
@@ -291,12 +353,30 @@ export const useCrawler = (options: UseCrawlerOptions): UseCrawlerReturn => {
         setState((prev) => ({
           ...prev,
           status: 'RUNNING',
+          backendStatus: 'RUNNING',
           jobId: result.jobId,
         }));
         startPolling(result.jobId);
       } catch (error) {
+        const axiosError = error as AxiosError<{ message?: string; jobId?: string }>;
+
+        if (axiosError.response?.status === 400) {
+          const badRequestMessage =
+            axiosError.response.data?.message ||
+            '요청 범위가 유효하지 않습니다. start/end를 함께 입력하고 start <= end인지 확인해주세요.';
+          setState((prev) => ({
+            ...prev,
+            status: 'FAILED',
+            backendStatus: 'FAILED',
+            errorMessage: badRequestMessage,
+          }));
+          if (onError) {
+            onError(new Error(badRequestMessage));
+          }
+          throw error;
+        }
+
         // 타임아웃 처리: jobId가 있으면 상태 조회하여 checkpoint 확인
-        const axiosError = error as AxiosError<{ jobId?: string }>;
         const isTimeout = axiosError.code === 'ECONNABORTED' || axiosError.message?.includes('timeout');
         
         if (isTimeout && axiosError.response?.data?.jobId) {
@@ -310,6 +390,7 @@ export const useCrawler = (options: UseCrawlerOptions): UseCrawlerReturn => {
               setState((prev) => ({
                 ...prev,
                 status: 'RUNNING',
+                backendStatus: status.status,
                 jobId,
                 lastCheckpointId: status.lastCheckpointId,
                 errorMessage: null,
@@ -326,6 +407,7 @@ export const useCrawler = (options: UseCrawlerOptions): UseCrawlerReturn => {
         setState((prev) => ({
           ...prev,
           status: 'FAILED',
+          backendStatus: 'FAILED',
           errorMessage,
         }));
         if (onError) {
@@ -339,7 +421,7 @@ export const useCrawler = (options: UseCrawlerOptions): UseCrawlerReturn => {
 
   // 재시작 (이어하기)
   const restart = useCallback(
-    async (params?: CollectMetadataRequest) => {
+    async (params?: CrawlerStartParams) => {
       // 메타데이터 수집의 경우: lastCheckpointId + 1부터 시작
       if (type === 'metadata' && state.lastCheckpointId && typeof state.lastCheckpointId === 'number') {
         const checkpointStart = state.lastCheckpointId + 1;

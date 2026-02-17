@@ -13,6 +13,8 @@ import type { ProblemResponse } from '../../../types/api/problem.types';
 import { OnlyKoreanToggle } from '../../../components/common/OnlyKoreanToggle';
 import { getCategoryDisplayLabel } from '../../../constants/categoryMapping';
 import { LanguageBadge } from '../../../components/common/LanguageBadge';
+import { buildRepresentativeCategoriesFromSource } from '../../../utils/problemCategory';
+import { getCategoryLabel } from '../../../utils/constants';
 
 const BOJ_STEP_URL = 'https://www.acmicpc.net/step';
 
@@ -186,6 +188,15 @@ export const RecommendedProblems: FC<RecommendedProblemsProps> = ({ count = 4, c
 
         if (shouldShowUnratedEmptyState) {
             return <RecommendedProblemsUnratedEmptyState />;
+        }
+
+        if (isEmpty && onlyKorean) {
+            return (
+                <RecommendedProblemsLanguageFilteredEmptyState
+                    onRetry={() => refetch()}
+                    onShowAllLanguages={() => setOnlyKorean(false)}
+                />
+            );
         }
 
         if (isEmpty) {
@@ -381,6 +392,56 @@ const RecommendedProblemsDefaultEmptyState: FC<RecommendedProblemsDefaultEmptySt
     );
 };
 
+interface RecommendedProblemsLanguageFilteredEmptyStateProps {
+    onRetry: () => void;
+    onShowAllLanguages: () => void;
+}
+
+const RecommendedProblemsLanguageFilteredEmptyState: FC<RecommendedProblemsLanguageFilteredEmptyStateProps> = ({
+    onRetry,
+    onShowAllLanguages,
+}) => {
+    return (
+        <div className="tour-recommend-empty text-center py-8 px-4">
+            <div className="mb-4">
+                <svg
+                    className="w-16 h-16 mx-auto text-gray-400 dark:text-gray-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                </svg>
+            </div>
+            <p className="text-gray-700 dark:text-gray-300 text-sm font-medium mb-2">한국어 필터 결과가 비어 있어요.</p>
+            <p className="text-gray-600 dark:text-gray-400 text-xs mb-4">
+                본문/입출력 기반 엄격 필터로 추천 수가 줄 수 있습니다. 전체 언어로 다시 보거나 재시도해 주세요.
+            </p>
+            <div className="flex items-center justify-center gap-2">
+                <button
+                    type="button"
+                    onClick={onShowAllLanguages}
+                    className="px-4 py-2 text-sm rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                >
+                    전체 언어 보기
+                </button>
+                <button
+                    type="button"
+                    onClick={onRetry}
+                    className="px-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                >
+                    다시 조회
+                </button>
+            </div>
+        </div>
+    );
+};
+
 const RecommendedProblemsUnratedEmptyState: FC = () => {
     return (
         <div className="tour-recommend-empty text-center py-8 px-4">
@@ -427,6 +488,9 @@ interface ProblemCardProps {
 
 const ProblemCard: FC<ProblemCardProps> = ({ problem }) => {
     const difficultyDisplay = formatTierFromDifficulty(problem.difficulty, problem.difficultyLevel);
+    const representative = buildRepresentativeCategoriesFromSource(problem, 3);
+    const primaryCategory = representative[0] ? getCategoryLabel(representative[0]) : problem.category;
+    const secondaryCategories = representative.slice(1).map((item) => getCategoryLabel(item));
 
     return (
         <Link
@@ -441,9 +505,12 @@ const ProblemCard: FC<ProblemCardProps> = ({ problem }) => {
                     </div>
                     <h4 className="text-sm font-semibold text-gray-900 dark:text-white mt-1">{problem.title}</h4>
                     {/* 카테고리 정보 표시 */}
-                    {problem.category && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
-                            {problem.category}
+                    {primaryCategory && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">{primaryCategory}</p>
+                    )}
+                    {secondaryCategories.length > 0 && (
+                        <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
+                            {secondaryCategories.join(', ')}
                         </p>
                     )}
                 </div>

@@ -6,6 +6,9 @@ export interface ProblemResponse {
     id: string;
     title: string;
     category: string;
+    primaryCategory?: string;
+    secondaryCategories?: string[];
+    normalizedTags?: string[];
     difficulty: string;
     difficultyLevel: number;
     url: string;
@@ -16,6 +19,9 @@ export interface ProblemDetailResponse {
     id: string;
     title: string;
     category: string;
+    primaryCategory?: string;
+    secondaryCategories?: string[];
+    normalizedTags?: string[];
     difficulty: string;
     difficultyLevel: number;
     url: string;

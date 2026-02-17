@@ -13,13 +13,17 @@ import { Spinner } from '../../../components/ui/Spinner';
 import { BookOpen, Minus, Maximize, Languages, RotateCw, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import type { CollectMetadataRequest } from '../../../types/api/admin.types';
+import type { CollectMetadataRequest, RefreshDetailsRequest } from '../../../types/api/admin.types';
 
 export const ProblemCollector: FC = () => {
   const [start, setStart] = useState('');
   const [end, setEnd] = useState('');
   const [errors, setErrors] = useState<{ start?: string; end?: string }>({});
   const [metadataParams, setMetadataParams] = useState<CollectMetadataRequest | null>(null);
+  const [refreshStart, setRefreshStart] = useState('');
+  const [refreshEnd, setRefreshEnd] = useState('');
+  const [refreshErrors, setRefreshErrors] = useState<{ start?: string; end?: string }>({});
+  const [refreshDetailsParams, setRefreshDetailsParams] = useState<RefreshDetailsRequest | null>(null);
 
   const { data: stats, isLoading: isStatsLoading, refetch: refetchStats } = useProblemStats();
   const suggestedStart = stats?.maxProblemId ? String(stats.maxProblemId + 1) : '';
@@ -58,6 +62,21 @@ export const ProblemCollector: FC = () => {
     },
   });
 
+  const detailsRefreshCrawler = useCrawler({
+    type: 'detailsRefresh',
+    pollInterval: 2000,
+    onComplete: (state) => {
+      toast.success(
+        `상세 정보 재수집 완료: ${state.successCount}개 성공, ${state.failCount}개 실패`
+      );
+      refetchStats();
+      setRefreshDetailsParams(null);
+    },
+    onError: (error) => {
+      toast.error(`상세 정보 재수집 실패: ${error.message}`);
+    },
+  });
+
   const languageCrawler = useCrawler({
     type: 'language',
     pollInterval: 2000,
@@ -86,7 +105,13 @@ export const ProblemCollector: FC = () => {
     const startNum = Number(resolvedStart);
     const endNum = Number(end);
 
-    if (isNaN(startNum) || isNaN(endNum) || startNum < 1 || endNum < 1 || startNum > endNum) {
+    if (
+      !Number.isInteger(startNum) ||
+      !Number.isInteger(endNum) ||
+      startNum < 1 ||
+      endNum < 1 ||
+      startNum > endNum
+    ) {
       setErrors({ start: '유효한 범위를 입력해주세요.', end: '유효한 범위를 입력해주세요.' });
       return;
     }
@@ -163,13 +188,88 @@ export const ProblemCollector: FC = () => {
     }
   };
 
+  // 상세 정보 강제 재수집 시작 (기존 수집 데이터 포함)
+  const handleRefreshDetails = async (e: FormEvent) => {
+    e.preventDefault();
+
+    const hasStart = refreshStart.trim() !== '';
+    const hasEnd = refreshEnd.trim() !== '';
+
+    if (hasStart !== hasEnd) {
+      setRefreshErrors({
+        start: !hasStart ? '시작 문제 ID를 입력해주세요.' : undefined,
+        end: !hasEnd ? '종료 문제 ID를 입력해주세요.' : undefined,
+      });
+      return;
+    }
+
+    let params: RefreshDetailsRequest | undefined;
+    if (hasStart && hasEnd) {
+      const startNum = Number(refreshStart);
+      const endNum = Number(refreshEnd);
+      if (
+        !Number.isInteger(startNum) ||
+        !Number.isInteger(endNum) ||
+        startNum < 1 ||
+        endNum < 1 ||
+        startNum > endNum
+      ) {
+        setRefreshErrors({ start: '유효한 범위를 입력해주세요.', end: '유효한 범위를 입력해주세요.' });
+        return;
+      }
+      params = { start: startNum, end: endNum };
+    }
+
+    const scopeMessage =
+      params?.start && params?.end
+        ? `문제 ID ${params.start}부터 ${params.end}까지 강제 재수집합니다.`
+        : 'DB에 저장된 모든 문제를 강제 재수집합니다.';
+
+    const confirmed = window.confirm(
+      `문제 상세 정보를 강제로 재수집하시겠습니까?\n\n` +
+        `${scopeMessage}\n` +
+        `본문/입출력/예제와 언어 정보가 함께 최신화됩니다.\n\n` +
+        `이 작업은 시간이 오래 걸릴 수 있습니다.`
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await detailsRefreshCrawler.start(params);
+      setRefreshErrors({});
+      setRefreshDetailsParams(params ?? null);
+      toast.success('상세 정보 재수집 작업이 시작되었습니다.');
+    } catch (error) {
+      if (error instanceof Error) {
+        toast.error(`재수집 시작 실패: ${error.message}`);
+      } else {
+        toast.error('재수집 시작에 실패했습니다.');
+      }
+    }
+  };
+
+  const handleRestartRefreshDetails = async () => {
+    try {
+      await detailsRefreshCrawler.restart(refreshDetailsParams ?? undefined);
+      toast.success('상세 정보 재수집 작업을 다시 시작했습니다.');
+    } catch (error) {
+      if (error instanceof Error) {
+        toast.error(`재시작 실패: ${error.message}`);
+      } else {
+        toast.error('재시작에 실패했습니다.');
+      }
+    }
+  };
+
   // 언어 정보 업데이트 시작
   const handleUpdateLanguage = async () => {
     if (
       !confirm(
-        '모든 문제의 언어 정보를 업데이트하시겠습니까?\n\n' +
+        '전체 문제의 언어를 다시 판별하시겠습니까?\n\n' +
           '이 작업은 시간이 오래 걸릴 수 있습니다.\n' +
           '(문제 수에 따라 수 분 ~ 수십 분 소요)\n\n' +
+          '이번 작업은 null 값만 채우는 방식이 아니라 전체 문제를 재판별합니다.\n\n' +
           '중단되어도 다시 호출하면 이어서 진행됩니다.'
       )
     ) {
@@ -192,7 +292,7 @@ export const ProblemCollector: FC = () => {
   const ProgressDisplay: FC<{
     state: ReturnType<typeof useCrawler>['state'];
     title: string;
-    type: 'metadata' | 'details' | 'language';
+    type: 'metadata' | 'details' | 'detailsRefresh' | 'language';
   }> = ({ state, title, type }) => {
     // 그래프 데이터 준비 (시간 경과에 따른 진행률)
     const chartData = useMemo(() => {
@@ -218,6 +318,36 @@ export const ProblemCollector: FC = () => {
       return null;
     }
 
+    const backendStatus = state.backendStatus ?? (state.status === 'LOADING' ? 'PENDING' : null);
+    const statusLabel = backendStatus
+      ? {
+          PENDING: '대기 중',
+          RUNNING: '실행 중',
+          COMPLETED: '완료',
+          FAILED: '실패',
+        }[backendStatus]
+      : null;
+    const statusClassName = backendStatus
+      ? {
+          PENDING: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
+          RUNNING: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
+          COMPLETED: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300',
+          FAILED: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
+        }[backendStatus]
+      : '';
+
+    const effectiveTotalCount =
+      state.totalCount > 0
+        ? state.totalCount
+        : type === 'metadata' && state.startProblemId && state.endProblemId
+          ? state.endProblemId - state.startProblemId + 1
+          : 0;
+    const effectiveProgress =
+      effectiveTotalCount > 0
+        ? Math.min(100, Math.floor((state.processedCount / effectiveTotalCount) * 100))
+        : state.progress;
+    const hasDeterministicProgress = effectiveTotalCount > 0;
+
     // 현재 처리 중인 문제 ID 추정 (메타데이터 수집의 경우)
     const currentProblemId =
       type === 'metadata' && state.startProblemId && state.processedCount > 0
@@ -227,18 +357,27 @@ export const ProblemCollector: FC = () => {
     return (
       <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
         <div className="mb-4">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
-              {title} 진행률: {state.progress}%
-            </span>
+          <div className="flex items-center justify-between mb-1 gap-2">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                {title} 진행률: {hasDeterministicProgress ? `${effectiveProgress}%` : '계산 중...'}
+              </span>
+              {statusLabel && (
+                <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${statusClassName}`}>
+                  {statusLabel}
+                </span>
+              )}
+            </div>
             <span className="text-xs text-blue-600 dark:text-blue-400">
-              {state.processedCount}/{state.totalCount}
+              {state.processedCount}/{hasDeterministicProgress ? effectiveTotalCount : '?'}
             </span>
           </div>
           <div className="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-2">
             <div
-              className="bg-blue-600 dark:bg-blue-400 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${state.progress}%` }}
+              className={`bg-blue-600 dark:bg-blue-400 h-2 rounded-full transition-all duration-300 ${
+                hasDeterministicProgress ? '' : 'animate-pulse opacity-60'
+              }`}
+              style={{ width: `${hasDeterministicProgress ? effectiveProgress : 100}%` }}
             />
           </div>
         </div>
@@ -320,7 +459,20 @@ export const ProblemCollector: FC = () => {
           {type === 'details' && (
             <>
               <p className="font-medium">
-                처리 대상: descriptionHtml이 null인 문제 {state.totalCount}개
+                처리 대상: descriptionHtml이 null인 문제 {hasDeterministicProgress ? effectiveTotalCount : '집계 중'}개
+              </p>
+              {state.processedCount > 0 && (
+                <p className="text-blue-700 dark:text-blue-300 font-semibold">
+                  처리 완료: {state.processedCount}개
+                </p>
+              )}
+            </>
+          )}
+          {/* 상세 정보 강제 재수집: 처리된 개수 기반 정보 */}
+          {type === 'detailsRefresh' && (
+            <>
+              <p className="font-medium">
+                처리 대상: 기존 수집 여부와 무관하게 선택한 문제 상세/언어 정보를 강제 갱신
               </p>
               {state.processedCount > 0 && (
                 <p className="text-blue-700 dark:text-blue-300 font-semibold">
@@ -333,7 +485,7 @@ export const ProblemCollector: FC = () => {
           {type === 'language' && (
             <>
               <p className="font-medium">
-                처리 대상: 언어 정보가 null이거나 "other"인 문제 {state.totalCount}개
+                처리 대상: 전체 문제 언어 재판별 {hasDeterministicProgress ? effectiveTotalCount : '집계 중'}개
               </p>
               {state.processedCount > 0 && (
                 <p className="text-blue-700 dark:text-blue-300 font-semibold">
@@ -412,7 +564,7 @@ export const ProblemCollector: FC = () => {
   const CompleteDisplay: FC<{
     state: ReturnType<typeof useCrawler>['state'];
     title: string;
-    type: 'metadata' | 'details' | 'language';
+    type: 'metadata' | 'details' | 'detailsRefresh' | 'language';
   }> = ({ state, title, type }) => {
     if (state.status !== 'COMPLETED') {
       return null;
@@ -662,6 +814,78 @@ export const ProblemCollector: FC = () => {
         />
       </div>
 
+      {/* 상세 정보 강제 재수집 */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 border border-gray-200 dark:border-gray-700">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          문제 상세 정보 강제 재수집
+        </h2>
+
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          기존에 수집된 문제도 포함하여 상세 정보(description/input/output/sample)와 언어 정보를 다시
+          크롤링해 최신화합니다. 범위를 비워두면 전체 문제를 대상으로 실행됩니다.
+        </p>
+
+        <form onSubmit={handleRefreshDetails} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="시작 문제 ID (선택)"
+              type="number"
+              value={refreshStart}
+              onChange={(e) => {
+                setRefreshStart(e.target.value);
+                setRefreshErrors((prev) => ({ ...prev, start: undefined }));
+              }}
+              placeholder="예: 1000"
+              min={1}
+              error={refreshErrors.start}
+            />
+            <Input
+              label="종료 문제 ID (선택)"
+              type="number"
+              value={refreshEnd}
+              onChange={(e) => {
+                setRefreshEnd(e.target.value);
+                setRefreshErrors((prev) => ({ ...prev, end: undefined }));
+              }}
+              placeholder="예: 5000"
+              min={1}
+              error={refreshErrors.end}
+            />
+          </div>
+          <p className="text-xs text-gray-500 dark:text-gray-500">
+            범위를 지정하려면 시작/종료를 모두 입력해야 하며, 비워두면 전체 재수집을 수행합니다.
+          </p>
+          <Button
+            type="submit"
+            variant="primary"
+            isLoading={detailsRefreshCrawler.isLoading}
+            disabled={detailsRefreshCrawler.state.status === 'RUNNING'}
+          >
+            {detailsRefreshCrawler.isLoading
+              ? '작업 시작 중...'
+              : detailsRefreshCrawler.state.status === 'RUNNING'
+                ? '작업 진행 중...'
+                : '상세 정보 강제 재수집 시작'}
+          </Button>
+        </form>
+
+        <ProgressDisplay
+          state={detailsRefreshCrawler.state}
+          title="상세 정보 재수집"
+          type="detailsRefresh"
+        />
+        <ErrorDisplay
+          state={detailsRefreshCrawler.state}
+          onRestart={handleRestartRefreshDetails}
+          title="상세 정보 재수집"
+        />
+        <CompleteDisplay
+          state={detailsRefreshCrawler.state}
+          title="상세 정보 재수집"
+          type="detailsRefresh"
+        />
+      </div>
+
       {/* 언어 정보 최신화 */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 border border-gray-200 dark:border-gray-700">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
@@ -675,7 +899,7 @@ export const ProblemCollector: FC = () => {
             <div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">처리 대상</p>
               <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                언어 정보가 null이거나 "other"인 문제
+                전체 문제 언어 재판별
               </p>
             </div>
             <div>
@@ -688,13 +912,9 @@ export const ProblemCollector: FC = () => {
                 <p className="text-lg font-semibold text-green-600 dark:text-green-400">
                   완료됨
                 </p>
-              ) : stats?.minNullLanguageProblemId ? (
-                <p className="text-lg font-semibold text-blue-600 dark:text-blue-400">
-                  {stats.minNullLanguageProblemId}번부터 (null/other인 문제 최소 번호)
-                </p>
               ) : (
                 <p className="text-lg font-semibold text-gray-400 dark:text-gray-500">
-                  작업 시작 후 표시
+                  전체 범위 대상
                 </p>
               )}
             </div>
@@ -710,7 +930,7 @@ export const ProblemCollector: FC = () => {
         </div>
 
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-          DB에 저장된 모든 문제의 언어 정보를 재판별하여 업데이트합니다. 기존 크롤링 데이터는 유지하고
+          DB에 저장된 전체 문제를 대상으로 본문/입출력/제목 기반 언어 판별을 다시 수행합니다. 기존 크롤링 데이터는 유지하고
           language 필드만 업데이트합니다.
           <br />
           <span className="text-xs text-gray-500 dark:text-gray-500 mt-1 block">

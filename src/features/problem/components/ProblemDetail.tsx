@@ -2,13 +2,15 @@
  * 문제 상세 컴포넌트
  */
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { FC } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Copy, ExternalLink, ChevronLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatTierFromDifficulty, getTierColor } from '../../../utils/tier';
 import type { ProblemDetailResponse } from '../../../types/api/problem.types';
+import { buildRepresentativeCategoriesFromSource } from '../../../utils/problemCategory';
+import { getCategoryLabel } from '../../../utils/constants';
 
 interface ProblemDetailProps {
     problem: ProblemDetailResponse;
@@ -18,6 +20,10 @@ interface ProblemDetailProps {
 export const ProblemDetail: FC<ProblemDetailProps> = ({ problem, isBlurred }) => {
     const navigate = useNavigate();
     const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+    const representativeCategories = useMemo(
+        () => buildRepresentativeCategoriesFromSource(problem, 6),
+        [problem]
+    );
 
     const handleCopySampleInput = async (input: string, index: number) => {
         try {
@@ -57,13 +63,26 @@ export const ProblemDetail: FC<ProblemDetailProps> = ({ problem, isBlurred }) =>
                         {/* 태그 */}
                         <div className="flex items-center gap-2 flex-wrap ml-11">
                             <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded text-sm font-medium">
-                                {problem.category}
+                                {representativeCategories[0]
+                                    ? getCategoryLabel(representativeCategories[0])
+                                    : problem.category}
                             </span>
                             <span className={`px-2 py-1 rounded text-sm font-medium whitespace-nowrap ${getTierColor(problem.difficulty)}`}>
                                 {formatTierFromDifficulty(problem.difficulty, problem.difficultyLevel)}
                             </span>
                             {/* 알고리즘 태그 */}
-                            {problem.tags.length > 0 && (
+                            {representativeCategories.length > 1 ? (
+                                <>
+                                    {representativeCategories.slice(1).map((tag, index) => (
+                                        <span
+                                            key={index}
+                                            className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded text-xs"
+                                        >
+                                            {getCategoryLabel(tag)}
+                                        </span>
+                                    ))}
+                                </>
+                            ) : problem.tags.length > 0 ? (
                                 <>
                                     {problem.tags.map((tag, index) => (
                                         <span
@@ -74,7 +93,7 @@ export const ProblemDetail: FC<ProblemDetailProps> = ({ problem, isBlurred }) =>
                                         </span>
                                     ))}
                                 </>
-                            )}
+                            ) : null}
                         </div>
                     </div>
 

@@ -5,7 +5,12 @@
 
 import type { AxiosError } from 'axios';
 import { apiClient } from '../client';
-import type { CollectMetadataRequest, JobStartResponse, JobStatusResponse } from '../../types/api/admin.types';
+import type {
+  CollectMetadataRequest,
+  JobStartResponse,
+  JobStatusResponse,
+  RefreshDetailsRequest,
+} from '../../types/api/admin.types';
 
 export const crawlerApi = {
   /**
@@ -66,6 +71,37 @@ export const crawlerApi = {
       const axiosError = error as AxiosError;
       if (axiosError.response?.status === 404) {
         return null; // 작업을 찾을 수 없음
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * 문제 상세 정보 강제 재수집 시작 (비동기)
+   * 기존 수집 여부와 무관하게 상세 정보를 강제로 다시 수집
+   * 범위를 지정하면 해당 문제 ID 범위만 재수집
+   */
+  refreshDetails: async (params?: RefreshDetailsRequest): Promise<JobStartResponse> => {
+    const response = await apiClient.post<JobStartResponse>('/admin/problems/refresh-details', null, {
+      params,
+      timeout: 60000, // 60초로 증가
+    });
+    return response.data;
+  },
+
+  /**
+   * 상세 정보 강제 재수집 작업 상태 조회
+   */
+  getRefreshDetailsStatus: async (jobId: string): Promise<JobStatusResponse | null> => {
+    try {
+      const response = await apiClient.get<JobStatusResponse>(`/admin/problems/refresh-details/status/${jobId}`, {
+        timeout: 10000,
+      });
+      return response.data;
+    } catch (error) {
+      const axiosError = error as AxiosError;
+      if (axiosError.response?.status === 404) {
+        return null;
       }
       throw error;
     }

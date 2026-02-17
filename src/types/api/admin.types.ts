@@ -62,6 +62,11 @@ export interface CollectMetadataRequest {
     end: number;
 }
 
+export interface RefreshDetailsRequest {
+    start?: number;
+    end?: number;
+}
+
 export interface ProblemStatsResponse {
     totalCount: number;
     minProblemId: number | null;
@@ -76,7 +81,7 @@ export interface ProblemStatsResponse {
 export interface JobStartResponse {
     message: string;
     jobId: string;
-    range?: string; // 메타데이터 수집의 경우
+    range?: string; // 메타데이터/상세 강제 재수집의 경우
 }
 
 /**
