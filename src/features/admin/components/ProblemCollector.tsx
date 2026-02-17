@@ -335,6 +335,7 @@ export const ProblemCollector: FC = () => {
           FAILED: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
         }[backendStatus]
       : '';
+    const isPending = backendStatus === 'PENDING';
 
     const effectiveTotalCount =
       state.totalCount > 0
@@ -432,6 +433,16 @@ export const ProblemCollector: FC = () => {
           </div>
         )}
         <div className="text-xs text-blue-600 dark:text-blue-400 space-y-1">
+          {state.jobId && (
+            <p className="font-medium">
+              작업 ID: {state.jobId}
+            </p>
+          )}
+          {isPending && (
+            <p className="text-amber-700 dark:text-amber-300 font-medium">
+              작업이 큐에서 대기 중입니다. 잠시 후 자동으로 실행 상태로 전환됩니다.
+            </p>
+          )}
           {/* 메타데이터 수집: 범위 및 현재 처리 번호 */}
           {type === 'metadata' && state.startProblemId && state.endProblemId && (
             <>
@@ -461,6 +472,11 @@ export const ProblemCollector: FC = () => {
               <p className="font-medium">
                 처리 대상: descriptionHtml이 null인 문제 {hasDeterministicProgress ? effectiveTotalCount : '집계 중'}개
               </p>
+              {isPending && (
+                <p>
+                  현재 상태: 대상 문제를 집계하고 작업 리소스를 할당하는 중입니다.
+                </p>
+              )}
               {state.processedCount > 0 && (
                 <p className="text-blue-700 dark:text-blue-300 font-semibold">
                   처리 완료: {state.processedCount}개
@@ -474,6 +490,11 @@ export const ProblemCollector: FC = () => {
               <p className="font-medium">
                 처리 대상: 기존 수집 여부와 무관하게 선택한 문제 상세/언어 정보를 강제 갱신
               </p>
+              {isPending && (
+                <p>
+                  현재 상태: 재수집 대상 준비 중입니다.
+                </p>
+              )}
               {state.processedCount > 0 && (
                 <p className="text-blue-700 dark:text-blue-300 font-semibold">
                   처리 완료: {state.processedCount}개
@@ -487,6 +508,11 @@ export const ProblemCollector: FC = () => {
               <p className="font-medium">
                 처리 대상: 전체 문제 언어 재판별 {hasDeterministicProgress ? effectiveTotalCount : '집계 중'}개
               </p>
+              {isPending && (
+                <p>
+                  현재 상태: 재판별 대상 준비 중입니다.
+                </p>
+              )}
               {state.processedCount > 0 && (
                 <p className="text-blue-700 dark:text-blue-300 font-semibold">
                   처리 완료: {state.processedCount}개
