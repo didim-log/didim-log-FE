@@ -367,14 +367,23 @@ export const RetrospectiveWritePage: FC = () => {
                 }
                 if (isApiError(error) && error.response?.status === 404) {
                     toast.error('선택한 템플릿을 찾을 수 없어 기본 템플릿으로 전환합니다.');
-                } else if (isApiError(error) && error.code === 'ECONNABORTED') {
-                    toast.error('템플릿 로딩이 지연되어 기본 템플릿으로 전환합니다.');
+                } else if (
+                    isApiError(error) &&
+                    (
+                        error.response?.status === 504 ||
+                        error.response?.data?.code === 'TEMPLATE_RENDER_TIMEOUT' ||
+                        error.code === 'ECONNABORTED'
+                    )
+                ) {
+                    toast.error('템플릿 로딩 시간이 초과되어 기본 템플릿으로 전환합니다.');
+                } else if (isApiError(error) && error.response?.data?.retryable) {
+                    toast.error('템플릿을 일시적으로 불러오지 못했습니다. 기본 템플릿으로 전환합니다.');
                 } else {
                     toast.error('템플릿을 불러오는 중 오류가 발생했습니다.');
                 }
                 // Fallback: 최소한의 기본 템플릿 제공 (문제 제목 포함)
                 const problemTitle = problem?.title || '문제';
-                const resultText = isSuccess ? '성공' : '실패';
+                const resultText = isSuccess ? '해결' : '미해결';
                 const formattedTitle = formatTitle(DEFAULT_TITLE_FORMAT, {
                     problemId: pid,
                     problemTitle,
@@ -389,6 +398,7 @@ export const RetrospectiveWritePage: FC = () => {
                     pid,
                     tierText
                 );
+                setSelectedTemplateId(templateId);
                 setContent(fallbackTemplate);
                 setHasLoadedTemplate(true);
             } finally {
@@ -402,6 +412,10 @@ export const RetrospectiveWritePage: FC = () => {
 
     const loadDefaultTemplate = useCallback(
         async (pid: string, forceReload: boolean = false) => {
+            if (isLoadingTemplate) {
+                return;
+            }
+
             if (hasLoadedTemplate && !forceReload) {
                 return;
             }
@@ -429,7 +443,7 @@ export const RetrospectiveWritePage: FC = () => {
                 await loadTemplate(selectedTemplate.id, pid);
             }
         },
-        [templates, hasLoadedTemplate, category, loadTemplate]
+        [templates, hasLoadedTemplate, category, loadTemplate, isLoadingTemplate]
     );
 
     // 온보딩 모드: 자동으로 폼 열기 (AI 버튼이 보이도록)
@@ -545,6 +559,9 @@ export const RetrospectiveWritePage: FC = () => {
         if (!isPageStateReady) {
             return;
         }
+        if (isLoadingTemplate) {
+            return;
+        }
         if (problemId && !hasLoadedTemplate && !retrospectiveId) {
             // 카테고리별 기본 템플릿이 로드되면 자동으로 적용
             if (templates.length > 0) {
@@ -587,6 +604,7 @@ export const RetrospectiveWritePage: FC = () => {
         isTemplateSummariesLoading,
         isTemplatesLoading,
         templateSummariesError,
+        isLoadingTemplate,
         problem,
         isSuccess,
         language,

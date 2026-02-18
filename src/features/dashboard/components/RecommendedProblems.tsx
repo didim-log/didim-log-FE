@@ -234,8 +234,7 @@ export const RecommendedProblems: FC<RecommendedProblemsProps> = ({ count = 4, c
             </div>
 
             {/* 카테고리 칩 버튼 그룹 - 항상 표시 */}
-            {!isLoading && (
-                <div className="mb-4 relative">
+            <div className="mb-4 relative">
                 {/* 왼쪽 화살표 버튼 */}
                 {showLeftArrow && (
                     <button
@@ -296,7 +295,6 @@ export const RecommendedProblems: FC<RecommendedProblemsProps> = ({ count = 4, c
                     ))}
                 </div>
             </div>
-            )}
 
             {renderContent()}
         </div>

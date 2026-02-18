@@ -338,12 +338,16 @@ export const ProblemCollector: FC = () => {
   }, [
     autoRecoverEnabled,
     autoRecoveredJobIds,
+    detailsCrawler,
     detailsCrawler.state,
     detailsCrawler.restart,
+    detailsRefreshCrawler,
     detailsRefreshCrawler.state,
     detailsRefreshCrawler.restart,
+    languageCrawler,
     languageCrawler.state,
     languageCrawler.restart,
+    metadataCrawler,
     metadataCrawler.state,
     metadataCrawler.restart,
     metadataParams,
@@ -665,7 +669,7 @@ export const ProblemCollector: FC = () => {
         ? state.rangeStart + state.processedCount - 1
         : null;
 
-    const speedPerMin = useMemo(() => {
+    const speedPerMin = (() => {
       const history = state.progressHistory ?? [];
       if (history.length < 2) {
         return 0;
@@ -681,7 +685,7 @@ export const ProblemCollector: FC = () => {
         return 0;
       }
       return Math.round((processedDiff / elapsedMin) * 10) / 10;
-    }, [state.progressHistory]);
+    })();
 
     const etaConfidence = speedPerMin <= 0 ? '낮음' : speedPerMin < 5 ? '보통' : '높음';
     const etaConfidenceClass =
