@@ -15,7 +15,13 @@ import { Spinner } from '../../../components/ui/Spinner';
 import { BookOpen, Minus, Maximize, Languages, RotateCw, AlertCircle, Copy, Activity, Clock3, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import type { CollectMetadataRequest, JobStatusResponse, RefreshDetailsRequest } from '../../../types/api/admin.types';
+import type {
+  CollectMetadataRequest,
+  JobStatus,
+  JobStatusResponse,
+  JobType,
+  RefreshDetailsRequest,
+} from '../../../types/api/admin.types';
 import type { CrawlerType } from '../../../hooks/useCrawler';
 
 type CollectorTask = {
@@ -99,6 +105,10 @@ const formatDuration = (startMs?: number | null, endMs?: number | null): string 
 };
 
 export const ProblemCollector: FC = () => {
+  const [jobFilterType, setJobFilterType] = useState<JobType | ''>('');
+  const [jobFilterStatus, setJobFilterStatus] = useState<JobStatus | ''>('');
+  const [jobFilterFrom, setJobFilterFrom] = useState('');
+  const [jobFilterTo, setJobFilterTo] = useState('');
   const [start, setStart] = useState('');
   const [end, setEnd] = useState('');
   const [errors, setErrors] = useState<{ start?: string; end?: string }>({});
@@ -124,10 +134,22 @@ export const ProblemCollector: FC = () => {
     refreshEndNum >= 1 &&
     refreshStartNum <= refreshEndNum;
   const refreshEstimatedCount = refreshRangeValid ? refreshEndNum - refreshStartNum + 1 : null;
+  const filterParams = useMemo(() => {
+    const fromSeconds = jobFilterFrom ? Math.floor(new Date(jobFilterFrom).getTime() / 1000) : undefined;
+    const toSeconds = jobFilterTo ? Math.floor(new Date(jobFilterTo).getTime() / 1000) : undefined;
+    return {
+      type: jobFilterType || undefined,
+      status: jobFilterStatus || undefined,
+      from: Number.isFinite(fromSeconds) ? fromSeconds : undefined,
+      to: Number.isFinite(toSeconds) ? toSeconds : undefined,
+      page: 1,
+      size: 40,
+    };
+  }, [jobFilterFrom, jobFilterStatus, jobFilterTo, jobFilterType]);
 
   const jobsQuery = useQuery({
-    queryKey: ['admin', 'problem-jobs', { page: 1, size: 40 }],
-    queryFn: () => crawlerApi.getJobs({ page: 1, size: 40 }),
+    queryKey: ['admin', 'problem-jobs', filterParams],
+    queryFn: () => crawlerApi.getJobs(filterParams),
     refetchInterval: 5000,
   });
 
@@ -144,8 +166,8 @@ export const ProblemCollector: FC = () => {
   });
 
   const auditQuery = useQuery({
-    queryKey: ['admin', 'problem-jobs', 'audit', { page: 1, size: 10 }],
-    queryFn: () => crawlerApi.getJobAudit({ page: 1, size: 10 }),
+    queryKey: ['admin', 'problem-jobs', 'audit', { ...filterParams, size: 10 }],
+    queryFn: () => crawlerApi.getJobAudit({ ...filterParams, size: 10 }),
     refetchInterval: 30000,
   });
 
@@ -1425,18 +1447,81 @@ export const ProblemCollector: FC = () => {
 
       {/* 최근 작업 이력 */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 border border-gray-200 dark:border-gray-700">
+        <div className="mb-4 grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div>
+            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">작업 타입</label>
+            <select
+              value={jobFilterType}
+              onChange={(e) => setJobFilterType((e.target.value as JobType) || '')}
+              className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800"
+            >
+              <option value="">전체</option>
+              <option value="COLLECT_METADATA">COLLECT_METADATA</option>
+              <option value="COLLECT_DETAILS">COLLECT_DETAILS</option>
+              <option value="REFRESH_DETAILS">REFRESH_DETAILS</option>
+              <option value="UPDATE_LANGUAGE">UPDATE_LANGUAGE</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">상태</label>
+            <select
+              value={jobFilterStatus}
+              onChange={(e) => setJobFilterStatus((e.target.value as JobStatus) || '')}
+              className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800"
+            >
+              <option value="">전체</option>
+              <option value="PENDING">PENDING</option>
+              <option value="RUNNING">RUNNING</option>
+              <option value="COMPLETED">COMPLETED</option>
+              <option value="FAILED">FAILED</option>
+              <option value="CANCELLED">CANCELLED</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">시작 시각(From)</label>
+            <input
+              type="datetime-local"
+              value={jobFilterFrom}
+              onChange={(e) => setJobFilterFrom(e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">종료 시각(To)</label>
+            <input
+              type="datetime-local"
+              value={jobFilterTo}
+              onChange={(e) => setJobFilterTo(e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800"
+            />
+          </div>
+        </div>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">최근 작업 이력</h2>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              jobsQuery.refetch();
-              auditQuery.refetch();
-            }}
-          >
-            새로고침
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setJobFilterType('');
+                setJobFilterStatus('');
+                setJobFilterFrom('');
+                setJobFilterTo('');
+              }}
+            >
+              필터 초기화
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                jobsQuery.refetch();
+                auditQuery.refetch();
+              }}
+            >
+              새로고침
+            </Button>
+          </div>
         </div>
         {taskHistory.length === 0 ? (
           <p className="text-sm text-gray-500 dark:text-gray-400">아직 기록된 작업이 없습니다.</p>
