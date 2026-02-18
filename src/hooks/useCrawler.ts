@@ -16,7 +16,7 @@ import type {
 export type CrawlerType = 'metadata' | 'details' | 'detailsRefresh' | 'language';
 export type CrawlerStartParams = CollectMetadataRequest | RefreshDetailsRequest;
 
-export type CrawlerStatus = 'IDLE' | 'LOADING' | 'RUNNING' | 'COMPLETED' | 'FAILED';
+export type CrawlerStatus = 'IDLE' | 'LOADING' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
 
 export interface ProgressHistoryPoint {
   timestamp: number; // Unix timestamp (밀리초)
@@ -28,16 +28,26 @@ export interface CrawlerState {
   status: CrawlerStatus;
   backendStatus: JobStatus | null;
   jobId: string | null;
+  jobType: string | null;
+  queuedAt: number | null; // Unix timestamp (초)
+  startedAt: number | null; // Unix timestamp (초)
+  completedAt: number | null; // Unix timestamp (초)
+  lastHeartbeatAt: number | null; // Unix timestamp (초)
+  lastUpdatedAt: number | null; // Unix timestamp (밀리초)
+  retryCount: number; // 네트워크 재시도 횟수
+  queuePosition: number | null;
   progress: number; // 0~100
   processedCount: number;
   totalCount: number;
   successCount: number;
   failCount: number;
   estimatedRemainingSeconds: number | null;
+  rangeStart: number | null;
+  rangeEnd: number | null;
+  createdBy: string | null;
+  errorCode: string | null;
   errorMessage: string | null;
-  startProblemId?: number;
-  endProblemId?: number;
-  lastCheckpointId?: number | string | null; // checkpoint 정보 (실패 시 재시작용)
+  lastCheckpointId?: string | null; // checkpoint 정보 (실패 시 재시작용)
   progressHistory: ProgressHistoryPoint[]; // 진행률 히스토리
 }
 
@@ -60,12 +70,24 @@ const initialState: CrawlerState = {
   status: 'IDLE',
   backendStatus: null,
   jobId: null,
+  jobType: null,
+  queuedAt: null,
+  startedAt: null,
+  completedAt: null,
+  lastHeartbeatAt: null,
+  lastUpdatedAt: null,
+  retryCount: 0,
+  queuePosition: null,
   progress: 0,
   processedCount: 0,
   totalCount: 0,
   successCount: 0,
   failCount: 0,
   estimatedRemainingSeconds: null,
+  rangeStart: null,
+  rangeEnd: null,
+  createdBy: null,
+  errorCode: null,
   errorMessage: null,
   progressHistory: [],
 };
@@ -73,11 +95,13 @@ const initialState: CrawlerState = {
 export const useCrawler = (options: UseCrawlerOptions): UseCrawlerReturn => {
   const { type, pollInterval = 2000, onComplete, onError } = options;
   const [state, setState] = useState<CrawlerState>(initialState);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isPollingRef = useRef(false);
   const consecutiveErrorCountRef = useRef(0);
   const stateRef = useRef<CrawlerState>(initialState); // 현재 상태를 ref로 추적
   const MAX_CONSECUTIVE_ERRORS = 5; // 연속 에러 5회 발생 시 폴링 중단
+  const PENDING_POLL_INTERVAL_MS = 5000;
+  const MAX_BACKOFF_MS = 15000;
 
   // 상태 조회 API 선택
   const getStatusApi = useCallback(
@@ -122,9 +146,9 @@ export const useCrawler = (options: UseCrawlerOptions): UseCrawlerReturn => {
 
   // 폴링 중지 (먼저 정의하여 pollStatus에서 사용 가능하도록)
   const stop = useCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current); // setInterval이므로 clearInterval 사용
-      intervalRef.current = null;
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
     }
     isPollingRef.current = false;
     consecutiveErrorCountRef.current = 0;
@@ -150,6 +174,7 @@ export const useCrawler = (options: UseCrawlerOptions): UseCrawlerReturn => {
             status: 'FAILED',
             backendStatus: 'FAILED',
             errorMessage: `작업 상태를 찾을 수 없습니다. (jobId: ${jobId})`,
+            lastUpdatedAt: Date.now(),
             progressHistory: stateRef.current.progressHistory || [],
           };
           setState(failedState);
@@ -166,8 +191,8 @@ export const useCrawler = (options: UseCrawlerOptions): UseCrawlerReturn => {
         let finalState: CrawlerState | null = null;
         setState((prev) => {
           const totalCountByRange =
-            status.startProblemId && status.endProblemId
-              ? status.endProblemId - status.startProblemId + 1
+            status.range?.start && status.range?.end
+              ? status.range.end - status.range.start + 1
               : 0;
           const effectiveTotalCount = status.totalCount > 0 ? status.totalCount : totalCountByRange;
           const computedProgress =
@@ -195,18 +220,35 @@ export const useCrawler = (options: UseCrawlerOptions): UseCrawlerReturn => {
           const trimmedHistory = newHistory.slice(-100);
 
         const newState: CrawlerState = {
-          status: status.status === 'COMPLETED' ? 'COMPLETED' : status.status === 'FAILED' ? 'FAILED' : 'RUNNING',
+          status:
+            status.status === 'COMPLETED'
+              ? 'COMPLETED'
+              : status.status === 'FAILED'
+                ? 'FAILED'
+                : status.status === 'CANCELLED'
+                  ? 'CANCELLED'
+                  : 'RUNNING',
           backendStatus: status.status,
           jobId: status.jobId,
+          jobType: status.jobType,
+          queuedAt: status.queuedAt,
+          startedAt: status.startedAt ?? prev.startedAt,
+          completedAt: status.completedAt ?? null,
+          lastHeartbeatAt: status.lastHeartbeatAt ?? null,
+          lastUpdatedAt: Date.now(),
+          retryCount: 0,
+          queuePosition: status.queuePosition ?? null,
           progress: normalizedProgress,
           processedCount: status.processedCount,
           totalCount: effectiveTotalCount,
           successCount: status.successCount,
           failCount: status.failCount,
           estimatedRemainingSeconds: status.estimatedRemainingSeconds,
+          rangeStart: status.range?.start ?? null,
+          rangeEnd: status.range?.end ?? null,
+          createdBy: status.createdBy,
+          errorCode: status.errorCode,
           errorMessage: status.errorMessage,
-          startProblemId: status.startProblemId,
-          endProblemId: status.endProblemId,
           lastCheckpointId: status.lastCheckpointId,
           progressHistory: trimmedHistory,
         };
@@ -217,7 +259,7 @@ export const useCrawler = (options: UseCrawlerOptions): UseCrawlerReturn => {
         });
 
         // 완료 또는 실패 시 폴링 중지
-        if (status.status === 'COMPLETED' || status.status === 'FAILED') {
+        if (status.status === 'COMPLETED' || status.status === 'FAILED' || status.status === 'CANCELLED') {
           stop();
           consecutiveErrorCountRef.current = 0;
           if (finalState) {
@@ -228,12 +270,11 @@ export const useCrawler = (options: UseCrawlerOptions): UseCrawlerReturn => {
               // 실패했지만 lastCheckpointId가 있으면 재시작 가능
               if (status.lastCheckpointId) {
                 // 에러 메시지에 checkpoint 정보 추가
-                const checkpointMessage = typeof status.lastCheckpointId === 'number'
-                  ? `${status.errorMessage || '작업이 실패했습니다.'} (마지막 처리 위치: ${status.lastCheckpointId}번)`
-                  : `${status.errorMessage || '작업이 실패했습니다.'} (마지막 처리 위치: ${status.lastCheckpointId})`;
+                const checkpointMessage = `${status.errorMessage || '작업이 실패했습니다.'} (마지막 처리 위치: ${status.lastCheckpointId})`;
                 setState((prev) => ({
                   ...prev,
                   errorMessage: checkpointMessage,
+                  lastUpdatedAt: Date.now(),
                 }));
               }
               if (onError) {
@@ -253,6 +294,8 @@ export const useCrawler = (options: UseCrawlerOptions): UseCrawlerReturn => {
             status: 'FAILED',
             backendStatus: 'FAILED',
             errorMessage: `연속 ${MAX_CONSECUTIVE_ERRORS}회 상태 조회 실패: ${errorMessage}`,
+            retryCount: consecutiveErrorCountRef.current,
+            lastUpdatedAt: Date.now(),
             progressHistory: stateRef.current.progressHistory || [],
           };
           setState(failedState);
@@ -265,14 +308,18 @@ export const useCrawler = (options: UseCrawlerOptions): UseCrawlerReturn => {
           return;
         }
 
-        const axiosError = error as AxiosError<{ message?: string }>;
+        const axiosError = error as AxiosError<{ message?: string; code?: string }>;
         const statusCode = axiosError.response?.status;
+        const errorCode = axiosError.response?.data?.code;
         if (statusCode === 404) {
           const failedState: CrawlerState = {
             ...stateRef.current,
             status: 'FAILED',
             backendStatus: 'FAILED',
             errorMessage: `작업 상태를 찾을 수 없습니다. (jobId: ${jobId})`,
+            errorCode: errorCode ?? 'JOB_NOT_FOUND',
+            retryCount: consecutiveErrorCountRef.current,
+            lastUpdatedAt: Date.now(),
             progressHistory: stateRef.current.progressHistory || [],
           };
           setState(failedState);
@@ -290,6 +337,45 @@ export const useCrawler = (options: UseCrawlerOptions): UseCrawlerReturn => {
             errorMessage:
               axiosError.response?.data?.message ||
               '요청 파라미터가 유효하지 않습니다. start/end 범위를 확인해주세요.',
+            errorCode: errorCode ?? 'INVALID_RANGE',
+            retryCount: consecutiveErrorCountRef.current,
+            lastUpdatedAt: Date.now(),
+            progressHistory: stateRef.current.progressHistory || [],
+          };
+          setState(failedState);
+          stateRef.current = failedState;
+          stop();
+          consecutiveErrorCountRef.current = 0;
+          return;
+        }
+
+        if (statusCode === 409) {
+          const failedState: CrawlerState = {
+            ...stateRef.current,
+            status: 'FAILED',
+            backendStatus: 'FAILED',
+            errorMessage: axiosError.response?.data?.message || '이미 종료된 작업입니다.',
+            errorCode: errorCode ?? 'JOB_ALREADY_TERMINAL',
+            retryCount: consecutiveErrorCountRef.current,
+            lastUpdatedAt: Date.now(),
+            progressHistory: stateRef.current.progressHistory || [],
+          };
+          setState(failedState);
+          stateRef.current = failedState;
+          stop();
+          consecutiveErrorCountRef.current = 0;
+          return;
+        }
+
+        if (statusCode === 503) {
+          const failedState: CrawlerState = {
+            ...stateRef.current,
+            status: 'FAILED',
+            backendStatus: 'FAILED',
+            errorMessage: axiosError.response?.data?.message || '워커/큐 상태로 인해 작업을 진행할 수 없습니다.',
+            errorCode: errorCode ?? 'WORKER_UNAVAILABLE',
+            retryCount: consecutiveErrorCountRef.current,
+            lastUpdatedAt: Date.now(),
             progressHistory: stateRef.current.progressHistory || [],
           };
           setState(failedState);
@@ -301,6 +387,11 @@ export const useCrawler = (options: UseCrawlerOptions): UseCrawlerReturn => {
 
         // 일시적인 네트워크 에러인 경우 다음 폴링 시도는 계속 진행
         // 상태를 업데이트하지 않고 조용히 재시도 (로그만 남김)
+        setState((prev) => ({
+          ...prev,
+          retryCount: consecutiveErrorCountRef.current,
+          lastUpdatedAt: Date.now(),
+        }));
         console.warn(`상태 조회 실패 (${consecutiveErrorCountRef.current}/${MAX_CONSECUTIVE_ERRORS}):`, error);
       } finally {
         isPollingRef.current = false;
@@ -309,28 +400,36 @@ export const useCrawler = (options: UseCrawlerOptions): UseCrawlerReturn => {
     [getStatusApi, onComplete, onError, stop]
   );
 
-  // 폴링 시작 (간단한 setInterval 방식)
+  const getNextPollDelay = useCallback((): number => {
+    const backendStatus = stateRef.current.backendStatus;
+    const base = backendStatus === 'PENDING' ? PENDING_POLL_INTERVAL_MS : pollInterval;
+    const backoff = Math.min(MAX_BACKOFF_MS, pollInterval * Math.max(0, consecutiveErrorCountRef.current - 1));
+    return base + backoff;
+  }, [pollInterval]);
+
+  // 폴링 시작 (setTimeout 기반 동적 폴링)
   const startPolling = useCallback(
     (jobId: string) => {
       stop(); // 기존 폴링 중지
 
-      // 즉시 한 번 조회
-      pollStatus(jobId);
-
-      // 주기적으로 폴링
-      intervalRef.current = setInterval(() => {
-        // ref로 현재 상태 확인 (setState 내부에서 확인하지 않음)
+      const runPoll = async () => {
         const currentStatus = stateRef.current.status;
-        if (currentStatus === 'RUNNING' || currentStatus === 'LOADING') {
-          // RUNNING 또는 LOADING 상태인 경우에만 폴링 실행
-          pollStatus(jobId);
-        } else {
-          // RUNNING이 아니면 폴링 중지
+        if (currentStatus !== 'RUNNING' && currentStatus !== 'LOADING') {
           stop();
+          return;
         }
-      }, pollInterval);
+        await pollStatus(jobId);
+        const nextStatus = stateRef.current.status;
+        if (nextStatus !== 'RUNNING' && nextStatus !== 'LOADING') {
+          stop();
+          return;
+        }
+        timerRef.current = setTimeout(runPoll, getNextPollDelay());
+      };
+
+      runPoll();
     },
-    [pollStatus, pollInterval, stop]
+    [getNextPollDelay, pollStatus, stop]
   );
 
   // 작업 시작
@@ -344,8 +443,17 @@ export const useCrawler = (options: UseCrawlerOptions): UseCrawlerReturn => {
         ...prev,
         status: 'LOADING',
         backendStatus: 'PENDING',
+        jobType: null,
+        queuedAt: null,
+        startedAt: null,
+        completedAt: null,
+        lastHeartbeatAt: null,
+        lastUpdatedAt: Date.now(),
+        retryCount: 0,
+        queuePosition: null,
         errorMessage: null,
-        progressHistory: prev.progressHistory || [], // 새 작업 시작 시 히스토리 초기화 (기존 값이 없으면 빈 배열)
+        errorCode: null,
+        progressHistory: [],
       }));
 
       try {
@@ -353,25 +461,54 @@ export const useCrawler = (options: UseCrawlerOptions): UseCrawlerReturn => {
         setState((prev) => ({
           ...prev,
           status: 'RUNNING',
-          backendStatus: 'RUNNING',
+          backendStatus: 'PENDING',
           jobId: result.jobId,
+          lastUpdatedAt: Date.now(),
         }));
         startPolling(result.jobId);
       } catch (error) {
-        const axiosError = error as AxiosError<{ message?: string; jobId?: string }>;
+        const axiosError = error as AxiosError<{ message?: string; jobId?: string; code?: string }>;
+        const statusCode = axiosError.response?.status;
+        const errorCode = axiosError.response?.data?.code;
 
-        if (axiosError.response?.status === 400) {
+        if (statusCode === 400) {
           const badRequestMessage =
-            axiosError.response.data?.message ||
+            axiosError.response?.data?.message ||
             '요청 범위가 유효하지 않습니다. start/end를 함께 입력하고 start <= end인지 확인해주세요.';
           setState((prev) => ({
             ...prev,
             status: 'FAILED',
             backendStatus: 'FAILED',
             errorMessage: badRequestMessage,
+            errorCode: errorCode ?? 'INVALID_RANGE',
+            retryCount: 0,
+            lastUpdatedAt: Date.now(),
           }));
           if (onError) {
             onError(new Error(badRequestMessage));
+          }
+          throw error;
+        }
+
+        if (statusCode === 409 || statusCode === 503) {
+          const terminalMessage =
+            axiosError.response?.data?.message ||
+            (statusCode === 409
+              ? '이미 종료된 작업입니다.'
+              : '큐/워커 상태로 작업 시작에 실패했습니다.');
+          setState((prev) => ({
+            ...prev,
+            status: 'FAILED',
+            backendStatus: 'FAILED',
+            errorMessage: terminalMessage,
+            errorCode:
+              errorCode ??
+              (statusCode === 409 ? 'JOB_ALREADY_TERMINAL' : 'WORKER_UNAVAILABLE'),
+            retryCount: 0,
+            lastUpdatedAt: Date.now(),
+          }));
+          if (onError) {
+            onError(new Error(terminalMessage));
           }
           throw error;
         }
@@ -392,7 +529,18 @@ export const useCrawler = (options: UseCrawlerOptions): UseCrawlerReturn => {
                 status: 'RUNNING',
                 backendStatus: status.status,
                 jobId,
+                jobType: status.jobType,
+                queuedAt: status.queuedAt,
+                startedAt: status.startedAt ?? prev.startedAt,
+                completedAt: status.completedAt ?? null,
+                lastHeartbeatAt: status.lastHeartbeatAt ?? null,
+                lastUpdatedAt: Date.now(),
                 lastCheckpointId: status.lastCheckpointId,
+                queuePosition: status.queuePosition,
+                rangeStart: status.range?.start ?? null,
+                rangeEnd: status.range?.end ?? null,
+                createdBy: status.createdBy,
+                errorCode: status.errorCode,
                 errorMessage: null,
               }));
               startPolling(jobId);
@@ -408,6 +556,9 @@ export const useCrawler = (options: UseCrawlerOptions): UseCrawlerReturn => {
           ...prev,
           status: 'FAILED',
           backendStatus: 'FAILED',
+          retryCount: 0,
+          lastUpdatedAt: Date.now(),
+          errorCode: errorCode ?? null,
           errorMessage,
         }));
         if (onError) {
@@ -423,20 +574,9 @@ export const useCrawler = (options: UseCrawlerOptions): UseCrawlerReturn => {
   const restart = useCallback(
     async (params?: CrawlerStartParams) => {
       // 메타데이터 수집의 경우: lastCheckpointId + 1부터 시작
-      if (type === 'metadata' && state.lastCheckpointId && typeof state.lastCheckpointId === 'number') {
-        const checkpointStart = state.lastCheckpointId + 1;
-        const originalEnd = params?.end || state.endProblemId || checkpointStart;
-        const newParams: CollectMetadataRequest = {
-          start: checkpointStart,
-          end: originalEnd,
-        };
-        await start(newParams);
-      } else {
-        // 상세 정보/언어 업데이트: 같은 API를 다시 호출하면 백엔드가 checkpoint부터 자동으로 이어서 진행
-        await start(params);
-      }
+      await start(params);
     },
-    [start, type, state.lastCheckpointId, state.endProblemId]
+    [start]
   );
 
   // state 변경 시 stateRef 동기화
