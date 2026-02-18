@@ -3,17 +3,65 @@
  * Resumable Crawling 기능 지원
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import type { FC, FormEvent } from 'react';
 import { useCrawler } from '../../../hooks/useCrawler';
 import { useProblemStats } from '../../../hooks/api/useAdmin';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { Spinner } from '../../../components/ui/Spinner';
-import { BookOpen, Minus, Maximize, Languages, RotateCw, AlertCircle } from 'lucide-react';
+import { BookOpen, Minus, Maximize, Languages, RotateCw, AlertCircle, Copy, Activity, Clock3, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import type { CollectMetadataRequest, RefreshDetailsRequest } from '../../../types/api/admin.types';
+import type { CrawlerType } from '../../../hooks/useCrawler';
+
+type CollectorTask = {
+  id: string;
+  type: CrawlerType;
+  title: string;
+  jobId: string;
+  status: 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED';
+  startedAt: number | null;
+  completedAt: number | null;
+  processedCount: number;
+  totalCount: number;
+  successCount: number;
+  failCount: number;
+  progressPercentage: number;
+  errorMessage: string | null;
+  rangeLabel: string;
+  createdAt: number;
+  updatedAt: number;
+};
+
+const TASK_HISTORY_STORAGE_KEY = 'admin_problem_collector_tasks_v1';
+const MAX_TASK_HISTORY_COUNT = 40;
+
+const CRAWLER_TYPE_LABEL: Record<CrawlerType, string> = {
+  metadata: '메타데이터 수집',
+  details: '상세 크롤링',
+  detailsRefresh: '상세 재수집',
+  language: '언어 재판별',
+};
+
+const formatDateTime = (timestampMs?: number | null): string => {
+  if (!timestampMs || Number.isNaN(timestampMs)) {
+    return '-';
+  }
+  return new Date(timestampMs).toLocaleString('ko-KR', { hour12: false });
+};
+
+const formatDuration = (startMs?: number | null, endMs?: number | null): string => {
+  if (!startMs) {
+    return '-';
+  }
+  const end = endMs ?? Date.now();
+  const diffSec = Math.max(0, Math.floor((end - startMs) / 1000));
+  const minutes = Math.floor(diffSec / 60);
+  const seconds = diffSec % 60;
+  return `${minutes}분 ${seconds}초`;
+};
 
 export const ProblemCollector: FC = () => {
   const [start, setStart] = useState('');
@@ -24,9 +72,46 @@ export const ProblemCollector: FC = () => {
   const [refreshEnd, setRefreshEnd] = useState('');
   const [refreshErrors, setRefreshErrors] = useState<{ start?: string; end?: string }>({});
   const [refreshDetailsParams, setRefreshDetailsParams] = useState<RefreshDetailsRequest | null>(null);
+  const [taskHistory, setTaskHistory] = useState<CollectorTask[]>([]);
+  const [autoRecoverEnabled, setAutoRecoverEnabled] = useState(true);
+  const [autoRecoveredJobIds, setAutoRecoveredJobIds] = useState<Record<string, boolean>>({});
 
   const { data: stats, isLoading: isStatsLoading, refetch: refetchStats } = useProblemStats();
   const suggestedStart = stats?.maxProblemId ? String(stats.maxProblemId + 1) : '';
+  const refreshStartNum = Number(refreshStart);
+  const refreshEndNum = Number(refreshEnd);
+  const refreshRangeValid =
+    refreshStart.trim() !== '' &&
+    refreshEnd.trim() !== '' &&
+    Number.isInteger(refreshStartNum) &&
+    Number.isInteger(refreshEndNum) &&
+    refreshStartNum >= 1 &&
+    refreshEndNum >= 1 &&
+    refreshStartNum <= refreshEndNum;
+  const refreshEstimatedCount = refreshRangeValid ? refreshEndNum - refreshStartNum + 1 : null;
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(TASK_HISTORY_STORAGE_KEY);
+      if (!raw) {
+        return;
+      }
+      const parsed = JSON.parse(raw) as CollectorTask[];
+      if (Array.isArray(parsed)) {
+        setTaskHistory(parsed.slice(0, MAX_TASK_HISTORY_COUNT));
+      }
+    } catch {
+      // ignore malformed cache
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(TASK_HISTORY_STORAGE_KEY, JSON.stringify(taskHistory.slice(0, MAX_TASK_HISTORY_COUNT)));
+    } catch {
+      // ignore storage failure
+    }
+  }, [taskHistory]);
 
   // 크롤링 훅들
   const metadataCrawler = useCrawler({
@@ -89,6 +174,123 @@ export const ProblemCollector: FC = () => {
       toast.error(`언어 정보 업데이트 실패: ${error.message}`);
     },
   });
+
+  const upsertTaskHistory = (
+    crawlerType: CrawlerType,
+    state: ReturnType<typeof useCrawler>['state'],
+    rangeLabel: string
+  ) => {
+    if (!state.jobId || !state.backendStatus) {
+      return;
+    }
+    const now = Date.now();
+    const status = state.backendStatus;
+    const jobId = state.jobId;
+    const startMs = state.startedAt ? state.startedAt * 1000 : null;
+    const completedMs = state.completedAt ? state.completedAt * 1000 : null;
+    const progressPercentage =
+      state.totalCount > 0
+        ? Math.min(100, Math.floor((state.processedCount / state.totalCount) * 100))
+        : state.progress;
+    setTaskHistory((prev) => {
+      const existingIndex = prev.findIndex((item) => item.jobId === jobId);
+      const task: CollectorTask = {
+        id: jobId,
+        type: crawlerType,
+        title: CRAWLER_TYPE_LABEL[crawlerType],
+        jobId,
+        status,
+        startedAt: startMs,
+        completedAt: completedMs,
+        processedCount: state.processedCount,
+        totalCount: state.totalCount,
+        successCount: state.successCount,
+        failCount: state.failCount,
+        progressPercentage,
+        errorMessage: state.errorMessage,
+        rangeLabel,
+        createdAt: existingIndex >= 0 ? prev[existingIndex].createdAt : now,
+        updatedAt: now,
+      };
+      if (existingIndex >= 0) {
+        const clone = [...prev];
+        clone[existingIndex] = task;
+        return clone.sort((a, b) => b.updatedAt - a.updatedAt).slice(0, MAX_TASK_HISTORY_COUNT);
+      }
+      return [task, ...prev].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, MAX_TASK_HISTORY_COUNT);
+    });
+  };
+
+  useEffect(() => {
+    const range = metadataParams ? `${metadataParams.start}~${metadataParams.end}` : '-';
+    upsertTaskHistory('metadata', metadataCrawler.state, range);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [metadataCrawler.state, metadataParams?.start, metadataParams?.end]);
+
+  useEffect(() => {
+    upsertTaskHistory('details', detailsCrawler.state, 'descriptionHtml null');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [detailsCrawler.state]);
+
+  useEffect(() => {
+    const range =
+      refreshDetailsParams?.start && refreshDetailsParams?.end
+        ? `${refreshDetailsParams.start}~${refreshDetailsParams.end}`
+        : '전체';
+    upsertTaskHistory('detailsRefresh', detailsRefreshCrawler.state, range);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [detailsRefreshCrawler.state, refreshDetailsParams?.start, refreshDetailsParams?.end]);
+
+  useEffect(() => {
+    upsertTaskHistory('language', languageCrawler.state, '전체');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [languageCrawler.state]);
+
+  useEffect(() => {
+    if (!autoRecoverEnabled) {
+      return;
+    }
+    const candidates: Array<{
+      state: ReturnType<typeof useCrawler>['state'];
+      restart: () => Promise<void>;
+      name: string;
+    }> = [
+      { state: metadataCrawler.state, restart: () => metadataCrawler.restart(metadataParams ?? undefined), name: '메타데이터 수집' },
+      { state: detailsCrawler.state, restart: () => detailsCrawler.restart(), name: '상세 크롤링' },
+      { state: detailsRefreshCrawler.state, restart: () => detailsRefreshCrawler.restart(refreshDetailsParams ?? undefined), name: '상세 재수집' },
+      { state: languageCrawler.state, restart: () => languageCrawler.restart(), name: '언어 재판별' },
+    ];
+    candidates.forEach((candidate) => {
+      const { state, restart, name } = candidate;
+      if (
+        state.status !== 'FAILED' ||
+        !state.jobId ||
+        !state.lastCheckpointId ||
+        autoRecoveredJobIds[state.jobId]
+      ) {
+        return;
+      }
+      setAutoRecoveredJobIds((prev) => ({ ...prev, [state.jobId as string]: true }));
+      restart()
+        .then(() => toast.success(`${name} 자동 복구: checkpoint 기준 재시작했습니다.`))
+        .catch(() => {
+          // manual restart fallback
+        });
+    });
+  }, [
+    autoRecoverEnabled,
+    autoRecoveredJobIds,
+    detailsCrawler.state,
+    detailsCrawler.restart,
+    detailsRefreshCrawler.state,
+    detailsRefreshCrawler.restart,
+    languageCrawler.state,
+    languageCrawler.restart,
+    metadataCrawler.state,
+    metadataCrawler.restart,
+    metadataParams,
+    refreshDetailsParams,
+  ]);
 
   // 메타데이터 수집 시작
   const handleCollectMetadata = async (e: FormEvent) => {
@@ -288,6 +490,61 @@ export const ProblemCollector: FC = () => {
     }
   };
 
+  const taskWarnings = useMemo(() => {
+    return taskHistory
+      .filter((task) => task.status === 'RUNNING' || task.status === 'FAILED')
+      .map((task) => {
+        const failureRate =
+          task.processedCount > 0 ? Math.round((task.failCount / task.processedCount) * 100) : 0;
+        const stagnantMinutes = Math.floor((Date.now() - task.updatedAt) / 60000);
+        const warningMessages: string[] = [];
+        if (failureRate >= 20) {
+          warningMessages.push(`실패율 ${failureRate}%`);
+        }
+        if (task.status === 'RUNNING' && stagnantMinutes >= 3) {
+          warningMessages.push(`진행 정체 ${stagnantMinutes}분`);
+        }
+        return {
+          task,
+          warningMessages,
+        };
+      })
+      .filter((item) => item.warningMessages.length > 0)
+      .slice(0, 5);
+  }, [taskHistory]);
+
+  const opsSummary = useMemo(() => {
+    const now = Date.now();
+    const dayWindow = now - 24 * 60 * 60 * 1000;
+    const weekWindow = now - 7 * 24 * 60 * 60 * 1000;
+    const dayTasks = taskHistory.filter((task) => task.createdAt >= dayWindow);
+    const weekTasks = taskHistory.filter((task) => task.createdAt >= weekWindow);
+    const byStatus = (tasks: CollectorTask[], status: CollectorTask['status']) =>
+      tasks.filter((task) => task.status === status).length;
+    const avgDurationSec = (tasks: CollectorTask[]) => {
+      const completed = tasks.filter((task) => task.startedAt && task.completedAt);
+      if (completed.length === 0) {
+        return 0;
+      }
+      const total = completed.reduce((acc, task) => acc + Math.max(0, ((task.completedAt as number) - (task.startedAt as number)) / 1000), 0);
+      return Math.round(total / completed.length);
+    };
+    return {
+      day: {
+        total: dayTasks.length,
+        completed: byStatus(dayTasks, 'COMPLETED'),
+        failed: byStatus(dayTasks, 'FAILED'),
+        avgDurationSec: avgDurationSec(dayTasks),
+      },
+      week: {
+        total: weekTasks.length,
+        completed: byStatus(weekTasks, 'COMPLETED'),
+        failed: byStatus(weekTasks, 'FAILED'),
+        avgDurationSec: avgDurationSec(weekTasks),
+      },
+    };
+  }, [taskHistory]);
+
   // 진행 상황 표시 컴포넌트
   const ProgressDisplay: FC<{
     state: ReturnType<typeof useCrawler>['state'];
@@ -336,6 +593,12 @@ export const ProblemCollector: FC = () => {
         }[backendStatus]
       : '';
     const isPending = backendStatus === 'PENDING';
+    const timelineSteps = [
+      { key: 'PENDING', label: '대기' },
+      { key: 'RUNNING', label: '실행' },
+      { key: 'COMPLETED', label: '완료' },
+    ] as const;
+    const currentStepIndex = backendStatus === 'PENDING' ? 0 : backendStatus === 'RUNNING' ? 1 : backendStatus === 'COMPLETED' ? 2 : 1;
 
     const effectiveTotalCount =
       state.totalCount > 0
@@ -355,8 +618,60 @@ export const ProblemCollector: FC = () => {
         ? state.startProblemId + state.processedCount - 1
         : null;
 
+    const speedPerMin = useMemo(() => {
+      const history = state.progressHistory ?? [];
+      if (history.length < 2) {
+        return 0;
+      }
+      const first = history[0];
+      const last = history[history.length - 1];
+      if (!first || !last || last.timestamp <= first.timestamp) {
+        return 0;
+      }
+      const processedDiff = Math.max(0, last.processedCount - first.processedCount);
+      const elapsedMin = (last.timestamp - first.timestamp) / 60000;
+      if (elapsedMin <= 0) {
+        return 0;
+      }
+      return Math.round((processedDiff / elapsedMin) * 10) / 10;
+    }, [state.progressHistory]);
+
+    const etaConfidence = speedPerMin <= 0 ? '낮음' : speedPerMin < 5 ? '보통' : '높음';
+    const etaConfidenceClass =
+      etaConfidence === '높음'
+        ? 'text-green-700 dark:text-green-300'
+        : etaConfidence === '보통'
+          ? 'text-amber-700 dark:text-amber-300'
+          : 'text-gray-600 dark:text-gray-300';
+
     return (
       <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+        <div className="mb-4">
+          <div className="flex items-center gap-2">
+            {timelineSteps.map((step, index) => {
+              const isActive = index <= currentStepIndex && backendStatus !== 'FAILED';
+              return (
+                <div key={step.key} className="flex items-center gap-2 text-[11px]">
+                  <span
+                    className={`px-2 py-0.5 rounded-full font-medium ${
+                      isActive
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+                    }`}
+                  >
+                    {step.label}
+                  </span>
+                  {index < timelineSteps.length - 1 && (
+                    <span className={`w-5 h-0.5 ${isActive ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'}`} />
+                  )}
+                </div>
+              );
+            })}
+            {backendStatus === 'FAILED' && (
+              <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-red-600 text-white">실패</span>
+            )}
+          </div>
+        </div>
         <div className="mb-4">
           <div className="flex items-center justify-between mb-1 gap-2">
             <div className="flex items-center gap-2">
@@ -434,10 +749,24 @@ export const ProblemCollector: FC = () => {
         )}
         <div className="text-xs text-blue-600 dark:text-blue-400 space-y-1">
           {state.jobId && (
-            <p className="font-medium">
-              작업 ID: {state.jobId}
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="font-medium">작업 ID: {state.jobId}</p>
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(state.jobId ?? '');
+                  toast.success('작업 ID를 복사했습니다.');
+                }}
+                className="inline-flex items-center gap-1 px-2 py-1 rounded border border-blue-300 dark:border-blue-700 hover:bg-blue-100 dark:hover:bg-blue-900/30"
+              >
+                <Copy className="w-3 h-3" />
+                복사
+              </button>
+            </div>
           )}
+          <p>작업 시작: {state.startedAt ? formatDateTime(state.startedAt * 1000) : '-'}</p>
+          <p>마지막 갱신: {formatDateTime(state.lastUpdatedAt)}</p>
+          {state.completedAt && <p>작업 완료: {formatDateTime(state.completedAt * 1000)}</p>}
           {isPending && (
             <p className="text-amber-700 dark:text-amber-300 font-medium">
               작업이 큐에서 대기 중입니다. 잠시 후 자동으로 실행 상태로 전환됩니다.
@@ -526,6 +855,15 @@ export const ProblemCollector: FC = () => {
           {state.estimatedRemainingSeconds && (
             <p>
               예상 남은 시간: 약 {Math.floor(state.estimatedRemainingSeconds / 60)}분
+            </p>
+          )}
+          <p>
+            처리 속도: {speedPerMin > 0 ? `${speedPerMin}건/분` : '집계 중'} | ETA 신뢰도:{' '}
+            <span className={etaConfidenceClass}>{etaConfidence}</span>
+          </p>
+          {state.retryCount > 0 && (
+            <p className="text-amber-700 dark:text-amber-300">
+              네트워크 재시도 횟수: {state.retryCount}회
             </p>
           )}
           <p className="mt-2 text-blue-700 dark:text-blue-300 font-medium">
@@ -667,6 +1005,92 @@ export const ProblemCollector: FC = () => {
             </div>
           </div>
         )}
+      </div>
+
+      {/* 운영 리포트 요약 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-5 border border-gray-200 dark:border-gray-700">
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+            <Activity className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            24시간 작업 리포트
+          </h3>
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <p className="text-gray-500 dark:text-gray-400">총 작업</p>
+              <p className="font-semibold text-gray-900 dark:text-white">{opsSummary.day.total}</p>
+            </div>
+            <div>
+              <p className="text-gray-500 dark:text-gray-400">평균 소요</p>
+              <p className="font-semibold text-gray-900 dark:text-white">
+                {Math.floor(opsSummary.day.avgDurationSec / 60)}분 {opsSummary.day.avgDurationSec % 60}초
+              </p>
+            </div>
+            <div>
+              <p className="text-gray-500 dark:text-gray-400">완료</p>
+              <p className="font-semibold text-green-700 dark:text-green-300">{opsSummary.day.completed}</p>
+            </div>
+            <div>
+              <p className="text-gray-500 dark:text-gray-400">실패</p>
+              <p className="font-semibold text-red-700 dark:text-red-300">{opsSummary.day.failed}</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-5 border border-gray-200 dark:border-gray-700">
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+            <Clock3 className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+            7일 작업 리포트
+          </h3>
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <p className="text-gray-500 dark:text-gray-400">총 작업</p>
+              <p className="font-semibold text-gray-900 dark:text-white">{opsSummary.week.total}</p>
+            </div>
+            <div>
+              <p className="text-gray-500 dark:text-gray-400">평균 소요</p>
+              <p className="font-semibold text-gray-900 dark:text-white">
+                {Math.floor(opsSummary.week.avgDurationSec / 60)}분 {opsSummary.week.avgDurationSec % 60}초
+              </p>
+            </div>
+            <div>
+              <p className="text-gray-500 dark:text-gray-400">완료</p>
+              <p className="font-semibold text-green-700 dark:text-green-300">{opsSummary.week.completed}</p>
+            </div>
+            <div>
+              <p className="text-gray-500 dark:text-gray-400">실패</p>
+              <p className="font-semibold text-red-700 dark:text-red-300">{opsSummary.week.failed}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 운영 경고 */}
+      {taskWarnings.length > 0 && (
+        <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl shadow-md p-5 border border-amber-200 dark:border-amber-800">
+          <h3 className="text-sm font-semibold text-amber-800 dark:text-amber-200 mb-3 flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4" />
+            운영 경고
+          </h3>
+          <div className="space-y-2">
+            {taskWarnings.map(({ task, warningMessages }) => (
+              <p key={task.jobId} className="text-sm text-amber-800 dark:text-amber-200">
+                [{task.title}] {warningMessages.join(', ')} (jobId: {task.jobId})
+              </p>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 자동 복구 옵션 */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-5 border border-gray-200 dark:border-gray-700">
+        <label className="inline-flex items-center gap-3 text-sm text-gray-700 dark:text-gray-300">
+          <input
+            type="checkbox"
+            checked={autoRecoverEnabled}
+            onChange={(e) => setAutoRecoverEnabled(e.target.checked)}
+            className="w-4 h-4"
+          />
+          checkpoint가 있는 실패 작업은 1회 자동 복구(재시작)
+        </label>
       </div>
 
       {/* 메타데이터 수집 */}
@@ -881,6 +1305,11 @@ export const ProblemCollector: FC = () => {
           <p className="text-xs text-gray-500 dark:text-gray-500">
             범위를 지정하려면 시작/종료를 모두 입력해야 하며, 비워두면 전체 재수집을 수행합니다.
           </p>
+          {refreshEstimatedCount !== null && (
+            <p className="text-xs text-blue-600 dark:text-blue-400">
+              예상 처리 대상: 약 {refreshEstimatedCount.toLocaleString()}개
+            </p>
+          )}
           <Button
             type="submit"
             variant="primary"
@@ -1005,6 +1434,66 @@ export const ProblemCollector: FC = () => {
           title="언어 정보 업데이트"
           type="language"
         />
+      </div>
+
+      {/* 최근 작업 이력 */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 border border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">최근 작업 이력</h2>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setTaskHistory([])}
+          >
+            이력 초기화
+          </Button>
+        </div>
+        {taskHistory.length === 0 ? (
+          <p className="text-sm text-gray-500 dark:text-gray-400">아직 기록된 작업이 없습니다.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
+                  <th className="py-2 pr-3">작업</th>
+                  <th className="py-2 pr-3">상태</th>
+                  <th className="py-2 pr-3">진행</th>
+                  <th className="py-2 pr-3">범위</th>
+                  <th className="py-2 pr-3">소요</th>
+                  <th className="py-2 pr-3">업데이트</th>
+                  <th className="py-2">jobId</th>
+                </tr>
+              </thead>
+              <tbody>
+                {taskHistory.map((task) => (
+                  <tr key={task.id} className="border-b border-gray-100 dark:border-gray-800 text-gray-700 dark:text-gray-300">
+                    <td className="py-2 pr-3">{task.title}</td>
+                    <td className="py-2 pr-3">{task.status}</td>
+                    <td className="py-2 pr-3">
+                      {task.processedCount}/{task.totalCount || '?'} ({task.progressPercentage}%)
+                    </td>
+                    <td className="py-2 pr-3">{task.rangeLabel}</td>
+                    <td className="py-2 pr-3">{formatDuration(task.startedAt, task.completedAt)}</td>
+                    <td className="py-2 pr-3">{formatDateTime(task.updatedAt)}</td>
+                    <td className="py-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(task.jobId);
+                          toast.success('jobId를 복사했습니다.');
+                        }}
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      >
+                        <Copy className="w-3 h-3" />
+                        복사
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
