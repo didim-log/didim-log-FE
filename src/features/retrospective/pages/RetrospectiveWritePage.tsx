@@ -261,6 +261,7 @@ export const RetrospectiveWritePage: FC = () => {
     const [editorKey, setEditorKey] = useState<number>(Date.now());
     const templateLoadRequestIdRef = useRef(0);
     const templateContextKeyRef = useRef<string | null>(null);
+    const templateAbortControllerRef = useRef<AbortController | null>(null);
 
     // 문제 상세 정보 조회
     const { data: problem, isLoading: isProblemLoading } = useProblemDetail(problemId);
@@ -282,6 +283,9 @@ export const RetrospectiveWritePage: FC = () => {
             }
 
             const requestId = ++templateLoadRequestIdRef.current;
+            templateAbortControllerRef.current?.abort();
+            const abortController = new AbortController();
+            templateAbortControllerRef.current = abortController;
             setIsLoadingTemplate(true);
             try {
                 const problemIdNum = parseInt(pid, 10);
@@ -299,6 +303,7 @@ export const RetrospectiveWritePage: FC = () => {
                     problemId: problemIdNum,
                     code: code || null, // 제출한 코드가 있으면 전달 (백엔드에서 언어 자동 감지에 사용)
                     programmingLanguage: programmingLanguageValue, // 선택된 언어가 있으면 전달 (코드 블록 언어 태그로 사용)
+                    signal: abortController.signal,
                 });
 
                 // 템플릿 내용 처리
@@ -365,6 +370,9 @@ export const RetrospectiveWritePage: FC = () => {
                 if (requestId !== templateLoadRequestIdRef.current) {
                     return;
                 }
+                if (isApiError(error) && error.code === 'ERR_CANCELED') {
+                    return;
+                }
                 if (isApiError(error) && error.response?.status === 404) {
                     toast.error('선택한 템플릿을 찾을 수 없어 기본 템플릿으로 전환합니다.');
                 } else if (
@@ -402,6 +410,9 @@ export const RetrospectiveWritePage: FC = () => {
                 setContent(fallbackTemplate);
                 setHasLoadedTemplate(true);
             } finally {
+                if (templateAbortControllerRef.current === abortController) {
+                    templateAbortControllerRef.current = null;
+                }
                 if (requestId === templateLoadRequestIdRef.current) {
                     setIsLoadingTemplate(false);
                 }
@@ -548,11 +559,19 @@ export const RetrospectiveWritePage: FC = () => {
         }
         templateContextKeyRef.current = contextKey;
         templateLoadRequestIdRef.current += 1;
+        templateAbortControllerRef.current?.abort();
+        templateAbortControllerRef.current = null;
         setIsLoadingTemplate(false);
         setHasLoadedTemplate(false);
         setSelectedTemplateId(null);
         setContent('');
     }, [problemId, category, retrospectiveId]);
+
+    useEffect(() => {
+        return () => {
+            templateAbortControllerRef.current?.abort();
+        };
+    }, []);
 
     // templates가 로드된 후 또는 isSuccess 변경 시 기본 템플릿 자동 로드
     useEffect(() => {

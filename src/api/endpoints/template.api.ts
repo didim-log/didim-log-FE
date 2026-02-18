@@ -55,6 +55,7 @@ export const templateApi = {
         options?: {
             programmingLanguage?: string | null;
             code?: string | null;
+            signal?: AbortSignal;
         }
     ): Promise<TemplateRenderResponse> => {
         const requestBody: TemplateRenderRequest = {
@@ -63,10 +64,14 @@ export const templateApi = {
             code: options?.code ?? null,
         };
 
+        const requestConfig = options?.signal
+            ? { timeout: TEMPLATE_RENDER_TIMEOUT_MS, signal: options.signal }
+            : { timeout: TEMPLATE_RENDER_TIMEOUT_MS };
+
         const response = await apiClient.post<TemplateRenderResponse>(
             `/templates/${templateId}/render`,
             requestBody,
-            { timeout: TEMPLATE_RENDER_TIMEOUT_MS }
+            requestConfig
         );
         return response.data;
     },

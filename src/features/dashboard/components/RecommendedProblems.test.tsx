@@ -3,9 +3,10 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { MemoryRouter } from 'react-router-dom';
 import type { User } from '../../../types/domain/user.types';
 
-const { mockUseProblemRecommend, mockUseAuthStore } = vi.hoisted(() => {
+const { mockUseProblemRecommend, mockUseProblemCategoryMeta, mockUseAuthStore } = vi.hoisted(() => {
     return {
         mockUseProblemRecommend: vi.fn(),
+        mockUseProblemCategoryMeta: vi.fn(),
         mockUseAuthStore: vi.fn(),
     };
 });
@@ -13,6 +14,7 @@ const { mockUseProblemRecommend, mockUseAuthStore } = vi.hoisted(() => {
 vi.mock('../../../hooks/api/useProblem', () => {
     return {
         useProblemRecommend: mockUseProblemRecommend,
+        useProblemCategoryMeta: mockUseProblemCategoryMeta,
     };
 });
 
@@ -42,6 +44,7 @@ const createUser = (override?: Partial<User>): User => {
 describe('RecommendedProblems', () => {
     it('Unrated(tierLevel=0) + 빈 배열이면 브론즈 5 달성 안내 Empty State와 step 링크를 노출한다', () => {
         mockUseAuthStore.mockReturnValue({ user: createUser({ rating: 0, tierLevel: 0 }) });
+        mockUseProblemCategoryMeta.mockReturnValue({ data: [] });
         mockUseProblemRecommend.mockReturnValue({
             data: [],
             isLoading: false,
@@ -64,6 +67,7 @@ describe('RecommendedProblems', () => {
 
     it('티어가 있는데(>0) 빈 배열이면 기존 "기록 부족" Empty State를 유지한다', () => {
         mockUseAuthStore.mockReturnValue({ user: createUser({ rating: 1000, tierLevel: 5, tier: 'BRONZE' }) });
+        mockUseProblemCategoryMeta.mockReturnValue({ data: [] });
         mockUseProblemRecommend.mockReturnValue({
             data: [],
             isLoading: false,

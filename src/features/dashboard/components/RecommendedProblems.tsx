@@ -6,7 +6,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import type { FC } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
-import { useProblemRecommend } from '../../../hooks/api/useProblem';
+import { useProblemCategoryMeta, useProblemRecommend } from '../../../hooks/api/useProblem';
 import { formatTierFromDifficulty, getTierColor, formatTier } from '../../../utils/tier';
 import { useAuthStore } from '../../../stores/auth.store';
 import type { ProblemResponse } from '../../../types/api/problem.types';
@@ -17,6 +17,10 @@ import { buildRepresentativeCategoriesFromSource } from '../../../utils/problemC
 import { getCategoryLabel } from '../../../utils/constants';
 
 const BOJ_STEP_URL = 'https://www.acmicpc.net/step';
+const DASHBOARD_CATEGORY_STORAGE_KEY = 'dashboard.recommend.category';
+const DASHBOARD_CATEGORY_SCROLL_STORAGE_KEY = 'dashboard.recommend.category.scrollLeft';
+const normalizeCategoryKey = (value: string): string =>
+    value.trim().toLowerCase().replace(/['`]/g, '').replace(/[-_]/g, ' ').replace(/\s+/g, ' ');
 
 /**
  * 추천 문제 태그 필터 목록 (대기업 코딩 테스트 출제 빈도 순)
@@ -46,19 +50,58 @@ interface RecommendedProblemsProps {
 
 export const RecommendedProblems: FC<RecommendedProblemsProps> = ({ count = 4, category: initialCategory }) => {
     const { user } = useAuthStore();
-    const [selectedCategory, setSelectedCategory] = useState<string | null>(initialCategory || null);
+    const [selectedCategory, setSelectedCategory] = useState<string | null>(() => {
+        if (typeof window === 'undefined') {
+            return initialCategory || null;
+        }
+        const saved = window.sessionStorage.getItem(DASHBOARD_CATEGORY_STORAGE_KEY);
+        if (saved && RECOMMENDED_TAGS.includes(saved as (typeof RECOMMENDED_TAGS)[number])) {
+            return saved;
+        }
+        return initialCategory || null;
+    });
     const [onlyKorean, setOnlyKorean] = useState<boolean>(false);
     const [showLeftArrow, setShowLeftArrow] = useState(false);
     const [showRightArrow, setShowRightArrow] = useState(true);
+    const { data: categoryMeta } = useProblemCategoryMeta();
     // 백엔드 @Min(1) 변경으로 count만큼 직접 요청 가능 (최적화)
     const { data: problems, isLoading, error, refetch } = useProblemRecommend({ 
         count, 
         category: selectedCategory || undefined,
-        language: onlyKorean ? 'ko' : undefined
+        language: onlyKorean ? 'ko' : undefined,
+        filterMode: 'RELATED',
     });
     const problemList = Array.isArray(problems) ? problems : null;
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+    const categoryMetaMap = useMemo(() => {
+        const map = new Map<string, string>();
+        categoryMeta?.forEach((meta) => {
+            const englishName = meta.englishName;
+            map.set(normalizeCategoryKey(meta.canonical), englishName);
+            map.set(normalizeCategoryKey(meta.englishName), englishName);
+            map.set(normalizeCategoryKey(meta.koreanName), englishName);
+            meta.aliases.forEach((alias) => map.set(normalizeCategoryKey(alias), englishName));
+        });
+        return map;
+    }, [categoryMeta]);
+
+    const getRecommendedCategoryLabel = useCallback((categoryValue: string) => {
+        const metaLabel = categoryMetaMap.get(normalizeCategoryKey(categoryValue));
+        return metaLabel ?? getCategoryDisplayLabel(categoryValue);
+    }, [categoryMetaMap]);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') {
+            return;
+        }
+        if (!selectedCategory) {
+            window.sessionStorage.removeItem(DASHBOARD_CATEGORY_STORAGE_KEY);
+            return;
+        }
+        window.sessionStorage.setItem(DASHBOARD_CATEGORY_STORAGE_KEY, selectedCategory);
+    }, [selectedCategory]);
 
     const isTierZeroUser = useMemo(() => {
         if (!user) {
@@ -118,11 +161,25 @@ export const RecommendedProblems: FC<RecommendedProblemsProps> = ({ count = 4, c
         const container = scrollContainerRef.current;
         if (!container) return;
 
+        if (typeof window !== 'undefined') {
+            const savedScrollLeft = Number(window.sessionStorage.getItem(DASHBOARD_CATEGORY_SCROLL_STORAGE_KEY) || '0');
+            if (!Number.isNaN(savedScrollLeft) && savedScrollLeft > 0) {
+                container.scrollLeft = savedScrollLeft;
+            }
+        }
+
         // 초기 상태 확인
         updateArrowVisibility();
 
+        const handleScroll = () => {
+            updateArrowVisibility();
+            if (typeof window !== 'undefined') {
+                window.sessionStorage.setItem(DASHBOARD_CATEGORY_SCROLL_STORAGE_KEY, String(container.scrollLeft));
+            }
+        };
+
         // 스크롤 이벤트 리스너 추가
-        container.addEventListener('scroll', updateArrowVisibility);
+        container.addEventListener('scroll', handleScroll);
         
         // 리사이즈 이벤트 리스너 추가 (컨테이너 크기 변경 시)
         const resizeObserver = new ResizeObserver(() => {
@@ -131,7 +188,7 @@ export const RecommendedProblems: FC<RecommendedProblemsProps> = ({ count = 4, c
         resizeObserver.observe(container);
 
         return () => {
-            container.removeEventListener('scroll', updateArrowVisibility);
+            container.removeEventListener('scroll', handleScroll);
             resizeObserver.disconnect();
         };
     }, [updateArrowVisibility]);
@@ -169,6 +226,19 @@ export const RecommendedProblems: FC<RecommendedProblemsProps> = ({ count = 4, c
             container.scrollBy({ left: 200, behavior: 'smooth' });
         }
     }, []);
+
+    const problemListLink = useMemo(() => {
+        const params = new URLSearchParams();
+        if (selectedCategory) {
+            params.set('category', selectedCategory);
+            params.set('filterMode', 'RELATED');
+        }
+        if (onlyKorean) {
+            params.set('language', 'ko');
+        }
+        const query = params.toString();
+        return query ? `/problems?${query}` : '/problems';
+    }, [onlyKorean, selectedCategory]);
 
     const renderContent = () => {
         if (isLoading) {
@@ -225,7 +295,7 @@ export const RecommendedProblems: FC<RecommendedProblemsProps> = ({ count = 4, c
                 <div className="flex items-center gap-3">
                     <OnlyKoreanToggle value={onlyKorean} onChange={setOnlyKorean} />
                     <Link
-                        to="/problems"
+                        to={problemListLink}
                         className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
                     >
                         더보기 &gt;
@@ -290,7 +360,7 @@ export const RecommendedProblems: FC<RecommendedProblemsProps> = ({ count = 4, c
                                     : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600'
                             }`}
                         >
-                            {getCategoryDisplayLabel(category)}
+                            {getRecommendedCategoryLabel(category)}
                         </button>
                     ))}
                 </div>

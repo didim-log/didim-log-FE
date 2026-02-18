@@ -6,6 +6,7 @@ import { apiClient } from '../client';
 import type {
     ProblemResponse,
     ProblemDetailResponse,
+    ProblemCategoryMetaResponse,
     RecommendRequest,
     SearchRequest,
 } from '../../types/api/problem.types';
@@ -19,6 +20,14 @@ export const problemApi = {
         const category = params.category ? mapCategoryToApiValue(params.category) : undefined;
         const mappedParams: RecommendRequest = { ...params, category };
         const response = await apiClient.get<ProblemResponse[]>('/problems/recommend', { params: mappedParams });
+        return response.data;
+    },
+
+    /**
+     * 카테고리 정규화 메타 조회
+     */
+    getCategoryMeta: async (): Promise<ProblemCategoryMetaResponse[]> => {
+        const response = await apiClient.get<ProblemCategoryMetaResponse[]>('/problems/categories/meta');
         return response.data;
     },
 
@@ -38,4 +47,3 @@ export const problemApi = {
         return response.data;
     },
 };
-

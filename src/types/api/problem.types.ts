@@ -13,6 +13,9 @@ export interface ProblemResponse {
     difficultyLevel: number;
     url: string;
     language: string; // "ko" or "en"
+    matchedByPrimary?: boolean | null;
+    matchedByTags?: boolean | null;
+    expandedFrom?: string[];
 }
 
 export interface ProblemDetailResponse {
@@ -38,6 +41,19 @@ export interface RecommendRequest {
     count?: number;
     category?: string;
     language?: string; // "ko" or "en", null이면 모든 언어
+    filterMode?: CategoryFilterMode;
+}
+
+export type CategoryFilterMode = 'EXACT' | 'HIERARCHY' | 'RELATED';
+
+export interface ProblemCategoryMetaResponse {
+    canonical: string;
+    englishName: string;
+    koreanName: string;
+    aliases: string[];
+    parents: string[];
+    children: string[];
+    related: string[];
 }
 
 export interface SearchRequest {
