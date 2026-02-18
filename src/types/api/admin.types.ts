@@ -175,9 +175,25 @@ export type ProblemJobAuditPageResponse = JobPageResponse<ProblemJobAuditRespons
 export interface PerformanceMetricsResponse {
     rpm: number;
     averageResponseTime: number;
+    p95ResponseTime: number;
+    maxResponseTime: number;
+    totalRequests: number;
+    errorRequests: number;
+    serverErrorRequests: number;
+    errorRate: number;
+    serverErrorRate: number;
+    slowRequestRate: number;
     timeRangeMinutes: number;
+    statusCodeSummary: StatusCodeSummary[];
     rpmTimeSeries: TimeSeriesPoint[];
     latencyTimeSeries: TimeSeriesPoint[];
+    errorRateTimeSeries: TimeSeriesPoint[];
+}
+
+export interface StatusCodeSummary {
+    statusCode: number;
+    count: number;
+    ratio: number;
 }
 
 export interface TimeSeriesPoint {
