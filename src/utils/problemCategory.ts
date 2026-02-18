@@ -1,4 +1,3 @@
-import { getCategoryHierarchyHints } from '../constants/algorithmHierarchy';
 import { ALGORITHM_CATEGORIES } from './constants';
 
 const normalizeKey = (value: string): string =>
@@ -83,14 +82,11 @@ export const buildRepresentativeCategories = (
     tags?: string[] | null,
     maxCount = 8
 ): string[] => {
-    const sources = [...(tags ?? []), ...(category ? [category] : [])].filter(Boolean);
+    const sources = [category, ...(tags ?? [])].filter(Boolean);
     const result: string[] = [];
 
     sources.forEach((source) => {
         addIfUnique(result, toCanonicalCategory(source));
-        getCategoryHierarchyHints(source).forEach((hint) => {
-            addIfUnique(result, toCanonicalCategory(hint));
-        });
     });
 
     return result.slice(0, maxCount);

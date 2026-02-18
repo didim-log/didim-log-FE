@@ -32,3 +32,10 @@ export const useProblemSearch = (params: SearchRequest) => {
     });
 };
 
+export const useProblemCategoryMeta = () => {
+    return useQuery({
+        queryKey: ['problems', 'categories', 'meta'],
+        queryFn: () => problemApi.getCategoryMeta(),
+        staleTime: 30 * 60 * 1000, // 30분
+    });
+};

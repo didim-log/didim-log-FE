@@ -7,6 +7,7 @@ export interface ErrorResponse {
     error: string;
     code: string;
     message: string;
+    retryable?: boolean; // 재시도 가능 여부
     remainingAttempts?: number; // Rate Limit 남은 시도 횟수 (로그인 실패 시)
     unlockTime?: string; // Rate Limit 잠금 해제 시간 (ISO 8601 형식, 한국시간)
 }

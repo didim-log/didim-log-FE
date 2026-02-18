@@ -5,7 +5,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import type { FC, FormEvent } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
-import { useProblemRecommend } from '../../../hooks/api/useProblem';
+import { useProblemCategoryMeta, useProblemRecommend } from '../../../hooks/api/useProblem';
 import { Spinner } from '../../../components/ui/Spinner';
 import { Layout } from '../../../components/layout/Layout';
 import { Input } from '../../../components/ui/Input';
@@ -14,10 +14,13 @@ import { OnlyKoreanToggle } from '../../../components/common/OnlyKoreanToggle';
 import { formatTierFromDifficulty, getTierColor } from '../../../utils/tier';
 import type { ProblemResponse } from '../../../types/api/problem.types';
 import { Search, HelpCircle } from 'lucide-react';
-import { getCategoryHierarchyHints } from '../../../constants/algorithmHierarchy';
 import { LanguageBadge } from '../../../components/common/LanguageBadge';
 import { buildRepresentativeCategoriesFromSource } from '../../../utils/problemCategory';
-import { getCategoryLabel } from '../../../utils/constants';
+import { ALGORITHM_CATEGORIES, getCategoryLabel } from '../../../utils/constants';
+import type { CategoryFilterMode, ProblemCategoryMetaResponse } from '../../../types/api/problem.types';
+
+const normalizeCategoryKey = (value: string): string =>
+    value.trim().toLowerCase().replace(/['`]/g, '').replace(/[-_]/g, ' ').replace(/\s+/g, ' ');
 
 export const ProblemListPage: FC = () => {
     const navigate = useNavigate();
@@ -29,27 +32,71 @@ export const ProblemListPage: FC = () => {
     const initialCount = validCounts.includes(initialCountParam) ? initialCountParam : 10;
     const initialCategory = searchParams.get('category') || '';
     const initialLanguage = searchParams.get('language') || '';
+    const initialFilterMode = (searchParams.get('filterMode') || 'RELATED').toUpperCase() as CategoryFilterMode;
     
     const [count, setCount] = useState(initialCount);
     const [category, setCategory] = useState(initialCategory);
     const [searchQuery, setSearchQuery] = useState('');
     const [onlyKorean, setOnlyKorean] = useState<boolean>(initialLanguage === 'ko');
-    const hierarchyHints = getCategoryHierarchyHints(category);
+    const [filterMode, setFilterMode] = useState<CategoryFilterMode>(
+        initialFilterMode === 'EXACT' || initialFilterMode === 'HIERARCHY' || initialFilterMode === 'RELATED'
+            ? initialFilterMode
+            : 'RELATED'
+    );
+    const { data: categoryMeta } = useProblemCategoryMeta();
+
+    const categoryMetaByNormalized = useMemo(() => {
+        const map = new Map<string, ProblemCategoryMetaResponse>();
+        categoryMeta?.forEach((meta) => {
+            const keys = [meta.canonical, meta.englishName, meta.koreanName, ...meta.aliases];
+            keys.forEach((key) => {
+                const normalized = normalizeCategoryKey(key);
+                if (!map.has(normalized)) {
+                    map.set(normalized, meta);
+                }
+            });
+        });
+        return map;
+    }, [categoryMeta]);
+
+    const categoryMetaByCanonical = useMemo(() => {
+        const map = new Map<string, string>();
+        categoryMeta?.forEach((meta) => {
+            map.set(meta.canonical, meta.englishName);
+        });
+        return map;
+    }, [categoryMeta]);
+
+    const categoryOptions = useMemo(() => {
+        return ALGORITHM_CATEGORIES.map((item) => {
+            const meta = categoryMetaByNormalized.get(normalizeCategoryKey(item.value));
+            return {
+                value: item.value,
+                label: meta?.englishName ?? item.label,
+            };
+        });
+    }, [categoryMetaByNormalized]);
+
+    const hierarchyHints = useMemo(() => {
+        const selectedMeta = categoryMetaByNormalized.get(normalizeCategoryKey(category));
+        if (!selectedMeta) return [];
+        if (filterMode === 'EXACT') {
+            return [];
+        }
+        const source = filterMode === 'RELATED' ? selectedMeta.related : selectedMeta.children;
+        return source
+            .map((canonical) => categoryMetaByCanonical.get(canonical) ?? canonical)
+            .slice(0, 8);
+    }, [category, filterMode, categoryMetaByCanonical, categoryMetaByNormalized]);
     
     const { data: problems, isLoading, error } = useProblemRecommend({ 
         count, 
         category: category || undefined,
         language: onlyKorean ? 'ko' : undefined,
+        filterMode,
     });
 
-    const visibleProblems = useMemo(() => {
-        const base = problems || [];
-        if (!onlyKorean) {
-            return base;
-        }
-        // 서버 필터 누락/오탐 시 방어: language가 명확히 ko인 항목만 노출
-        return base.filter((problem) => (problem.language || '').toLowerCase() === 'ko');
-    }, [problems, onlyKorean]);
+    const visibleProblems = useMemo(() => problems || [], [problems]);
 
     // 상태 변경 시 URL 파라미터 업데이트
     useEffect(() => {
@@ -63,8 +110,11 @@ export const ProblemListPage: FC = () => {
         if (onlyKorean) {
             params.set('language', 'ko');
         }
+        if (filterMode !== 'RELATED') {
+            params.set('filterMode', filterMode);
+        }
         setSearchParams(params, { replace: true });
-    }, [count, category, onlyKorean, setSearchParams]);
+    }, [count, category, onlyKorean, filterMode, setSearchParams]);
 
     // 문제 번호 검색 핸들러
     const handleSearch = (e: FormEvent) => {
@@ -163,7 +213,7 @@ export const ProblemListPage: FC = () => {
                                         <HelpCircle className="w-4 h-4 text-gray-400 dark:text-gray-500 cursor-help" />
                                         <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-xs px-3 py-2 rounded-lg bg-gray-900/95 dark:bg-gray-700 text-white text-xs shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
                                             <span className="block text-center">
-                                                선택한 카테고리의 하위 세부 유형(예: 그래프 → BFS, DFS)도 함께 검색 결과에 포함됩니다.
+                                                카테고리 검색 모드에 따라 정확/계층/연관 확장 검색이 적용됩니다.
                                             </span>
                                             {hierarchyHints.length > 0 && (
                                                 <span className="block text-center mt-1 text-gray-200">
@@ -182,7 +232,22 @@ export const ProblemListPage: FC = () => {
                                     onChange={(value) => setCategory(value || '')}
                                     placeholder="카테고리를 선택하세요"
                                     variant="select"
+                                    options={categoryOptions}
                                 />
+                            </div>
+                            <div className="w-full sm:w-40">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    검색 방식
+                                </label>
+                                <select
+                                    value={filterMode}
+                                    onChange={(e) => setFilterMode(e.target.value as CategoryFilterMode)}
+                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                                >
+                                    <option value="EXACT">정확 일치</option>
+                                    <option value="HIERARCHY">계층 확장</option>
+                                    <option value="RELATED">연관 확장</option>
+                                </select>
                             </div>
                             <div className="flex items-center justify-start sm:justify-end">
                                 <OnlyKoreanToggle
@@ -254,7 +319,7 @@ export const ProblemListPage: FC = () => {
                         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-12 text-center border border-gray-200 dark:border-gray-700">
                             <p className="text-gray-600 dark:text-gray-400">
                                 {onlyKorean
-                                    ? '한국어 본문 기준의 엄격한 필터로 인해 추천 결과가 없습니다.'
+                                    ? '한국어 strict 필터 기준으로 추천 결과가 없습니다.'
                                     : '추천할 문제가 없습니다.'}
                             </p>
                             {onlyKorean && (

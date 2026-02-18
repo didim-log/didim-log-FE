@@ -34,11 +34,15 @@ describe('templateApi', () => {
             code: 'fun main() {}',
         });
 
-        expect(mockPost).toHaveBeenCalledWith('/templates/tpl-1/render', {
-            problemId: 1000,
-            programmingLanguage: 'KOTLIN',
-            code: 'fun main() {}',
-        });
+        expect(mockPost).toHaveBeenCalledWith(
+            '/templates/tpl-1/render',
+            {
+                problemId: 1000,
+                programmingLanguage: 'KOTLIN',
+                code: 'fun main() {}',
+            },
+            expect.objectContaining({ timeout: 12000 })
+        );
         expect(result.renderedContent).toBe('# rendered');
     });
 

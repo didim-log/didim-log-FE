@@ -13,6 +13,7 @@ interface CategorySelectProps {
     placeholder?: string;
     className?: string;
     variant?: 'select' | 'autocomplete';
+    options?: Array<{ value: string; label: string }>;
 }
 
 export const CategorySelect: FC<CategorySelectProps> = ({
@@ -21,6 +22,7 @@ export const CategorySelect: FC<CategorySelectProps> = ({
     placeholder = '카테고리를 선택하세요',
     className = '',
     variant = 'select',
+    options,
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -44,12 +46,13 @@ export const CategorySelect: FC<CategorySelectProps> = ({
         };
     }, [isOpen]);
 
-    const filteredCategories = ALGORITHM_CATEGORIES.filter((category) =>
+    const categories = options && options.length > 0 ? options : ALGORITHM_CATEGORIES;
+    const filteredCategories = categories.filter((category) =>
         category.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
         category.value.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const selectedCategory = value ? ALGORITHM_CATEGORIES.find((cat) => cat.value === value) : null;
+    const selectedCategory = value ? categories.find((cat) => cat.value === value) : null;
 
     if (variant === 'autocomplete') {
         return (
@@ -140,11 +143,11 @@ export const CategorySelect: FC<CategorySelectProps> = ({
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer"
             >
                 <option value="">{placeholder}</option>
-                {ALGORITHM_CATEGORIES.map((category) => (
-                    <option key={category.value} value={category.value}>
-                        {category.label}
-                    </option>
-                ))}
+                        {categories.map((category) => (
+                            <option key={category.value} value={category.value}>
+                                {category.label}
+                            </option>
+                        ))}
             </select>
             <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

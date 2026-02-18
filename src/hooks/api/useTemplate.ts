@@ -65,15 +65,18 @@ export const useRenderTemplate = () => {
             problemId,
             programmingLanguage,
             code,
+            signal,
         }: {
             templateId: string;
             problemId: number;
             programmingLanguage?: string | null;
             code?: string | null;
+            signal?: AbortSignal;
         }) =>
             templateApi.renderTemplate(templateId, problemId, {
                 programmingLanguage,
                 code,
+                signal,
             }),
     });
 };
