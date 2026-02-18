@@ -88,54 +88,63 @@ export interface JobStartResponse {
  * 작업 상태 조회 응답
  */
 export type JobStatus = 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
-export type JobType = 'METADATA' | 'DETAILS' | 'DETAILS_REFRESH' | 'LANGUAGE_UPDATE';
+export type JobType = 'COLLECT_METADATA' | 'COLLECT_DETAILS' | 'REFRESH_DETAILS' | 'UPDATE_LANGUAGE';
+export type JobMetricsWindow = 'DAY' | 'WEEK' | 'MONTH';
 
 export interface JobStatusResponse {
     jobId: string;
-    jobType?: JobType;
+    jobType: JobType;
     status: JobStatus;
-    queuedAt?: number | null; // Unix timestamp (초)
+    queuedAt: number; // Unix timestamp (초)
     totalCount: number;
     processedCount: number;
     successCount: number;
     failCount: number;
     progressPercentage: number;
     estimatedRemainingSeconds: number | null;
-    queuePosition?: number | null;
-    startedAt: number; // Unix timestamp (초)
-    lastHeartbeatAt?: number | null; // Unix timestamp (초)
+    queuePosition: number | null;
+    startedAt: number | null; // Unix timestamp (초)
+    lastHeartbeatAt: number | null; // Unix timestamp (초)
     completedAt: number | null; // Unix timestamp (초)
-    range?: {
+    range: {
         start?: number | null;
         end?: number | null;
     } | null;
-    createdBy?: string | null;
-    errorCode?: string | null;
+    createdBy: string;
+    errorCode: string | null;
     errorMessage: string | null;
-    // 메타데이터 수집의 경우 추가 필드
-    startProblemId?: number;
-    endProblemId?: number;
-    // checkpoint 정보 (실패 시 재시작용)
-    lastCheckpointId?: number | string | null; // 메타데이터: number, 상세/언어: string
+    lastCheckpointId: string | null;
+}
+
+export interface JobPageResponse<T> {
+    content: T[];
+    page: number;
+    size: number;
+    totalElements: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrevious: boolean;
 }
 
 export interface JobListRequest {
     type?: JobType;
     status?: JobStatus;
-    from?: string; // ISO 8601
-    to?: string; // ISO 8601
+    from?: number; // Unix timestamp (초)
+    to?: number; // Unix timestamp (초)
     page?: number;
     size?: number;
 }
 
-export type JobListResponse = Page<JobStatusResponse>;
+export type JobListResponse = JobPageResponse<JobStatusResponse>;
 
 export interface JobMetricsResponse {
+    window: JobMetricsWindow;
     totalJobs: number;
     completedJobs: number;
     failedJobs: number;
-    avgDurationSeconds: number;
-    avgFailureRate: number;
+    cancelledJobs: number;
+    averageDurationSeconds: number;
+    averageFailureRate: number;
     topErrorCodes: Array<{
         code: string;
         count: number;
@@ -143,17 +152,25 @@ export interface JobMetricsResponse {
 }
 
 export interface ProblemJobAuditResponse {
-    id: string;
     jobId: string;
     jobType: JobType;
     status: JobStatus;
-    rangeStart: number | null;
-    rangeEnd: number | null;
-    adminId: string;
-    createdAt: string; // ISO 8601
+    createdBy: string;
+    queuedAt: number; // Unix timestamp (초)
+    startedAt: number | null; // Unix timestamp (초)
+    completedAt: number | null; // Unix timestamp (초)
+    range: {
+        start?: number | null;
+        end?: number | null;
+    } | null;
+    totalCount: number;
+    successCount: number;
+    failCount: number;
+    errorCode: string | null;
+    errorMessage: string | null;
 }
 
-export type ProblemJobAuditPageResponse = Page<ProblemJobAuditResponse>;
+export type ProblemJobAuditPageResponse = JobPageResponse<ProblemJobAuditResponse>;
 
 export interface PerformanceMetricsResponse {
     rpm: number;

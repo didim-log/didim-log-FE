@@ -45,10 +45,10 @@ const CRAWLER_TYPE_LABEL: Record<CrawlerType, string> = {
 };
 
 const JOB_TYPE_TO_CRAWLER_TYPE: Record<string, CrawlerType> = {
-  METADATA: 'metadata',
-  DETAILS: 'details',
-  DETAILS_REFRESH: 'detailsRefresh',
-  LANGUAGE_UPDATE: 'language',
+  COLLECT_METADATA: 'metadata',
+  COLLECT_DETAILS: 'details',
+  REFRESH_DETAILS: 'detailsRefresh',
+  UPDATE_LANGUAGE: 'language',
 };
 
 const toCollectorTask = (job: JobStatusResponse): CollectorTask => {
@@ -57,11 +57,9 @@ const toCollectorTask = (job: JobStatusResponse): CollectorTask => {
   const completedAtMs = job.completedAt ? job.completedAt * 1000 : null;
   const updatedAtMs = (job.lastHeartbeatAt ?? job.startedAt ?? job.queuedAt ?? 0) * 1000;
   const rangeLabel =
-    job.range?.start && job.range?.end
+    job.range?.start != null && job.range?.end != null
       ? `${job.range.start}~${job.range.end}`
-      : job.startProblemId && job.endProblemId
-        ? `${job.startProblemId}~${job.endProblemId}`
-        : '-';
+      : '-';
   return {
     id: job.jobId,
     type: crawlerType,
@@ -182,8 +180,8 @@ export const ProblemCollector: FC = () => {
       );
       refetchStats();
       // 최대 ID 업데이트 후 자동으로 다음 시작 ID 설정
-      if (state.endProblemId && stats?.maxProblemId && state.endProblemId > stats.maxProblemId) {
-        setStart((state.endProblemId + 1).toString());
+      if (state.rangeEnd && stats?.maxProblemId && state.rangeEnd > stats.maxProblemId) {
+        setStart((state.rangeEnd + 1).toString());
       }
       setEnd('');
       setMetadataParams(null);
@@ -517,13 +515,13 @@ export const ProblemCollector: FC = () => {
         total: dayMetrics?.totalJobs ?? 0,
         completed: dayMetrics?.completedJobs ?? 0,
         failed: dayMetrics?.failedJobs ?? 0,
-        avgDurationSec: dayMetrics?.avgDurationSeconds ?? 0,
+        avgDurationSec: dayMetrics?.averageDurationSeconds ?? 0,
       },
       week: {
         total: weekMetrics?.totalJobs ?? 0,
         completed: weekMetrics?.completedJobs ?? 0,
         failed: weekMetrics?.failedJobs ?? 0,
-        avgDurationSec: weekMetrics?.avgDurationSeconds ?? 0,
+        avgDurationSec: weekMetrics?.averageDurationSeconds ?? 0,
       },
     };
   }, [metricsDayQuery.data, metricsWeekQuery.data]);
@@ -588,8 +586,8 @@ export const ProblemCollector: FC = () => {
     const effectiveTotalCount =
       state.totalCount > 0
         ? state.totalCount
-        : type === 'metadata' && state.startProblemId && state.endProblemId
-          ? state.endProblemId - state.startProblemId + 1
+        : type === 'metadata' && state.rangeStart != null && state.rangeEnd != null
+          ? state.rangeEnd - state.rangeStart + 1
           : 0;
     const effectiveProgress =
       effectiveTotalCount > 0
@@ -599,8 +597,8 @@ export const ProblemCollector: FC = () => {
 
     // 현재 처리 중인 문제 ID 추정 (메타데이터 수집의 경우)
     const currentProblemId =
-      type === 'metadata' && state.startProblemId && state.processedCount > 0
-        ? state.startProblemId + state.processedCount - 1
+      type === 'metadata' && state.rangeStart != null && state.processedCount > 0
+        ? state.rangeStart + state.processedCount - 1
         : null;
 
     const speedPerMin = useMemo(() => {
@@ -757,11 +755,14 @@ export const ProblemCollector: FC = () => {
               작업이 큐에서 대기 중입니다. 잠시 후 자동으로 실행 상태로 전환됩니다.
             </p>
           )}
+          {isPending && state.queuePosition != null && (
+            <p>대기열 순번: {state.queuePosition}</p>
+          )}
           {/* 메타데이터 수집: 범위 및 현재 처리 번호 */}
-          {type === 'metadata' && state.startProblemId && state.endProblemId && (
+          {type === 'metadata' && state.rangeStart != null && state.rangeEnd != null && (
             <>
               <p className="font-medium">
-                처리 범위: {state.startProblemId}번 ~ {state.endProblemId}번
+                처리 범위: {state.rangeStart}번 ~ {state.rangeEnd}번
               </p>
               {currentProblemId && (
                 <p className="text-blue-700 dark:text-blue-300 font-semibold">
@@ -775,8 +776,8 @@ export const ProblemCollector: FC = () => {
                     : state.lastCheckpointId}
                 </p>
               )}
-              {state.startProblemId && (
-                <p>시작 번호: {state.startProblemId}번부터</p>
+              {state.rangeStart != null && (
+                <p>시작 번호: {state.rangeStart}번부터</p>
               )}
             </>
           )}
@@ -880,11 +881,12 @@ export const ProblemCollector: FC = () => {
             <p className="text-sm text-red-600 dark:text-red-400 mb-3">
               {state.errorMessage || '알 수 없는 오류가 발생했습니다.'}
             </p>
+            {state.errorCode && (
+              <p className="text-xs text-red-700 dark:text-red-300 mb-2">오류 코드: {state.errorCode}</p>
+            )}
             {state.lastCheckpointId && (
               <p className="text-xs text-blue-600 dark:text-blue-400 mb-2">
-                마지막 처리 위치: {typeof state.lastCheckpointId === 'number' 
-                  ? `${state.lastCheckpointId}번` 
-                  : state.lastCheckpointId}
+                마지막 처리 위치: {state.lastCheckpointId}
               </p>
             )}
             <Button
@@ -895,7 +897,7 @@ export const ProblemCollector: FC = () => {
             >
               <RotateCw className="w-4 h-4" />
               {state.lastCheckpointId 
-                ? `재시작 (${typeof state.lastCheckpointId === 'number' ? state.lastCheckpointId + 1 : 'checkpoint'}번부터)`
+                ? '재시작 (checkpoint 기준)'
                 : '이어서 재시작'}
             </Button>
             <p className="mt-2 text-xs text-red-600 dark:text-red-400">
@@ -921,8 +923,8 @@ export const ProblemCollector: FC = () => {
 
     // 마지막 처리된 문제 ID (메타데이터 수집의 경우)
     const getLastProcessedId = () => {
-      if (type === 'metadata' && state.endProblemId) {
-        return state.endProblemId;
+      if (type === 'metadata' && state.rangeEnd != null) {
+        return state.rangeEnd;
       }
       return null;
     };
@@ -1098,11 +1100,11 @@ export const ProblemCollector: FC = () => {
               </p>
             </div>
           </div>
-          {metadataCrawler.state.status === 'RUNNING' && metadataCrawler.state.startProblemId && (
+          {metadataCrawler.state.status === 'RUNNING' && metadataCrawler.state.rangeStart != null && (
             <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">현재 작업 시작 번호</p>
               <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                {metadataCrawler.state.startProblemId}번부터 시작
+                {metadataCrawler.state.rangeStart}번부터 시작
               </p>
             </div>
           )}
@@ -1183,9 +1185,9 @@ export const ProblemCollector: FC = () => {
             </div>
             <div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">시작 번호</p>
-              {detailsCrawler.state.status === 'RUNNING' && detailsCrawler.state.startProblemId ? (
+              {detailsCrawler.state.status === 'RUNNING' && detailsCrawler.state.rangeStart != null ? (
                 <p className="text-lg font-semibold text-blue-600 dark:text-blue-400">
-                  {detailsCrawler.state.startProblemId}번부터
+                  {detailsCrawler.state.rangeStart}번부터
                 </p>
               ) : detailsCrawler.state.status === 'COMPLETED' ? (
                 <p className="text-lg font-semibold text-green-600 dark:text-green-400">
@@ -1344,9 +1346,9 @@ export const ProblemCollector: FC = () => {
             </div>
             <div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">시작 번호</p>
-              {languageCrawler.state.status === 'RUNNING' && languageCrawler.state.startProblemId ? (
+              {languageCrawler.state.status === 'RUNNING' && languageCrawler.state.rangeStart != null ? (
                 <p className="text-lg font-semibold text-blue-600 dark:text-blue-400">
-                  {languageCrawler.state.startProblemId}번부터
+                  {languageCrawler.state.rangeStart}번부터
                 </p>
               ) : languageCrawler.state.status === 'COMPLETED' ? (
                 <p className="text-lg font-semibold text-green-600 dark:text-green-400">
@@ -1514,12 +1516,12 @@ export const ProblemCollector: FC = () => {
           <div className="space-y-2 text-sm">
             {auditQuery.data.content.map((item) => (
               <div
-                key={item.id}
+                key={`${item.jobId}:${item.queuedAt}`}
                 className="p-3 rounded border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300"
               >
-                [{item.jobType}] {item.status} | admin: {item.adminId} | range:{' '}
-                {item.rangeStart && item.rangeEnd ? `${item.rangeStart}~${item.rangeEnd}` : '-'} |{' '}
-                {new Date(item.createdAt).toLocaleString('ko-KR', { hour12: false })}
+                [{item.jobType}] {item.status} | admin: {item.createdBy} | range:{' '}
+                {item.range?.start != null && item.range?.end != null ? `${item.range.start}~${item.range.end}` : '-'} |{' '}
+                {formatDateTime(item.queuedAt * 1000)}
               </div>
             ))}
           </div>
