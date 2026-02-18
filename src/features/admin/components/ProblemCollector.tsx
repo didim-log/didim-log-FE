@@ -6,6 +6,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import type { FC, FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import { useCrawler } from '../../../hooks/useCrawler';
 import { useProblemStats } from '../../../hooks/api/useAdmin';
 import { crawlerApi } from '../../../api/endpoints/crawler.api';
@@ -105,10 +106,15 @@ const formatDuration = (startMs?: number | null, endMs?: number | null): string 
 };
 
 export const ProblemCollector: FC = () => {
-  const [jobFilterType, setJobFilterType] = useState<JobType | ''>('');
-  const [jobFilterStatus, setJobFilterStatus] = useState<JobStatus | ''>('');
-  const [jobFilterFrom, setJobFilterFrom] = useState('');
-  const [jobFilterTo, setJobFilterTo] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [jobFilterType, setJobFilterType] = useState<JobType | ''>(
+    (searchParams.get('jobType') as JobType | null) ?? ''
+  );
+  const [jobFilterStatus, setJobFilterStatus] = useState<JobStatus | ''>(
+    (searchParams.get('jobStatus') as JobStatus | null) ?? ''
+  );
+  const [jobFilterFrom, setJobFilterFrom] = useState(searchParams.get('jobFrom') ?? '');
+  const [jobFilterTo, setJobFilterTo] = useState(searchParams.get('jobTo') ?? '');
   const [start, setStart] = useState('');
   const [end, setEnd] = useState('');
   const [errors, setErrors] = useState<{ start?: string; end?: string }>({});
@@ -134,6 +140,42 @@ export const ProblemCollector: FC = () => {
     refreshEndNum >= 1 &&
     refreshStartNum <= refreshEndNum;
   const refreshEstimatedCount = refreshRangeValid ? refreshEndNum - refreshStartNum + 1 : null;
+
+  useEffect(() => {
+    const next = new URLSearchParams(window.location.search);
+
+    if (jobFilterType) {
+      next.set('jobType', jobFilterType);
+    } else {
+      next.delete('jobType');
+    }
+
+    if (jobFilterStatus) {
+      next.set('jobStatus', jobFilterStatus);
+    } else {
+      next.delete('jobStatus');
+    }
+
+    if (jobFilterFrom) {
+      next.set('jobFrom', jobFilterFrom);
+    } else {
+      next.delete('jobFrom');
+    }
+
+    if (jobFilterTo) {
+      next.set('jobTo', jobFilterTo);
+    } else {
+      next.delete('jobTo');
+    }
+
+    const currentQuery = window.location.search.startsWith('?')
+      ? window.location.search.slice(1)
+      : window.location.search;
+    const nextQuery = next.toString();
+    if (currentQuery !== nextQuery) {
+      setSearchParams(next, { replace: true });
+    }
+  }, [jobFilterFrom, jobFilterStatus, jobFilterTo, jobFilterType, setSearchParams]);
   const filterParams = useMemo(() => {
     const fromSeconds = jobFilterFrom ? Math.floor(new Date(jobFilterFrom).getTime() / 1000) : undefined;
     const toSeconds = jobFilterTo ? Math.floor(new Date(jobFilterTo).getTime() / 1000) : undefined;
