@@ -5,15 +5,17 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import type { FC, FormEvent } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCrawler } from '../../../hooks/useCrawler';
 import { useProblemStats } from '../../../hooks/api/useAdmin';
+import { crawlerApi } from '../../../api/endpoints/crawler.api';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { Spinner } from '../../../components/ui/Spinner';
 import { BookOpen, Minus, Maximize, Languages, RotateCw, AlertCircle, Copy, Activity, Clock3, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import type { CollectMetadataRequest, RefreshDetailsRequest } from '../../../types/api/admin.types';
+import type { CollectMetadataRequest, JobStatusResponse, RefreshDetailsRequest } from '../../../types/api/admin.types';
 import type { CrawlerType } from '../../../hooks/useCrawler';
 
 type CollectorTask = {
@@ -21,7 +23,7 @@ type CollectorTask = {
   type: CrawlerType;
   title: string;
   jobId: string;
-  status: 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED';
+  status: 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
   startedAt: number | null;
   completedAt: number | null;
   processedCount: number;
@@ -35,14 +37,49 @@ type CollectorTask = {
   updatedAt: number;
 };
 
-const TASK_HISTORY_STORAGE_KEY = 'admin_problem_collector_tasks_v1';
-const MAX_TASK_HISTORY_COUNT = 40;
-
 const CRAWLER_TYPE_LABEL: Record<CrawlerType, string> = {
   metadata: '메타데이터 수집',
   details: '상세 크롤링',
   detailsRefresh: '상세 재수집',
   language: '언어 재판별',
+};
+
+const JOB_TYPE_TO_CRAWLER_TYPE: Record<string, CrawlerType> = {
+  METADATA: 'metadata',
+  DETAILS: 'details',
+  DETAILS_REFRESH: 'detailsRefresh',
+  LANGUAGE_UPDATE: 'language',
+};
+
+const toCollectorTask = (job: JobStatusResponse): CollectorTask => {
+  const crawlerType = JOB_TYPE_TO_CRAWLER_TYPE[job.jobType ?? ''] ?? 'details';
+  const startedAtMs = job.startedAt ? job.startedAt * 1000 : null;
+  const completedAtMs = job.completedAt ? job.completedAt * 1000 : null;
+  const updatedAtMs = (job.lastHeartbeatAt ?? job.startedAt ?? job.queuedAt ?? 0) * 1000;
+  const rangeLabel =
+    job.range?.start && job.range?.end
+      ? `${job.range.start}~${job.range.end}`
+      : job.startProblemId && job.endProblemId
+        ? `${job.startProblemId}~${job.endProblemId}`
+        : '-';
+  return {
+    id: job.jobId,
+    type: crawlerType,
+    title: CRAWLER_TYPE_LABEL[crawlerType],
+    jobId: job.jobId,
+    status: job.status,
+    startedAt: startedAtMs,
+    completedAt: completedAtMs,
+    processedCount: job.processedCount,
+    totalCount: job.totalCount,
+    successCount: job.successCount,
+    failCount: job.failCount,
+    progressPercentage: job.progressPercentage,
+    errorMessage: job.errorMessage,
+    rangeLabel,
+    createdAt: (job.queuedAt ?? job.startedAt ?? 0) * 1000,
+    updatedAt: updatedAtMs,
+  };
 };
 
 const formatDateTime = (timestampMs?: number | null): string => {
@@ -72,9 +109,9 @@ export const ProblemCollector: FC = () => {
   const [refreshEnd, setRefreshEnd] = useState('');
   const [refreshErrors, setRefreshErrors] = useState<{ start?: string; end?: string }>({});
   const [refreshDetailsParams, setRefreshDetailsParams] = useState<RefreshDetailsRequest | null>(null);
-  const [taskHistory, setTaskHistory] = useState<CollectorTask[]>([]);
   const [autoRecoverEnabled, setAutoRecoverEnabled] = useState(true);
   const [autoRecoveredJobIds, setAutoRecoveredJobIds] = useState<Record<string, boolean>>({});
+  const queryClient = useQueryClient();
 
   const { data: stats, isLoading: isStatsLoading, refetch: refetchStats } = useProblemStats();
   const suggestedStart = stats?.maxProblemId ? String(stats.maxProblemId + 1) : '';
@@ -90,28 +127,50 @@ export const ProblemCollector: FC = () => {
     refreshStartNum <= refreshEndNum;
   const refreshEstimatedCount = refreshRangeValid ? refreshEndNum - refreshStartNum + 1 : null;
 
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(TASK_HISTORY_STORAGE_KEY);
-      if (!raw) {
-        return;
-      }
-      const parsed = JSON.parse(raw) as CollectorTask[];
-      if (Array.isArray(parsed)) {
-        setTaskHistory(parsed.slice(0, MAX_TASK_HISTORY_COUNT));
-      }
-    } catch {
-      // ignore malformed cache
-    }
-  }, []);
+  const jobsQuery = useQuery({
+    queryKey: ['admin', 'problem-jobs', { page: 1, size: 40 }],
+    queryFn: () => crawlerApi.getJobs({ page: 1, size: 40 }),
+    refetchInterval: 5000,
+  });
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(TASK_HISTORY_STORAGE_KEY, JSON.stringify(taskHistory.slice(0, MAX_TASK_HISTORY_COUNT)));
-    } catch {
-      // ignore storage failure
-    }
-  }, [taskHistory]);
+  const metricsDayQuery = useQuery({
+    queryKey: ['admin', 'problem-jobs', 'metrics', 'DAY'],
+    queryFn: () => crawlerApi.getJobMetrics('DAY'),
+    refetchInterval: 30000,
+  });
+
+  const metricsWeekQuery = useQuery({
+    queryKey: ['admin', 'problem-jobs', 'metrics', 'WEEK'],
+    queryFn: () => crawlerApi.getJobMetrics('WEEK'),
+    refetchInterval: 60000,
+  });
+
+  const auditQuery = useQuery({
+    queryKey: ['admin', 'problem-jobs', 'audit', { page: 1, size: 10 }],
+    queryFn: () => crawlerApi.getJobAudit({ page: 1, size: 10 }),
+    refetchInterval: 30000,
+  });
+
+  const cancelJobMutation = useMutation({
+    mutationFn: (jobId: string) => crawlerApi.cancelJob(jobId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'problem-jobs'] });
+      toast.success('작업 취소 요청을 보냈습니다.');
+    },
+  });
+
+  const retryJobMutation = useMutation({
+    mutationFn: (jobId: string) => crawlerApi.retryJob(jobId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'problem-jobs'] });
+      toast.success('작업 재시작 요청을 보냈습니다.');
+    },
+  });
+
+  const taskHistory = useMemo(() => {
+    const content = jobsQuery.data?.content ?? [];
+    return content.map(toCollectorTask);
+  }, [jobsQuery.data]);
 
   // 크롤링 훅들
   const metadataCrawler = useCrawler({
@@ -128,6 +187,8 @@ export const ProblemCollector: FC = () => {
       }
       setEnd('');
       setMetadataParams(null);
+      queryClient.invalidateQueries({ queryKey: ['admin', 'problem-jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'problem-jobs', 'metrics'] });
     },
     onError: (error) => {
       toast.error(`메타데이터 수집 실패: ${error.message}`);
@@ -141,6 +202,8 @@ export const ProblemCollector: FC = () => {
       toast.success(
         `상세 정보 크롤링 완료: ${state.successCount}개 성공, ${state.failCount}개 실패`
       );
+      queryClient.invalidateQueries({ queryKey: ['admin', 'problem-jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'problem-jobs', 'metrics'] });
     },
     onError: (error) => {
       toast.error(`상세 정보 크롤링 실패: ${error.message}`);
@@ -156,6 +219,8 @@ export const ProblemCollector: FC = () => {
       );
       refetchStats();
       setRefreshDetailsParams(null);
+      queryClient.invalidateQueries({ queryKey: ['admin', 'problem-jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'problem-jobs', 'metrics'] });
     },
     onError: (error) => {
       toast.error(`상세 정보 재수집 실패: ${error.message}`);
@@ -169,82 +234,13 @@ export const ProblemCollector: FC = () => {
       toast.success(
         `언어 정보 업데이트 완료: ${state.successCount}개 성공, ${state.failCount}개 실패`
       );
+      queryClient.invalidateQueries({ queryKey: ['admin', 'problem-jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'problem-jobs', 'metrics'] });
     },
     onError: (error) => {
       toast.error(`언어 정보 업데이트 실패: ${error.message}`);
     },
   });
-
-  const upsertTaskHistory = (
-    crawlerType: CrawlerType,
-    state: ReturnType<typeof useCrawler>['state'],
-    rangeLabel: string
-  ) => {
-    if (!state.jobId || !state.backendStatus) {
-      return;
-    }
-    const now = Date.now();
-    const status = state.backendStatus;
-    const jobId = state.jobId;
-    const startMs = state.startedAt ? state.startedAt * 1000 : null;
-    const completedMs = state.completedAt ? state.completedAt * 1000 : null;
-    const progressPercentage =
-      state.totalCount > 0
-        ? Math.min(100, Math.floor((state.processedCount / state.totalCount) * 100))
-        : state.progress;
-    setTaskHistory((prev) => {
-      const existingIndex = prev.findIndex((item) => item.jobId === jobId);
-      const task: CollectorTask = {
-        id: jobId,
-        type: crawlerType,
-        title: CRAWLER_TYPE_LABEL[crawlerType],
-        jobId,
-        status,
-        startedAt: startMs,
-        completedAt: completedMs,
-        processedCount: state.processedCount,
-        totalCount: state.totalCount,
-        successCount: state.successCount,
-        failCount: state.failCount,
-        progressPercentage,
-        errorMessage: state.errorMessage,
-        rangeLabel,
-        createdAt: existingIndex >= 0 ? prev[existingIndex].createdAt : now,
-        updatedAt: now,
-      };
-      if (existingIndex >= 0) {
-        const clone = [...prev];
-        clone[existingIndex] = task;
-        return clone.sort((a, b) => b.updatedAt - a.updatedAt).slice(0, MAX_TASK_HISTORY_COUNT);
-      }
-      return [task, ...prev].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, MAX_TASK_HISTORY_COUNT);
-    });
-  };
-
-  useEffect(() => {
-    const range = metadataParams ? `${metadataParams.start}~${metadataParams.end}` : '-';
-    upsertTaskHistory('metadata', metadataCrawler.state, range);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [metadataCrawler.state, metadataParams?.start, metadataParams?.end]);
-
-  useEffect(() => {
-    upsertTaskHistory('details', detailsCrawler.state, 'descriptionHtml null');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [detailsCrawler.state]);
-
-  useEffect(() => {
-    const range =
-      refreshDetailsParams?.start && refreshDetailsParams?.end
-        ? `${refreshDetailsParams.start}~${refreshDetailsParams.end}`
-        : '전체';
-    upsertTaskHistory('detailsRefresh', detailsRefreshCrawler.state, range);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [detailsRefreshCrawler.state, refreshDetailsParams?.start, refreshDetailsParams?.end]);
-
-  useEffect(() => {
-    upsertTaskHistory('language', languageCrawler.state, '전체');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [languageCrawler.state]);
 
   useEffect(() => {
     if (!autoRecoverEnabled) {
@@ -514,36 +510,23 @@ export const ProblemCollector: FC = () => {
   }, [taskHistory]);
 
   const opsSummary = useMemo(() => {
-    const now = Date.now();
-    const dayWindow = now - 24 * 60 * 60 * 1000;
-    const weekWindow = now - 7 * 24 * 60 * 60 * 1000;
-    const dayTasks = taskHistory.filter((task) => task.createdAt >= dayWindow);
-    const weekTasks = taskHistory.filter((task) => task.createdAt >= weekWindow);
-    const byStatus = (tasks: CollectorTask[], status: CollectorTask['status']) =>
-      tasks.filter((task) => task.status === status).length;
-    const avgDurationSec = (tasks: CollectorTask[]) => {
-      const completed = tasks.filter((task) => task.startedAt && task.completedAt);
-      if (completed.length === 0) {
-        return 0;
-      }
-      const total = completed.reduce((acc, task) => acc + Math.max(0, ((task.completedAt as number) - (task.startedAt as number)) / 1000), 0);
-      return Math.round(total / completed.length);
-    };
+    const dayMetrics = metricsDayQuery.data;
+    const weekMetrics = metricsWeekQuery.data;
     return {
       day: {
-        total: dayTasks.length,
-        completed: byStatus(dayTasks, 'COMPLETED'),
-        failed: byStatus(dayTasks, 'FAILED'),
-        avgDurationSec: avgDurationSec(dayTasks),
+        total: dayMetrics?.totalJobs ?? 0,
+        completed: dayMetrics?.completedJobs ?? 0,
+        failed: dayMetrics?.failedJobs ?? 0,
+        avgDurationSec: dayMetrics?.avgDurationSeconds ?? 0,
       },
       week: {
-        total: weekTasks.length,
-        completed: byStatus(weekTasks, 'COMPLETED'),
-        failed: byStatus(weekTasks, 'FAILED'),
-        avgDurationSec: avgDurationSec(weekTasks),
+        total: weekMetrics?.totalJobs ?? 0,
+        completed: weekMetrics?.completedJobs ?? 0,
+        failed: weekMetrics?.failedJobs ?? 0,
+        avgDurationSec: weekMetrics?.avgDurationSeconds ?? 0,
       },
     };
-  }, [taskHistory]);
+  }, [metricsDayQuery.data, metricsWeekQuery.data]);
 
   // 진행 상황 표시 컴포넌트
   const ProgressDisplay: FC<{
@@ -577,20 +560,22 @@ export const ProblemCollector: FC = () => {
 
     const backendStatus = state.backendStatus ?? (state.status === 'LOADING' ? 'PENDING' : null);
     const statusLabel = backendStatus
-      ? {
-          PENDING: '대기 중',
-          RUNNING: '실행 중',
-          COMPLETED: '완료',
-          FAILED: '실패',
-        }[backendStatus]
+        ? {
+            PENDING: '대기 중',
+            RUNNING: '실행 중',
+            COMPLETED: '완료',
+            FAILED: '실패',
+            CANCELLED: '취소됨',
+          }[backendStatus]
       : null;
     const statusClassName = backendStatus
-      ? {
-          PENDING: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
-          RUNNING: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
-          COMPLETED: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300',
-          FAILED: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
-        }[backendStatus]
+        ? {
+            PENDING: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
+            RUNNING: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
+            COMPLETED: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300',
+            FAILED: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
+            CANCELLED: 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
+          }[backendStatus]
       : '';
     const isPending = backendStatus === 'PENDING';
     const timelineSteps = [
@@ -1443,9 +1428,12 @@ export const ProblemCollector: FC = () => {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setTaskHistory([])}
+            onClick={() => {
+              jobsQuery.refetch();
+              auditQuery.refetch();
+            }}
           >
-            이력 초기화
+            새로고침
           </Button>
         </div>
         {taskHistory.length === 0 ? (
@@ -1461,6 +1449,7 @@ export const ProblemCollector: FC = () => {
                   <th className="py-2 pr-3">범위</th>
                   <th className="py-2 pr-3">소요</th>
                   <th className="py-2 pr-3">업데이트</th>
+                  <th className="py-2 pr-3">제어</th>
                   <th className="py-2">jobId</th>
                 </tr>
               </thead>
@@ -1475,6 +1464,28 @@ export const ProblemCollector: FC = () => {
                     <td className="py-2 pr-3">{task.rangeLabel}</td>
                     <td className="py-2 pr-3">{formatDuration(task.startedAt, task.completedAt)}</td>
                     <td className="py-2 pr-3">{formatDateTime(task.updatedAt)}</td>
+                    <td className="py-2 pr-3">
+                      <div className="flex items-center gap-1">
+                        {(task.status === 'PENDING' || task.status === 'RUNNING') && (
+                          <button
+                            type="button"
+                            onClick={() => cancelJobMutation.mutate(task.jobId)}
+                            className="px-2 py-1 rounded border border-red-300 text-red-700 dark:border-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20"
+                          >
+                            취소
+                          </button>
+                        )}
+                        {(task.status === 'FAILED' || task.status === 'CANCELLED') && (
+                          <button
+                            type="button"
+                            onClick={() => retryJobMutation.mutate(task.jobId)}
+                            className="px-2 py-1 rounded border border-blue-300 text-blue-700 dark:border-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                          >
+                            재시도
+                          </button>
+                        )}
+                      </div>
+                    </td>
                     <td className="py-2">
                       <button
                         type="button"
@@ -1493,6 +1504,27 @@ export const ProblemCollector: FC = () => {
               </tbody>
             </table>
           </div>
+        )}
+      </div>
+
+      {/* 최근 감사 로그 */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 border border-gray-200 dark:border-gray-700">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">최근 배치 감사 로그</h2>
+        {auditQuery.data?.content?.length ? (
+          <div className="space-y-2 text-sm">
+            {auditQuery.data.content.map((item) => (
+              <div
+                key={item.id}
+                className="p-3 rounded border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300"
+              >
+                [{item.jobType}] {item.status} | admin: {item.adminId} | range:{' '}
+                {item.rangeStart && item.rangeEnd ? `${item.rangeStart}~${item.rangeEnd}` : '-'} |{' '}
+                {new Date(item.createdAt).toLocaleString('ko-KR', { hour12: false })}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-gray-500 dark:text-gray-400">감사 로그 데이터가 없습니다.</p>
         )}
       </div>
     </div>

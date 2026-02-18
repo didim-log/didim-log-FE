@@ -7,12 +7,66 @@ import type { AxiosError } from 'axios';
 import { apiClient } from '../client';
 import type {
   CollectMetadataRequest,
+  JobListRequest,
+  JobListResponse,
+  JobMetricsResponse,
   JobStartResponse,
   JobStatusResponse,
+  ProblemJobAuditPageResponse,
   RefreshDetailsRequest,
 } from '../../types/api/admin.types';
 
 export const crawlerApi = {
+  getJobStatus: async (jobId: string): Promise<JobStatusResponse | null> => {
+    try {
+      const response = await apiClient.get<JobStatusResponse>(`/admin/problems/jobs/${jobId}`, {
+        timeout: 10000,
+      });
+      return response.data;
+    } catch (error) {
+      const axiosError = error as AxiosError;
+      if (axiosError.response?.status === 404) {
+        return null;
+      }
+      throw error;
+    }
+  },
+
+  getJobs: async (params: JobListRequest = {}): Promise<JobListResponse> => {
+    const response = await apiClient.get<JobListResponse>('/admin/problems/jobs', { params, timeout: 10000 });
+    return response.data;
+  },
+
+  cancelJob: async (jobId: string): Promise<JobStatusResponse> => {
+    const response = await apiClient.post<JobStatusResponse>(`/admin/problems/jobs/${jobId}/cancel`, null, {
+      timeout: 10000,
+    });
+    return response.data;
+  },
+
+  retryJob: async (jobId: string): Promise<JobStartResponse> => {
+    const response = await apiClient.post<JobStartResponse>(`/admin/problems/jobs/${jobId}/retry`, null, {
+      timeout: 10000,
+    });
+    return response.data;
+  },
+
+  getJobMetrics: async (window: 'DAY' | 'WEEK' | 'MONTH' = 'DAY'): Promise<JobMetricsResponse> => {
+    const response = await apiClient.get<JobMetricsResponse>('/admin/problems/jobs/metrics', {
+      params: { window },
+      timeout: 10000,
+    });
+    return response.data;
+  },
+
+  getJobAudit: async (params: { page?: number; size?: number } = {}): Promise<ProblemJobAuditPageResponse> => {
+    const response = await apiClient.get<ProblemJobAuditPageResponse>('/admin/problems/jobs/audit', {
+      params,
+      timeout: 10000,
+    });
+    return response.data;
+  },
+
   /**
    * 문제 메타데이터 수집 시작 (비동기)
    * checkpoint가 있으면 자동으로 이어서 진행
@@ -31,18 +85,7 @@ export const crawlerApi = {
    * GET 요청은 빠르므로 기본 timeout 사용
    */
   getMetadataCollectStatus: async (jobId: string): Promise<JobStatusResponse | null> => {
-    try {
-      const response = await apiClient.get<JobStatusResponse>(`/admin/problems/collect-metadata/status/${jobId}`, {
-        timeout: 10000, // 상태 조회는 빠르므로 10초면 충분
-      });
-      return response.data;
-    } catch (error) {
-      const axiosError = error as AxiosError;
-      if (axiosError.response?.status === 404) {
-        return null; // 작업을 찾을 수 없음 (24시간 후 자동 삭제)
-      }
-      throw error;
-    }
+    return crawlerApi.getJobStatus(jobId);
   },
 
   /**
@@ -62,18 +105,7 @@ export const crawlerApi = {
    * GET 요청은 빠르므로 기본 timeout 사용
    */
   getDetailsCollectStatus: async (jobId: string): Promise<JobStatusResponse | null> => {
-    try {
-      const response = await apiClient.get<JobStatusResponse>(`/admin/problems/collect-details/status/${jobId}`, {
-        timeout: 10000, // 상태 조회는 빠르므로 10초면 충분
-      });
-      return response.data;
-    } catch (error) {
-      const axiosError = error as AxiosError;
-      if (axiosError.response?.status === 404) {
-        return null; // 작업을 찾을 수 없음
-      }
-      throw error;
-    }
+    return crawlerApi.getJobStatus(jobId);
   },
 
   /**
@@ -93,18 +125,7 @@ export const crawlerApi = {
    * 상세 정보 강제 재수집 작업 상태 조회
    */
   getRefreshDetailsStatus: async (jobId: string): Promise<JobStatusResponse | null> => {
-    try {
-      const response = await apiClient.get<JobStatusResponse>(`/admin/problems/refresh-details/status/${jobId}`, {
-        timeout: 10000,
-      });
-      return response.data;
-    } catch (error) {
-      const axiosError = error as AxiosError;
-      if (axiosError.response?.status === 404) {
-        return null;
-      }
-      throw error;
-    }
+    return crawlerApi.getJobStatus(jobId);
   },
 
   /**
@@ -124,17 +145,6 @@ export const crawlerApi = {
    * GET 요청은 빠르므로 기본 timeout 사용
    */
   getLanguageUpdateStatus: async (jobId: string): Promise<JobStatusResponse | null> => {
-    try {
-      const response = await apiClient.get<JobStatusResponse>(`/admin/problems/update-language/status/${jobId}`, {
-        timeout: 10000, // 상태 조회는 빠르므로 10초면 충분
-      });
-      return response.data;
-    } catch (error) {
-      const axiosError = error as AxiosError;
-      if (axiosError.response?.status === 404) {
-        return null; // 작업을 찾을 수 없음
-      }
-      throw error;
-    }
+    return crawlerApi.getJobStatus(jobId);
   },
 };

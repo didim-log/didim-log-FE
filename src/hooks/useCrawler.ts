@@ -16,7 +16,7 @@ import type {
 export type CrawlerType = 'metadata' | 'details' | 'detailsRefresh' | 'language';
 export type CrawlerStartParams = CollectMetadataRequest | RefreshDetailsRequest;
 
-export type CrawlerStatus = 'IDLE' | 'LOADING' | 'RUNNING' | 'COMPLETED' | 'FAILED';
+export type CrawlerStatus = 'IDLE' | 'LOADING' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
 
 export interface ProgressHistoryPoint {
   timestamp: number; // Unix timestamp (밀리초)
@@ -206,7 +206,14 @@ export const useCrawler = (options: UseCrawlerOptions): UseCrawlerReturn => {
           const trimmedHistory = newHistory.slice(-100);
 
         const newState: CrawlerState = {
-          status: status.status === 'COMPLETED' ? 'COMPLETED' : status.status === 'FAILED' ? 'FAILED' : 'RUNNING',
+          status:
+            status.status === 'COMPLETED'
+              ? 'COMPLETED'
+              : status.status === 'FAILED'
+                ? 'FAILED'
+                : status.status === 'CANCELLED'
+                  ? 'CANCELLED'
+                  : 'RUNNING',
           backendStatus: status.status,
           jobId: status.jobId,
           startedAt: status.startedAt ?? prev.startedAt,
@@ -232,7 +239,7 @@ export const useCrawler = (options: UseCrawlerOptions): UseCrawlerReturn => {
         });
 
         // 완료 또는 실패 시 폴링 중지
-        if (status.status === 'COMPLETED' || status.status === 'FAILED') {
+        if (status.status === 'COMPLETED' || status.status === 'FAILED' || status.status === 'CANCELLED') {
           stop();
           consecutiveErrorCountRef.current = 0;
           if (finalState) {
