@@ -246,7 +246,20 @@ export interface AdminMemberUpdateRequest {
 
 export interface LogCleanupResponse {
     message: string;
+    mode: LogCleanupMode;
+    referenceDays: number;
+    cutoffAt: string; // ISO 8601
     deletedCount: number;
+}
+
+export type LogCleanupMode = 'OLDER_THAN_DAYS' | 'KEEP_RECENT_DAYS';
+
+export interface LogCleanupPreviewResponse {
+    mode: LogCleanupMode;
+    referenceDays: number;
+    cutoffAt: string; // ISO 8601
+    deletableCount: number;
+    statusBreakdown: Record<string, number>;
 }
 
 export interface AiStatusResponse {
@@ -296,13 +309,17 @@ export type AdminActionType =
     | 'NOTICE_DELETE'
     | 'AI_SERVICE_TOGGLE'
     | 'AI_LIMITS_UPDATE'
+    | 'AI_REVIEW_POLICY_UPDATE'
     | 'USER_DELETE'
     | 'USER_UPDATE'
     | 'QUOTE_CREATE'
     | 'QUOTE_DELETE'
     | 'FEEDBACK_STATUS_UPDATE'
     | 'FEEDBACK_DELETE'
-    | 'MAINTENANCE_MODE_TOGGLE';
+    | 'MAINTENANCE_MODE_TOGGLE'
+    | 'PROBLEM_JOB_CREATE'
+    | 'PROBLEM_JOB_CANCEL'
+    | 'PROBLEM_JOB_RETRY';
 
 export interface AdminAuditLogResponse {
     id: string;
