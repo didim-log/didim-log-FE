@@ -18,6 +18,7 @@ const ACTION_TYPES: AdminActionType[] = [
     'NOTICE_DELETE',
     'AI_SERVICE_TOGGLE',
     'AI_LIMITS_UPDATE',
+    'AI_REVIEW_POLICY_UPDATE',
     'USER_DELETE',
     'USER_UPDATE',
     'QUOTE_CREATE',
@@ -25,6 +26,9 @@ const ACTION_TYPES: AdminActionType[] = [
     'FEEDBACK_STATUS_UPDATE',
     'FEEDBACK_DELETE',
     'MAINTENANCE_MODE_TOGGLE',
+    'PROBLEM_JOB_CREATE',
+    'PROBLEM_JOB_CANCEL',
+    'PROBLEM_JOB_RETRY',
 ];
 
 const ACTION_LABELS: Record<AdminActionType, string> = {
@@ -34,6 +38,7 @@ const ACTION_LABELS: Record<AdminActionType, string> = {
     NOTICE_DELETE: '공지사항 삭제',
     AI_SERVICE_TOGGLE: 'AI 서비스 토글',
     AI_LIMITS_UPDATE: 'AI 제한 업데이트',
+    AI_REVIEW_POLICY_UPDATE: 'AI 리뷰 정책 업데이트',
     USER_DELETE: '사용자 삭제',
     USER_UPDATE: '사용자 수정',
     QUOTE_CREATE: '명언 생성',
@@ -41,10 +46,18 @@ const ACTION_LABELS: Record<AdminActionType, string> = {
     FEEDBACK_STATUS_UPDATE: '피드백 상태 변경',
     FEEDBACK_DELETE: '피드백 삭제',
     MAINTENANCE_MODE_TOGGLE: '유지보수 모드 토글',
+    PROBLEM_JOB_CREATE: '문제 작업 생성',
+    PROBLEM_JOB_CANCEL: '문제 작업 취소',
+    PROBLEM_JOB_RETRY: '문제 작업 재시도',
+};
+
+const getActionLabel = (action: string): string => {
+    return ACTION_LABELS[action as AdminActionType] ?? `기타(${action})`;
 };
 
 export const AdminAuditLogWidget: FC = () => {
     const [page, setPage] = useState(1);
+    const [selectedDetails, setSelectedDetails] = useState<{ action: string; details: string } | null>(null);
     const [filters, setFilters] = useState<{
         adminId?: string;
         action?: AdminActionType;
@@ -125,7 +138,7 @@ export const AdminAuditLogWidget: FC = () => {
                             <option value="">전체</option>
                             {ACTION_TYPES.map((action) => (
                                 <option key={action} value={action}>
-                                    {ACTION_LABELS[action]}
+                                    {getActionLabel(action)}
                                 </option>
                             ))}
                         </select>
@@ -198,11 +211,22 @@ export const AdminAuditLogWidget: FC = () => {
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
-                                            {ACTION_LABELS[log.action]}
+                                            {getActionLabel(log.action)}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-white max-w-md truncate">
-                                        {log.details}
+                                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-white max-w-md">
+                                        <div className="flex items-center gap-2">
+                                            <span className="block truncate" title={log.details}>
+                                                {log.details}
+                                            </span>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => setSelectedDetails({ action: log.action, details: log.details })}
+                                            >
+                                                보기
+                                            </Button>
+                                        </div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                         {log.ipAddress}
@@ -243,6 +267,24 @@ export const AdminAuditLogWidget: FC = () => {
                         >
                             다음
                         </Button>
+                    </div>
+                </div>
+            )}
+
+            {selectedDetails && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+                    <div className="w-full max-w-2xl rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                                감사 로그 상세 · {getActionLabel(selectedDetails.action)}
+                            </h3>
+                            <Button variant="outline" size="sm" onClick={() => setSelectedDetails(null)}>
+                                닫기
+                            </Button>
+                        </div>
+                        <pre className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap break-words bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+                            {selectedDetails.details}
+                        </pre>
                     </div>
                 </div>
             )}

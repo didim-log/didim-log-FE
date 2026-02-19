@@ -88,6 +88,18 @@ export const ProblemListPage: FC = () => {
             .map((canonical) => categoryMetaByCanonical.get(canonical) ?? canonical)
             .slice(0, 8);
     }, [category, filterMode, categoryMetaByCanonical, categoryMetaByNormalized]);
+
+    const categoryExpansionSummary = useMemo(() => {
+        if (hierarchyHints.length === 0) {
+            return '';
+        }
+        const selectedMeta = categoryMetaByNormalized.get(normalizeCategoryKey(category));
+        const selectedLabel = selectedMeta?.englishName ?? (category || '선택 카테고리');
+        const preview = hierarchyHints.slice(0, 3);
+        const remains = Math.max(hierarchyHints.length - preview.length, 0);
+        const previewText = preview.join(', ');
+        return `${selectedLabel} 선택 시 ${previewText}${remains > 0 ? ` 외 ${remains}개` : ''} 포함`;
+    }, [category, hierarchyHints, categoryMetaByNormalized]);
     
     const { data: problems, isLoading, error } = useProblemRecommend({ 
         count, 
@@ -258,12 +270,14 @@ export const ProblemListPage: FC = () => {
                         </div>
                         {hierarchyHints.length > 0 && (
                             <div className="mt-3">
-                                <div className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-900/30 border border-gray-200 dark:border-gray-700 text-xs text-gray-600 dark:text-gray-300">
+                                <div
+                                    className="inline-flex max-w-full items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-900/30 border border-gray-200 dark:border-gray-700 text-xs text-gray-600 dark:text-gray-300"
+                                    title={categoryExpansionSummary}
+                                >
                                     <span className="font-medium">카테고리 확장 검색</span>
                                     <span className="text-gray-400">•</span>
-                                    <span>
-                                        {category.toUpperCase()} 선택 시 {hierarchyHints.slice(0, 8).join(', ')}
-                                        {hierarchyHints.length > 8 ? '…' : ''}도 함께 포함됩니다.
+                                    <span className="block min-w-0 truncate whitespace-nowrap">
+                                        {categoryExpansionSummary}
                                     </span>
                                 </div>
                             </div>

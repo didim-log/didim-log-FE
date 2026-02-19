@@ -190,7 +190,8 @@ export const useCleanupLogs = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (olderThanDays: number) => adminApi.cleanupLogs(olderThanDays),
+        mutationFn: ({ mode, referenceDays }: { mode: 'OLDER_THAN_DAYS' | 'KEEP_RECENT_DAYS'; referenceDays: number }) =>
+            adminApi.cleanupLogs(mode, referenceDays),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin', 'logs'] });
         },
@@ -260,4 +261,3 @@ export const useProblemStats = () => {
         staleTime: 30 * 1000, // 30초
     });
 };
-

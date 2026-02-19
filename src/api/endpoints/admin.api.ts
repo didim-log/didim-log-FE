@@ -30,6 +30,8 @@ import type {
     AdminAuditLogRequest,
     AdminAuditLogPageResponse,
     ProblemStatsResponse,
+    LogCleanupMode,
+    LogCleanupPreviewResponse,
 } from '../../types/api/admin.types';
 import type { QuoteResponse } from '../../types/api/quote.types';
 import type { FeedbackResponse, FeedbackStatusUpdateRequest } from '../../types/api/feedback.types';
@@ -168,9 +170,24 @@ export const adminApi = {
     /**
      * 오래된 로그 정리
      */
-    cleanupLogs: async (olderThanDays: number): Promise<LogCleanupResponse> => {
+    getLogCleanupPreview: async (mode: LogCleanupMode, referenceDays: number): Promise<LogCleanupPreviewResponse> => {
+        const params =
+            mode === 'KEEP_RECENT_DAYS'
+                ? { mode, keepDays: referenceDays }
+                : { mode, olderThanDays: referenceDays };
+        const response = await apiClient.get<LogCleanupPreviewResponse>('/admin/logs/cleanup/preview', {
+            params,
+        });
+        return response.data;
+    },
+
+    cleanupLogs: async (mode: LogCleanupMode, referenceDays: number): Promise<LogCleanupResponse> => {
+        const params =
+            mode === 'KEEP_RECENT_DAYS'
+                ? { mode, keepDays: referenceDays }
+                : { mode, olderThanDays: referenceDays };
         const response = await apiClient.delete<LogCleanupResponse>('/admin/logs/cleanup', {
-            params: { olderThanDays },
+            params,
         });
         return response.data;
     },

@@ -5,6 +5,7 @@
 import { useEffect, useState } from 'react';
 import type { FC } from 'react';
 import { useAdminLog, useAdminLogs, useCleanupLogs } from '../../../hooks/api/useAdmin';
+import { adminApi } from '../../../api/endpoints/admin.api';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { Spinner } from '../../../components/ui/Spinner';
@@ -12,6 +13,19 @@ import { toast } from 'sonner';
 import { formatKST } from '../../../utils/dateUtils';
 import { getErrorMessage } from '../../../types/api/common.types';
 import { useSearchParams } from 'react-router-dom';
+import type { LogCleanupMode } from '../../../types/api/admin.types';
+
+type CleanupPreset = {
+    label: string;
+    mode: LogCleanupMode;
+    referenceDays: number;
+};
+
+const CLEANUP_PRESETS: CleanupPreset[] = [
+    { label: '1주일 이상 된 로그 삭제', mode: 'OLDER_THAN_DAYS', referenceDays: 7 },
+    { label: '1개월 이상 된 로그 삭제', mode: 'OLDER_THAN_DAYS', referenceDays: 30 },
+    { label: '최근 3일 로그만 유지', mode: 'KEEP_RECENT_DAYS', referenceDays: 3 },
+];
 
 export const AdminLogManagement: FC = () => {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -50,15 +64,20 @@ export const AdminLogManagement: FC = () => {
         setSearchParams(nextParams, { replace: true });
     };
 
-    const handleCleanup = async (olderThanDays: number) => {
-        const confirmMessage = getConfirmMessage(olderThanDays);
-        if (!window.confirm(confirmMessage)) {
-            return;
-        }
-
+    const handleCleanup = async (preset: CleanupPreset) => {
         try {
-            const result = await cleanupLogsMutation.mutateAsync(olderThanDays);
+            const preview = await adminApi.getLogCleanupPreview(preset.mode, preset.referenceDays);
+            const confirmMessage = getConfirmMessage(preset, preview.deletableCount);
+            if (!window.confirm(confirmMessage)) {
+                return;
+            }
+
+            const result = await cleanupLogsMutation.mutateAsync({
+                mode: preset.mode,
+                referenceDays: preset.referenceDays,
+            });
             toast.success(result.message);
+            setPage(1);
             refetch();
         } catch (error: unknown) {
             const errorMessage = getErrorMessage(error);
@@ -66,11 +85,14 @@ export const AdminLogManagement: FC = () => {
         }
     };
 
-    const getConfirmMessage = (days: number): string => {
-        if (days === 3) {
-            return '정말 전체 로그를 초기화하시겠습니까? (3일 제외)\n이 작업은 복구할 수 없습니다.';
+    const getConfirmMessage = (preset: CleanupPreset, deletableCount: number): string => {
+        if (deletableCount === 0) {
+            return `${preset.label}\n현재 삭제 대상 로그가 없습니다.`;
         }
-        return `정말 ${days}일 이상 된 로그를 삭제하시겠습니까?\n이 작업은 복구할 수 없습니다.`;
+        if (preset.mode === 'KEEP_RECENT_DAYS') {
+            return `${preset.label}\n예상 삭제: ${deletableCount.toLocaleString()}건\n이 작업은 복구할 수 없습니다.`;
+        }
+        return `${preset.referenceDays}일 이상 된 로그를 삭제하시겠습니까?\n예상 삭제: ${deletableCount.toLocaleString()}건\n이 작업은 복구할 수 없습니다.`;
     };
 
     if (isLoading) {
@@ -96,33 +118,18 @@ export const AdminLogManagement: FC = () => {
                     로그는 60일 후 자동 삭제됩니다.
                 </p>
                 <div className="flex flex-wrap gap-3">
-                    <Button
-                        variant="danger"
-                        size="sm"
-                        onClick={() => handleCleanup(7)}
-                        isLoading={cleanupLogsMutation.isPending}
-                        disabled={cleanupLogsMutation.isPending}
-                    >
-                        1주일 이상 된 로그 삭제
-                    </Button>
-                    <Button
-                        variant="danger"
-                        size="sm"
-                        onClick={() => handleCleanup(30)}
-                        isLoading={cleanupLogsMutation.isPending}
-                        disabled={cleanupLogsMutation.isPending}
-                    >
-                        1개월 이상 된 로그 삭제
-                    </Button>
-                    <Button
-                        variant="danger"
-                        size="sm"
-                        onClick={() => handleCleanup(3)}
-                        isLoading={cleanupLogsMutation.isPending}
-                        disabled={cleanupLogsMutation.isPending}
-                    >
-                        전체 초기화 (3일 제외)
-                    </Button>
+                    {CLEANUP_PRESETS.map((preset) => (
+                        <Button
+                            key={`${preset.mode}-${preset.referenceDays}`}
+                            variant="danger"
+                            size="sm"
+                            onClick={() => void handleCleanup(preset)}
+                            isLoading={cleanupLogsMutation.isPending}
+                            disabled={cleanupLogsMutation.isPending}
+                        >
+                            {preset.label}
+                        </Button>
+                    ))}
                 </div>
             </div>
 
