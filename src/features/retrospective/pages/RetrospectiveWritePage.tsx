@@ -46,6 +46,17 @@ const formatTitle = (format: string, params: {
         .replace(/\{\{result\}\}/g, params.result);
 };
 
+type TemplateFallbackInfo = {
+    reason: string | null;
+};
+
+const getTemplateFallbackMessage = (reason: string | null): string => {
+    if (reason === 'TEMPLATE_RENDER_TIMEOUT') {
+        return '템플릿 렌더링 시간이 초과되어 기본 템플릿으로 대체되었습니다.';
+    }
+    return '템플릿 렌더링 중 일부 문제가 발생해 기본 템플릿으로 대체되었습니다.';
+};
+
 /**
  * 중복된 "제출한 코드" 섹션 제거 및 정리
  */
@@ -257,6 +268,7 @@ export const RetrospectiveWritePage: FC = () => {
     const [isLoadingTemplate, setIsLoadingTemplate] = useState(false);
     const [hasLoadedTemplate, setHasLoadedTemplate] = useState(false);
     const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+    const [templateFallbackInfo, setTemplateFallbackInfo] = useState<TemplateFallbackInfo | null>(null);
     const [isPageStateReady, setIsPageStateReady] = useState(false);
     const [editorKey, setEditorKey] = useState<number>(Date.now());
     const templateLoadRequestIdRef = useRef(0);
@@ -287,6 +299,7 @@ export const RetrospectiveWritePage: FC = () => {
             const abortController = new AbortController();
             templateAbortControllerRef.current = abortController;
             setIsLoadingTemplate(true);
+            setTemplateFallbackInfo(null);
             try {
                 const problemIdNum = parseInt(pid, 10);
                 if (isNaN(problemIdNum)) {
@@ -365,6 +378,13 @@ export const RetrospectiveWritePage: FC = () => {
                 }
                 setContent(templateContent);
                 setSelectedTemplateId(templateId);
+                if (result.fallbackUsed) {
+                    const fallbackReason = result.fallbackReason ?? null;
+                    setTemplateFallbackInfo({ reason: fallbackReason });
+                    toast.warning(getTemplateFallbackMessage(fallbackReason));
+                } else {
+                    setTemplateFallbackInfo(null);
+                }
                 setHasLoadedTemplate(true);
             } catch (error: unknown) {
                 if (requestId !== templateLoadRequestIdRef.current) {
@@ -383,7 +403,7 @@ export const RetrospectiveWritePage: FC = () => {
                         error.code === 'ECONNABORTED'
                     )
                 ) {
-                    toast.error('템플릿 로딩 시간이 초과되어 기본 템플릿으로 전환합니다.');
+                    toast.error(getTemplateFallbackMessage('TEMPLATE_RENDER_TIMEOUT'));
                 } else if (isApiError(error) && error.response?.data?.retryable) {
                     toast.error('템플릿을 일시적으로 불러오지 못했습니다. 기본 템플릿으로 전환합니다.');
                 } else {
@@ -408,6 +428,9 @@ export const RetrospectiveWritePage: FC = () => {
                 );
                 setSelectedTemplateId(templateId);
                 setContent(fallbackTemplate);
+                setTemplateFallbackInfo({
+                    reason: isApiError(error) ? (error.response?.data?.code ?? null) : null,
+                });
                 setHasLoadedTemplate(true);
             } finally {
                 if (templateAbortControllerRef.current === abortController) {
@@ -424,6 +447,9 @@ export const RetrospectiveWritePage: FC = () => {
     const loadDefaultTemplate = useCallback(
         async (pid: string, forceReload: boolean = false) => {
             if (isLoadingTemplate) {
+                return;
+            }
+            if (templateAbortControllerRef.current) {
                 return;
             }
 
@@ -564,6 +590,7 @@ export const RetrospectiveWritePage: FC = () => {
         setIsLoadingTemplate(false);
         setHasLoadedTemplate(false);
         setSelectedTemplateId(null);
+        setTemplateFallbackInfo(null);
         setContent('');
     }, [problemId, category, retrospectiveId]);
 
@@ -607,6 +634,9 @@ export const RetrospectiveWritePage: FC = () => {
                     tierText
                 );
                 setContent(emergencyTemplate);
+                setTemplateFallbackInfo({
+                    reason: templateSummariesError ? 'TEMPLATE_LIST_UNAVAILABLE' : 'TEMPLATE_NOT_CONFIGURED',
+                });
                 setHasLoadedTemplate(true);
                 if (templateSummariesError) {
                     toast.error('템플릿 목록 조회에 실패하여 기본 템플릿을 적용했습니다.');
@@ -897,6 +927,19 @@ export const RetrospectiveWritePage: FC = () => {
                                         </option>
                                     ))}
                                 </select>
+                            </div>
+                        </div>
+                    )}
+
+                    {!isLoadingTemplate && templateFallbackInfo && (
+                        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl px-4 py-3">
+                            <div className="flex items-center gap-2">
+                                <span className="inline-flex items-center rounded-full bg-amber-100 dark:bg-amber-900/40 px-2 py-1 text-xs font-semibold text-amber-800 dark:text-amber-200">
+                                    템플릿 fallback 적용
+                                </span>
+                                <p className="text-sm text-amber-800 dark:text-amber-200">
+                                    {getTemplateFallbackMessage(templateFallbackInfo.reason)}
+                                </p>
                             </div>
                         </div>
                     )}

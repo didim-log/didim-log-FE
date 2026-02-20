@@ -30,6 +30,7 @@ export interface AdminUserUpdateDto {
     role?: string;
     nickname?: string;
     bojId?: string;
+    password?: string;
 }
 
 export type AdminUserPageResponse = Page<AdminUserResponse>;
@@ -239,11 +240,6 @@ export interface AdminLogResponse {
 
 export type AdminLogPageResponse = Page<AdminLogResponse>;
 
-export interface AdminMemberUpdateRequest {
-    nickname?: string;
-    password?: string;
-}
-
 export interface LogCleanupResponse {
     message: string;
     mode: LogCleanupMode;
@@ -337,6 +333,6 @@ export interface AdminAuditLogRequest {
     size?: number;
     adminId?: string;
     action?: AdminActionType;
-    startDate?: string; // ISO 8601 형식
-    endDate?: string; // ISO 8601 형식
+    startDate?: string; // ISO 8601 형식 (startDate/endDate는 함께 전달)
+    endDate?: string; // ISO 8601 형식 (startDate/endDate는 함께 전달)
 }

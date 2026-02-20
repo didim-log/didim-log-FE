@@ -10,6 +10,7 @@ import { Input } from '../../../components/ui/Input';
 import { Spinner } from '../../../components/ui/Spinner';
 import type { AdminActionType } from '../../../types/api/admin.types';
 import { formatKST } from '../../../utils/dateUtils';
+import { toast } from 'sonner';
 
 const ACTION_TYPES: AdminActionType[] = [
     'STORAGE_CLEANUP',
@@ -55,15 +56,18 @@ const getActionLabel = (action: string): string => {
     return ACTION_LABELS[action as AdminActionType] ?? `기타(${action})`;
 };
 
+type AuditFilters = {
+    adminId?: string;
+    action?: AdminActionType;
+    startDate?: string;
+    endDate?: string;
+};
+
 export const AdminAuditLogWidget: FC = () => {
     const [page, setPage] = useState(1);
     const [selectedDetails, setSelectedDetails] = useState<{ action: string; details: string } | null>(null);
-    const [filters, setFilters] = useState<{
-        adminId?: string;
-        action?: AdminActionType;
-        startDate?: string;
-        endDate?: string;
-    }>({});
+    const [draftFilters, setDraftFilters] = useState<AuditFilters>({});
+    const [filters, setFilters] = useState<AuditFilters>({});
 
     const { data, isLoading, error } = useAdminAuditLogs({
         page,
@@ -71,15 +75,33 @@ export const AdminAuditLogWidget: FC = () => {
         ...filters,
     });
 
-    const handleFilterChange = (key: keyof typeof filters, value: string | undefined) => {
-        setFilters((prev) => ({
+    const handleFilterChange = (key: keyof AuditFilters, value: string | undefined) => {
+        setDraftFilters((prev) => ({
             ...prev,
             [key]: value || undefined,
         }));
+    };
+
+    const handleApplyFilters = () => {
+        const hasStartDate = Boolean(draftFilters.startDate);
+        const hasEndDate = Boolean(draftFilters.endDate);
+
+        if (hasStartDate !== hasEndDate) {
+            toast.error('기간 필터는 시작 날짜와 종료 날짜를 함께 입력해야 합니다.');
+            return;
+        }
+
+        setFilters({
+            adminId: draftFilters.adminId,
+            action: draftFilters.action,
+            startDate: hasStartDate ? draftFilters.startDate : undefined,
+            endDate: hasEndDate ? draftFilters.endDate : undefined,
+        });
         setPage(1);
     };
 
     const handleResetFilters = () => {
+        setDraftFilters({});
         setFilters({});
         setPage(1);
     };
@@ -120,7 +142,7 @@ export const AdminAuditLogWidget: FC = () => {
                         </label>
                         <Input
                             type="text"
-                            value={filters.adminId || ''}
+                            value={draftFilters.adminId || ''}
                             onChange={(e) => handleFilterChange('adminId', e.target.value)}
                             placeholder="관리자 ID 검색"
                             className="w-full"
@@ -131,7 +153,7 @@ export const AdminAuditLogWidget: FC = () => {
                             작업 타입
                         </label>
                         <select
-                            value={filters.action || ''}
+                            value={draftFilters.action || ''}
                             onChange={(e) => handleFilterChange('action', e.target.value || undefined)}
                             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                         >
@@ -149,7 +171,7 @@ export const AdminAuditLogWidget: FC = () => {
                         </label>
                         <Input
                             type="datetime-local"
-                            value={filters.startDate || ''}
+                            value={draftFilters.startDate || ''}
                             onChange={(e) => handleFilterChange('startDate', e.target.value || undefined)}
                             className="w-full"
                         />
@@ -160,14 +182,17 @@ export const AdminAuditLogWidget: FC = () => {
                         </label>
                         <Input
                             type="datetime-local"
-                            value={filters.endDate || ''}
+                            value={draftFilters.endDate || ''}
                             onChange={(e) => handleFilterChange('endDate', e.target.value || undefined)}
                             className="w-full"
                         />
                     </div>
                 </div>
 
-                <div className="flex justify-end">
+                <div className="flex justify-end gap-2">
+                    <Button variant="primary" onClick={handleApplyFilters} className="text-sm">
+                        필터 적용
+                    </Button>
                     <Button variant="secondary" onClick={handleResetFilters} className="text-sm">
                         필터 초기화
                     </Button>

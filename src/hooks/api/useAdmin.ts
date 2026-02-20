@@ -7,7 +7,6 @@ import { adminApi } from '../../api/endpoints/admin.api';
 import type {
     AdminUserListRequest,
     AdminUserUpdateDto,
-    AdminMemberUpdateRequest,
     QuoteCreateRequest,
     MaintenanceModeRequest,
     ChartDataType,
@@ -45,18 +44,6 @@ export const useUpdateUser = () => {
     return useMutation({
         mutationFn: ({ studentId, data }: { studentId: string; data: AdminUserUpdateDto }) =>
             adminApi.updateUser(studentId, data),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
-        },
-    });
-};
-
-export const useUpdateMember = () => {
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: ({ memberId, data }: { memberId: string; data: AdminMemberUpdateRequest }) =>
-            adminApi.updateMember(memberId, data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
         },

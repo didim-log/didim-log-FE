@@ -40,6 +40,8 @@ export interface TemplateSectionPreset {
 
 export interface TemplateRenderResponse {
     renderedContent: string;
+    fallbackUsed?: boolean;
+    fallbackReason?: string | null;
 }
 
 export interface TemplateRenderRequest {
