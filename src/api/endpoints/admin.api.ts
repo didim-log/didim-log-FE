@@ -7,7 +7,6 @@ import type {
     AdminUserListRequest,
     AdminUserPageResponse,
     AdminUserUpdateDto,
-    AdminMemberUpdateRequest,
     QuoteCreateRequest,
     QuotePageResponse,
     FeedbackPageResponse,
@@ -37,6 +36,21 @@ import type { QuoteResponse } from '../../types/api/quote.types';
 import type { FeedbackResponse, FeedbackStatusUpdateRequest } from '../../types/api/feedback.types';
 import type { PageRequest } from '../../types/api/common.types';
 
+const normalizeAuditDateRange = (params: AdminAuditLogRequest): AdminAuditLogRequest => {
+    const { startDate, endDate, ...rest } = params;
+    if (!startDate && !endDate) {
+        return rest;
+    }
+    if (!startDate || !endDate) {
+        return rest;
+    }
+    return {
+        ...rest,
+        startDate,
+        endDate,
+    };
+};
+
 export const adminApi = {
     /**
      * 회원 목록 조회
@@ -59,13 +73,6 @@ export const adminApi = {
      */
     updateUser: async (studentId: string, data: AdminUserUpdateDto): Promise<void> => {
         await apiClient.patch(`/admin/users/${studentId}`, data);
-    },
-
-    /**
-     * 회원 닉네임/비밀번호 수정 (AdminMemberController)
-     */
-    updateMember: async (memberId: string, data: AdminMemberUpdateRequest): Promise<void> => {
-        await apiClient.put(`/admin/members/${memberId}`, data);
     },
 
     /**
@@ -246,7 +253,9 @@ export const adminApi = {
      * 관리자 작업 감사 로그 조회
      */
     getAuditLogs: async (params: AdminAuditLogRequest): Promise<AdminAuditLogPageResponse> => {
-        const response = await apiClient.get<AdminAuditLogPageResponse>('/admin/audit-logs', { params });
+        const response = await apiClient.get<AdminAuditLogPageResponse>('/admin/audit-logs', {
+            params: normalizeAuditDateRange(params),
+        });
         return response.data;
     },
 

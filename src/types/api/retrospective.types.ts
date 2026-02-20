@@ -54,4 +54,6 @@ export interface TemplateRequest {
 
 export interface TemplateResponse {
     template: string;
+    fallbackUsed?: boolean;
+    fallbackReason?: string | null;
 }

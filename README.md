@@ -50,7 +50,7 @@ graph TD
 - **문제(Problem)**: 카테고리/템플릿 규칙 불일치 시 요청 실패 및 UX 혼선 발생
 - **원인(Cause)**: 프론트 상수와 백엔드 enum 정책이 분산 관리될 때 변경 누락 발생
 - **해결(Solution)**:
-  1. API 규칙을 문서(`FRONTEND_UPDATE_GUIDE`)로 고정
+  1. API 규칙을 백엔드 공식 명세([`API_SPECIFICATION.md`](https://github.com/didim-log/didim-log/blob/main/DOCS/API_SPECIFICATION.md)) 기준으로 고정
   2. 타입/상수/엔드포인트 레이어를 분리해 계약 변경 영향 범위 최소화
 - **검증(Verification)**: 계약 변경 시 `api/endpoints`와 `types/constants`만 수정되는지 PR 단위 점검
 - **결과(Result)**: 계약 변경 시 수정 지점이 명확해져 협업 안정성 향상, 배포 후 장애 가능성 감소

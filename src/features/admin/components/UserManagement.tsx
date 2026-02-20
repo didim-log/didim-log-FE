@@ -4,11 +4,11 @@
 
 import { useState } from 'react';
 import type { FC } from 'react';
-import { useAdminUsers, useDeleteUser, useUpdateMember } from '../../../hooks/api/useAdmin';
+import { useAdminUsers, useDeleteUser, useUpdateUser } from '../../../hooks/api/useAdmin';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { Spinner } from '../../../components/ui/Spinner';
-import type { AdminUserListRequest, AdminMemberUpdateRequest } from '../../../types/api/admin.types';
+import type { AdminUserListRequest, AdminUserUpdateDto } from '../../../types/api/admin.types';
 import { toast } from 'sonner';
 import { getErrorMessage } from '../../../types/api/common.types';
 
@@ -23,7 +23,7 @@ export const UserManagement: FC = () => {
 
     const { data, isLoading, error } = useAdminUsers(searchParams);
     const deleteMutation = useDeleteUser();
-    const updateMemberMutation = useUpdateMember();
+    const updateUserMutation = useUpdateUser();
     const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
     const [editNickname, setEditNickname] = useState('');
     const [editPassword, setEditPassword] = useState('');
@@ -62,7 +62,7 @@ export const UserManagement: FC = () => {
     };
 
     const handleSubmitEdit = async (memberId: string) => {
-        const updateData: AdminMemberUpdateRequest = {};
+        const updateData: AdminUserUpdateDto = {};
         if (editNickname.trim() && editNickname.trim() !== data?.content.find((u) => u.id === memberId)?.nickname) {
             updateData.nickname = editNickname.trim();
         }
@@ -76,7 +76,7 @@ export const UserManagement: FC = () => {
         }
 
         try {
-            await updateMemberMutation.mutateAsync({ memberId, data: updateData });
+            await updateUserMutation.mutateAsync({ studentId: memberId, data: updateData });
             toast.success('회원 정보가 성공적으로 수정되었습니다.');
             handleCancelEdit();
         } catch (error: unknown) {
@@ -202,7 +202,7 @@ export const UserManagement: FC = () => {
                                                             onClick={() => handleSubmitEdit(user.id)}
                                                             variant="primary"
                                                             size="sm"
-                                                            isLoading={updateMemberMutation.isPending}
+                                                            isLoading={updateUserMutation.isPending}
                                                         >
                                                             저장
                                                         </Button>
