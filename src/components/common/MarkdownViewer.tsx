@@ -60,19 +60,19 @@ export const MarkdownViewer: FC<MarkdownViewerProps> = memo(({ content, classNam
     const components = useMemo(() => ({
         h1: (props: HeadingProps) => (
             <h1
-                className="text-3xl font-bold mt-8 mb-4 border-b border-gray-300 dark:border-gray-600 pb-2 text-gray-900 dark:text-white"
+                className="text-3xl font-bold mt-8 first:mt-0 mb-4 border-b border-gray-300 dark:border-gray-600 pb-2 text-gray-900 dark:text-white"
                 {...withoutNode(props)}
             />
         ),
         h2: (props: HeadingProps) => (
             <h2
-                className="text-2xl font-bold mt-6 mb-3 text-gray-900 dark:text-white"
+                className="text-2xl font-bold mt-6 first:mt-0 mb-3 text-gray-900 dark:text-white"
                 {...withoutNode(props)}
             />
         ),
         h3: (props: HeadingProps) => (
             <h3
-                className="text-xl font-bold mt-4 mb-2 text-gray-900 dark:text-white"
+                className="text-xl font-bold mt-4 first:mt-0 mb-2 text-gray-900 dark:text-white"
                 {...withoutNode(props)}
             />
         ),

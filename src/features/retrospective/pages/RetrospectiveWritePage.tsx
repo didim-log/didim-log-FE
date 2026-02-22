@@ -5,7 +5,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import type { FC } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { useCreateRetrospective, useUpdateRetrospective } from '../../../hooks/api/useRetrospective';
+import { useCreateRetrospective, useRetrospective, useUpdateRetrospective } from '../../../hooks/api/useRetrospective';
 import { useTemplateSummaries, useRenderTemplate, useTemplates } from '../../../hooks/api/useTemplate';
 import { useProblemDetail } from '../../../hooks/api/useProblem';
 import { RetrospectiveEditor } from '../components/RetrospectiveEditor';
@@ -254,6 +254,7 @@ export const RetrospectiveWritePage: FC = () => {
     }, [templateSummaries, templatesRaw]);
 
     const isOnboarding = searchParams.get('onboarding') === 'true';
+    const queryRetrospectiveId = searchParams.get('retrospectiveId') || '';
 
     const [retrospectiveId, setRetrospectiveId] = useState<string | null>(null);
     const [problemId, setProblemId] = useState<string>('');
@@ -274,8 +275,13 @@ export const RetrospectiveWritePage: FC = () => {
     const templateLoadRequestIdRef = useRef(0);
     const templateContextKeyRef = useRef<string | null>(null);
     const templateAbortControllerRef = useRef<AbortController | null>(null);
+    const editHydratedRef = useRef<string | null>(null);
 
     // 문제 상세 정보 조회
+    const effectiveRetrospectiveId = retrospectiveId || queryRetrospectiveId;
+    const { data: retrospectiveForEdit, isLoading: isLoadingRetrospectiveForEdit } = useRetrospective(
+        effectiveRetrospectiveId || ''
+    );
     const { data: problem, isLoading: isProblemLoading } = useProblemDetail(problemId);
 
     const category: 'SUCCESS' | 'FAIL' = isSuccess ? 'SUCCESS' : 'FAIL';
@@ -283,7 +289,12 @@ export const RetrospectiveWritePage: FC = () => {
         () => buildRepresentativeCategoriesFromSource(problem ?? {}, 8),
         [problem]
     );
-    const isMissingProblemContext = isPageStateReady && !problemId && !retrospectiveId;
+    const isMissingProblemContext = isPageStateReady && !problemId && !effectiveRetrospectiveId;
+    const isLoadingEditRetrospective =
+        Boolean(effectiveRetrospectiveId) &&
+        isLoadingRetrospectiveForEdit &&
+        !hasLoadedTemplate &&
+        !content.trim();
 
     /**
      * 템플릿 렌더링 및 에디터에 적용
@@ -517,13 +528,15 @@ export const RetrospectiveWritePage: FC = () => {
 
         const queryProblemId = searchParams.get('problemId') || '';
         const queryStatus = searchParams.get('status') || '';
+        const queryRetroId = searchParams.get('retrospectiveId') || '';
 
         if (state) {
             const { retrospectiveId: retroId, problemId: pid, template: temp, isSuccess: success, code: codeValue, logId: createdLogId, solveTime: stateSolveTime, language: stateLanguage, initialSummary: stateSummary, status: stateStatus } = state;
+            const effectiveStateRetroId = retroId || queryRetroId;
             
             // 수정 모드인 경우 retrospectiveId 설정
-            if (retroId) {
-                setRetrospectiveId(retroId);
+            if (effectiveStateRetroId) {
+                setRetrospectiveId(effectiveStateRetroId);
             }
             
             // problemId 설정 (최우선)
@@ -550,10 +563,15 @@ export const RetrospectiveWritePage: FC = () => {
             
             // 템플릿 로드 우선순위:
             // 1. 수정 모드에서는 기존 회고 내용을 우선 사용
-            if (temp && retroId) {
+            if (temp && effectiveStateRetroId) {
                 setContent(temp);
                 setHasLoadedTemplate(true);
+                editHydratedRef.current = effectiveStateRetroId;
+                setEditorKey(Date.now());
             }
+        }
+        if (!state?.retrospectiveId && queryRetroId) {
+            setRetrospectiveId(queryRetroId);
         }
         if (!state?.problemId && queryProblemId) {
             setProblemId(queryProblemId);
@@ -573,6 +591,32 @@ export const RetrospectiveWritePage: FC = () => {
         }
         setIsPageStateReady(true);
     }, [location.state, searchParams]);
+
+    useEffect(() => {
+        if (!effectiveRetrospectiveId || !retrospectiveForEdit) {
+            return;
+        }
+        if (editHydratedRef.current === effectiveRetrospectiveId) {
+            return;
+        }
+
+        const normalizedResult = (retrospectiveForEdit.solutionResult || '').toUpperCase();
+        const hydratedIsSuccess = normalizedResult === 'SUCCESS' || normalizedResult === 'SOLVED';
+        const hydratedResultType: ProblemResult =
+            normalizedResult === 'TIME_OVER' ? 'TIME_OVER' : hydratedIsSuccess ? 'SUCCESS' : 'FAIL';
+
+        setRetrospectiveId(retrospectiveForEdit.id);
+        setProblemId(retrospectiveForEdit.problemId);
+        setIsSuccess(hydratedIsSuccess);
+        setResultType(hydratedResultType);
+        setSummary(retrospectiveForEdit.summary || '');
+        setSolveTime(retrospectiveForEdit.solveTime || null);
+        setContent(retrospectiveForEdit.content || '');
+        setHasLoadedTemplate(true);
+        setTemplateFallbackInfo(null);
+        setEditorKey(Date.now());
+        editHydratedRef.current = effectiveRetrospectiveId;
+    }, [effectiveRetrospectiveId, retrospectiveForEdit]);
 
     // 문제/결과 컨텍스트가 바뀌면 이전 템플릿 상태를 무효화하여 잘못된 템플릿 잔존을 방지
     useEffect(() => {
@@ -902,7 +946,16 @@ export const RetrospectiveWritePage: FC = () => {
                     )}
 
                     {/* 템플릿 선택 드롭다운 */}
-                    {!isLoadingTemplate && problemId && templates && templates.length > 0 && (
+                    {isLoadingEditRetrospective && (
+                        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 border border-gray-200 dark:border-gray-700">
+                            <div className="flex items-center justify-center py-8">
+                                <Spinner />
+                                <span className="ml-3 text-gray-600 dark:text-gray-400">기존 회고를 불러오는 중...</span>
+                            </div>
+                        </div>
+                    )}
+
+                    {!isLoadingTemplate && !retrospectiveId && problemId && templates && templates.length > 0 && (
                         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 border border-gray-200 dark:border-gray-700">
                             <div className="flex items-center gap-3">
                                 <label htmlFor="template-select" className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -931,6 +984,14 @@ export const RetrospectiveWritePage: FC = () => {
                         </div>
                     )}
 
+                    {!isLoadingTemplate && retrospectiveId && (
+                        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl px-4 py-3">
+                            <p className="text-sm text-blue-800 dark:text-blue-200">
+                                수정 모드에서는 저장된 회고 내용을 기준으로 편집합니다.
+                            </p>
+                        </div>
+                    )}
+
                     {!isLoadingTemplate && templateFallbackInfo && (
                         <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl px-4 py-3">
                             <div className="flex items-center gap-2">
@@ -945,7 +1006,7 @@ export const RetrospectiveWritePage: FC = () => {
                     )}
 
                     {/* 회고 에디터 */}
-                    {!isLoadingTemplate && !isMissingProblemContext && (
+                    {!isLoadingTemplate && !isLoadingEditRetrospective && !isMissingProblemContext && (
                         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 border border-gray-200 dark:border-gray-700">
                             <RetrospectiveEditor
                                 key={editorKey}

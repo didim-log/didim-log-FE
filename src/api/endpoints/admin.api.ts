@@ -51,6 +51,30 @@ const normalizeAuditDateRange = (params: AdminAuditLogRequest): AdminAuditLogReq
     };
 };
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+const buildCutoffAt = (referenceDays: number): string =>
+    new Date(Date.now() - referenceDays * DAY_MS).toISOString();
+
+const shouldUseLegacyCleanupRequest = (error: unknown): boolean => {
+    const status = (error as { response?: { status?: number } })?.response?.status;
+    return status === 400 || status === 404 || status === 405 || status === 422;
+};
+
+const normalizeCleanupResponse = (
+    mode: LogCleanupMode,
+    referenceDays: number,
+    raw: Partial<LogCleanupResponse> | undefined
+): LogCleanupResponse => {
+    return {
+        message: raw?.message ?? '로그 정리가 완료되었습니다.',
+        mode: raw?.mode ?? mode,
+        referenceDays: raw?.referenceDays ?? referenceDays,
+        cutoffAt: raw?.cutoffAt ?? buildCutoffAt(referenceDays),
+        deletedCount: raw?.deletedCount ?? 0,
+    };
+};
+
 export const adminApi = {
     /**
      * 회원 목록 조회
@@ -182,10 +206,30 @@ export const adminApi = {
             mode === 'KEEP_RECENT_DAYS'
                 ? { mode, keepDays: referenceDays }
                 : { mode, olderThanDays: referenceDays };
-        const response = await apiClient.get<LogCleanupPreviewResponse>('/admin/logs/cleanup/preview', {
-            params,
-        });
-        return response.data;
+        try {
+            const response = await apiClient.get<LogCleanupPreviewResponse>('/admin/logs/cleanup/preview', {
+                params,
+            });
+            return {
+                mode: response.data.mode ?? mode,
+                referenceDays: response.data.referenceDays ?? referenceDays,
+                cutoffAt: response.data.cutoffAt ?? buildCutoffAt(referenceDays),
+                deletableCount: response.data.deletableCount ?? 0,
+                statusBreakdown: response.data.statusBreakdown ?? {},
+            };
+        } catch (error: unknown) {
+            if (!shouldUseLegacyCleanupRequest(error)) {
+                throw error;
+            }
+            // 구버전 백엔드(미리보기 미지원)도 실제 정리 동작은 가능하도록 안전 fallback
+            return {
+                mode,
+                referenceDays,
+                cutoffAt: buildCutoffAt(referenceDays),
+                deletableCount: 0,
+                statusBreakdown: {},
+            };
+        }
     },
 
     cleanupLogs: async (mode: LogCleanupMode, referenceDays: number): Promise<LogCleanupResponse> => {
@@ -193,10 +237,22 @@ export const adminApi = {
             mode === 'KEEP_RECENT_DAYS'
                 ? { mode, keepDays: referenceDays }
                 : { mode, olderThanDays: referenceDays };
-        const response = await apiClient.delete<LogCleanupResponse>('/admin/logs/cleanup', {
-            params,
-        });
-        return response.data;
+        try {
+            const response = await apiClient.delete<LogCleanupResponse>('/admin/logs/cleanup', {
+                params,
+            });
+            return normalizeCleanupResponse(mode, referenceDays, response.data);
+        } catch (error: unknown) {
+            if (!shouldUseLegacyCleanupRequest(error)) {
+                throw error;
+            }
+
+            // 레거시 API 하위호환: olderThanDays 단일 파라미터만 지원하는 경우
+            const legacyResponse = await apiClient.delete<Partial<LogCleanupResponse>>('/admin/logs/cleanup', {
+                params: { olderThanDays: referenceDays },
+            });
+            return normalizeCleanupResponse(mode, referenceDays, legacyResponse.data);
+        }
     },
 
     /**

@@ -233,19 +233,31 @@ export const RetrospectiveDetailPage: FC = () => {
                             {canManage && (
                                 <>
                                     <Button
-                                        onClick={() => navigate(`/retrospectives/write`, {
-                                            state: {
+                                        onClick={() => {
+                                            const editStatus =
+                                                retrospective.solutionResult === 'SUCCESS'
+                                                    ? 'SOLVED'
+                                                    : (retrospective.solutionResult || 'FAIL');
+                                            const params = new URLSearchParams({
                                                 retrospectiveId: retrospective.id,
                                                 problemId: retrospective.problemId,
-                                                template: retrospective.content,
-                                                isSuccess: retrospective.solutionResult === 'SUCCESS',
-                                                status: retrospective.solutionResult === 'SUCCESS' ? 'SOLVED' : (retrospective.solutionResult || 'FAIL'), // 명시적 status 전달
-                                                code: '',
-                                                solveTime: retrospective.solveTime,
-                                                initialSummary: retrospective.summary || '', // 한 줄 요약 전달
-                                                initialSolvedCategory: retrospective.solvedCategory || '', // 풀이 전략 태그 전달
-                                            }
-                                        })}
+                                                status: editStatus,
+                                            });
+
+                                            navigate(`/retrospectives/write?${params.toString()}`, {
+                                                state: {
+                                                    retrospectiveId: retrospective.id,
+                                                    problemId: retrospective.problemId,
+                                                    template: retrospective.content,
+                                                    isSuccess: retrospective.solutionResult === 'SUCCESS',
+                                                    status: editStatus, // 명시적 status 전달
+                                                    code: '',
+                                                    solveTime: retrospective.solveTime,
+                                                    initialSummary: retrospective.summary || '', // 한 줄 요약 전달
+                                                    initialSolvedCategory: retrospective.solvedCategory || '', // 풀이 전략 태그 전달
+                                                },
+                                            });
+                                        }}
                                         variant="outline"
                                         className="flex items-center gap-2"
                                         title="회고 수정 (본인이 작성한 회고만 수정 가능)"
