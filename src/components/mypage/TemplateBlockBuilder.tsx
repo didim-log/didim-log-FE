@@ -895,7 +895,7 @@ export const TemplateBlockBuilder: FC<TemplateBlockBuilderProps> = ({
                         </div>
                         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 min-h-[400px]">
                             <div className="prose dark:prose-invert max-w-none">
-                                <MarkdownViewer content={previewContent || '템플릿 내용을 작성하면 미리보기가 표시됩니다.'} />
+                                <MarkdownViewer content={(previewContent || '템플릿 내용을 작성하면 미리보기가 표시됩니다.').trimStart()} />
                             </div>
                         </div>
                     </div>

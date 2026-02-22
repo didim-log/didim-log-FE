@@ -76,7 +76,7 @@ export const AdminLogManagement: FC = () => {
                 mode: preset.mode,
                 referenceDays: preset.referenceDays,
             });
-            toast.success(result.message);
+            toast.success(`${result.message} (삭제 ${result.deletedCount.toLocaleString()}건)`);
             setPage(1);
             refetch();
         } catch (error: unknown) {
