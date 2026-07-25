@@ -23,6 +23,7 @@ import { AiReviewCard } from '../../../components/retrospective/AiReviewCard';
 import type { TemplateSummary } from '../../../types/api/template.types';
 import { buildRepresentativeCategoriesFromSource } from '../../../utils/problemCategory';
 import { getCategoryLabel } from '../../../utils/constants';
+import { insertCodeIntoTemplate } from '../utils/codeTemplate';
 
 /**
  * 제목 초기값 포맷 상수
@@ -153,71 +154,6 @@ const ensureDefaultSections = (
     
     // 플레이스홀더를 실제 값으로 치환
     return replacePlaceholders(contentWithDefaults, problemId, tier);
-};
-
-/**
- * 템플릿의 코드 블록에 제출한 코드를 삽입
- * 코드 블록 패턴: ```language\n...\n```
- * "제출한 코드" 섹션의 빈 코드 블록에만 코드를 채움
- */
-const insertCodeIntoTemplate = (templateContent: string, code: string, programmingLanguage: string): string => {
-    if (!code || !code.trim()) {
-        return templateContent;
-    }
-
-    const normalizedLang = programmingLanguage.toLowerCase();
-    
-    // "제출한 코드" 섹션을 찾기
-    const 제출한코드SectionPattern = /##\s*제출한\s*코드[\s\S]*?```(\w+)?\n([\s\S]*?)```/i;
-    const match = templateContent.match(제출한코드SectionPattern);
-    
-    if (match) {
-        const lang = match[1];
-        const existingContent = match[2];
-        const trimmedContent = existingContent.trim();
-        
-        // 플레이스홀더가 있거나 빈 경우에만 코드 삽입
-        if (!trimmedContent || 
-            trimmedContent.includes('여기에 코드를 작성하세요') || 
-            trimmedContent.includes('Write your code here') ||
-            trimmedContent === '') {
-            
-            // 언어 태그가 없거나 'text'인 경우 프로그래밍 언어 사용
-            const codeLanguage = (lang && lang !== 'text') ? lang : (normalizedLang !== 'text' ? normalizedLang : 'text');
-            
-            // 코드 블록 교체
-            return templateContent.replace(
-                /(##\s*제출한\s*코드[\s\S]*?)```(\w+)?\n([\s\S]*?)```/i,
-                `$1\`\`\`${codeLanguage}\n${code.trim()}\n\`\`\``
-            );
-        }
-    }
-    
-    // "제출한 코드" 섹션을 찾지 못한 경우, 첫 번째 빈 코드 블록에 삽입
-    const codeBlockPattern = /```(\w+)?\n([\s\S]*?)```/g;
-    let isReplaced = false;
-    
-    const result = templateContent.replace(codeBlockPattern, (match, lang, existingContent) => {
-        if (isReplaced) {
-            return match; // 이미 교체했으면 그대로 반환
-        }
-        
-        const trimmedContent = existingContent.trim();
-        
-        // 빈 코드 블록이나 플레이스홀더가 있는 경우에만 삽입
-        if (!trimmedContent || 
-            trimmedContent.includes('여기에 코드를 작성하세요') || 
-            trimmedContent.includes('Write your code here')) {
-            
-            isReplaced = true;
-            const codeLanguage = (lang && lang !== 'text') ? lang : (normalizedLang !== 'text' ? normalizedLang : 'text');
-            return `\`\`\`${codeLanguage}\n${code.trim()}\n\`\`\``;
-        }
-        
-        return match;
-    });
-    
-    return result;
 };
 
 export const RetrospectiveWritePage: FC = () => {

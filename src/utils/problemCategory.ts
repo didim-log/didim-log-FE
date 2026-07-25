@@ -20,6 +20,7 @@ const CATEGORY_ALIAS_MAP: Record<string, string> = {
     'graph theory': 'Graph',
     'graph traversal': 'Graph',
     graph: 'Graph',
+    'topological sorting': 'Topological Sorting',
     string: 'String',
     implementation: 'Implementation',
     simulation: 'Simulation',
@@ -82,11 +83,14 @@ export const buildRepresentativeCategories = (
     tags?: string[] | null,
     maxCount = 8
 ): string[] => {
-    const sources = [category, ...(tags ?? [])].filter(Boolean);
+    const sources = [category, ...(tags ?? [])].filter(
+        (source): source is string => Boolean(source)
+    );
     const result: string[] = [];
 
     sources.forEach((source) => {
-        addIfUnique(result, toCanonicalCategory(source));
+        const canonical = toCanonicalCategory(source);
+        addIfUnique(result, canonical ?? source.trim());
     });
 
     return result.slice(0, maxCount);
