@@ -72,9 +72,9 @@ flowchart LR
 
 ## 화면으로 확인하기
 
-03 GIF의 `Local fixture` 표시는 외부 BOJ·solved.ac 응답을 고정한 녹화 환경임을 뜻합니다. 01도 같은 fixture 경계에서 촬영했으며, 두 영상의 FE, API, Redis와 MongoDB 동작은 실제 로컬 서비스입니다.
+03 영상의 `Local fixture` 표시는 외부 BOJ·solved.ac 응답을 고정한 녹화 환경임을 뜻합니다. 01도 같은 fixture 경계에서 촬영했으며, 두 영상의 FE, API, Redis와 MongoDB 동작은 실제 로컬 서비스입니다.
 
-| GIF | 기능 요약 |
+| 데모 | 기능 요약 |
 | --- | --- |
 | `01` | BOJ 상태 메시지 인증 → 회원 정보 입력 → 가입 완료 → 대시보드 이동 |
 | `03` | 풀이 결과 저장 → 입력 코드 로그 저장 → 코드가 포함된 회고 저장·조회 |
@@ -83,13 +83,17 @@ flowchart LR
 
 BOJ ID 입력, 인증 코드 발급, 프로필 상태 메시지 검증과 가입 완료까지의 흐름입니다.
 
-![BOJ 계정 인증과 회원가입](./DOCS/assets/portfolio/01-boj-signup_demo.gif)
+[![BOJ 계정 인증과 회원가입 영상 보기](./DOCS/assets/portfolio/01-boj-signup_demo-poster.png)](./DOCS/assets/portfolio/01-boj-signup_demo.mp4)
+
+[MP4 영상 열기](./DOCS/assets/portfolio/01-boj-signup_demo.mp4) · [GIF 미리보기](./DOCS/assets/portfolio/01-boj-signup_demo.gif)
 
 ### 2. 문제 풀이 결과와 코드·회고 저장
 
 문제 풀이 화면에서 코드를 작성한 뒤 결과를 기록하고, 코드 로그와 회고를 차례로 저장해 목록에서 확인합니다.
 
-![문제 풀이 결과와 코드 및 회고 저장](./DOCS/assets/portfolio/03-problem-solve-save_demo.gif)
+[![문제 풀이 결과와 코드 및 회고 저장 영상 보기](./DOCS/assets/portfolio/03-problem-solve-save_demo-poster.png)](./DOCS/assets/portfolio/03-problem-solve-save_demo.mp4)
+
+[MP4 영상 열기](./DOCS/assets/portfolio/03-problem-solve-save_demo.mp4) · [GIF 미리보기](./DOCS/assets/portfolio/03-problem-solve-save_demo.gif)
 
 ## 카테고리 수집과 필터
 
