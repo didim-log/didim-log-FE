@@ -252,6 +252,8 @@ export const ProblemListPage: FC = () => {
                                     검색 방식
                                 </label>
                                 <select
+                                    data-testid="category-filter-mode-select"
+                                    aria-label="카테고리 검색 방식"
                                     value={filterMode}
                                     onChange={(e) => setFilterMode(e.target.value as CategoryFilterMode)}
                                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"

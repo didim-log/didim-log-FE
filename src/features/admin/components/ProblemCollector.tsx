@@ -1149,7 +1149,10 @@ export const ProblemCollector: FC = () => {
       </div>
 
       {/* 메타데이터 수집 */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 border border-gray-200 dark:border-gray-700">
+      <div
+        data-testid="metadata-collector-card"
+        className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 border border-gray-200 dark:border-gray-700"
+      >
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">문제 메타데이터 수집</h2>
         
         {/* 크롤링 정보 카드 */}

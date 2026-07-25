@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { deriveApiOrigin, deriveServerRoot } from './env';
+import { deriveApiOrigin, deriveServerRoot, parseBooleanFlag } from './env';
 
 describe('deriveApiOrigin', () => {
     it('apiUrl이 /api/v1로 끝나면 오리진을 반환한다', () => {
@@ -31,5 +31,16 @@ describe('deriveServerRoot', () => {
 
     it('prod이고 apiUrl이 정상 도메인이면 해당 오리진을 사용한다', () => {
         expect(deriveServerRoot('https://example.com/api/v1', { isProd: true })).toBe('https://example.com');
+    });
+});
+
+describe('parseBooleanFlag', () => {
+    it('대소문자와 공백을 정규화해 true 값을 판별한다', () => {
+        expect(parseBooleanFlag(' TRUE ')).toBe(true);
+    });
+
+    it('true 이외의 값은 false로 처리한다', () => {
+        expect(parseBooleanFlag('1')).toBe(false);
+        expect(parseBooleanFlag(undefined)).toBe(false);
     });
 });
