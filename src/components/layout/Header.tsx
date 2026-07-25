@@ -9,6 +9,7 @@ import { useAuthStore } from '../../stores/auth.store';
 import { useTourStore } from '../../stores/tour.store';
 import { useUIStore } from '../../stores/ui.store';
 import { useBodyScrollLock } from '@/hooks/ui/useBodyScrollLock';
+import { IS_PORTFOLIO_FIXTURE } from '@/config/env';
 import { HelpCircle, Menu, X } from 'lucide-react';
 
 export const Header: FC = () => {
@@ -103,8 +104,13 @@ export const Header: FC = () => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-16">
                     {/* 로고 */}
-                    <Link to="/dashboard" className="flex items-center" onClick={handleNavClick}>
+                    <Link to="/dashboard" className="flex items-center gap-2" onClick={handleNavClick}>
                         <h1 className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400">디딤로그</h1>
+                        {IS_PORTFOLIO_FIXTURE && (
+                            <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                                Local fixture
+                            </span>
+                        )}
                     </Link>
 
                     {/* 데스크톱 네비게이션 (md 이상에서만 표시) */}

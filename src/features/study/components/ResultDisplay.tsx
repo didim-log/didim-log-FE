@@ -28,6 +28,7 @@ export const ResultDisplay: FC<ResultDisplayProps> = ({ result, isSuccess, onWri
 
     return (
         <div 
+            data-testid="study-result-dialog"
             className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50 p-4"
             onClick={handleBackdropClick}
         >

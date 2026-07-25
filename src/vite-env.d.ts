@@ -2,9 +2,9 @@
 
 interface ImportMetaEnv {
     readonly VITE_API_URL?: string;
+    readonly VITE_PORTFOLIO_FIXTURE?: string;
 }
 
 interface ImportMeta {
     readonly env: ImportMetaEnv;
 }
-

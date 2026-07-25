@@ -62,6 +62,9 @@ export const deriveServerRoot = (apiUrl: string, params: DeriveServerRootParams)
     return window.location.origin;
 };
 
+export const parseBooleanFlag = (value: unknown): boolean =>
+    typeof value === 'string' && value.trim().toLowerCase() === 'true';
+
 const resolveApiUrl = (apiUrl: unknown): string => {
     const value = typeof apiUrl === 'string' ? apiUrl : '';
     const normalized = normalizeApiUrl(value);
@@ -85,3 +88,4 @@ const resolveApiUrl = (apiUrl: unknown): string => {
 export const API_URL: string = resolveApiUrl(import.meta.env.VITE_API_URL);
 export const API_ORIGIN: string = deriveApiOrigin(API_URL);
 export const SERVER_ROOT: string = deriveServerRoot(API_URL, { isProd: import.meta.env.PROD });
+export const IS_PORTFOLIO_FIXTURE: boolean = parseBooleanFlag(import.meta.env.VITE_PORTFOLIO_FIXTURE);
