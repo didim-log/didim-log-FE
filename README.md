@@ -83,17 +83,13 @@ flowchart LR
 
 BOJ ID 입력, 인증 코드 발급, 프로필 상태 메시지 검증과 가입 완료까지의 흐름입니다.
 
-[![BOJ 계정 인증과 회원가입 영상 보기](./DOCS/assets/portfolio/01-boj-signup_demo-poster.png)](./DOCS/assets/portfolio/01-boj-signup_demo.mp4)
-
-[MP4 영상 열기](./DOCS/assets/portfolio/01-boj-signup_demo.mp4) · [GIF 미리보기](./DOCS/assets/portfolio/01-boj-signup_demo.gif)
+![BOJ 계정 인증과 회원가입](./DOCS/assets/portfolio/01-boj-signup_demo.gif)
 
 ### 2. 문제 풀이 결과와 코드·회고 저장
 
 문제 풀이 화면에서 코드를 작성한 뒤 결과를 기록하고, 코드 로그와 회고를 차례로 저장해 목록에서 확인합니다.
 
-[![문제 풀이 결과와 코드 및 회고 저장 영상 보기](./DOCS/assets/portfolio/03-problem-solve-save_demo-poster.png)](./DOCS/assets/portfolio/03-problem-solve-save_demo.mp4)
-
-[MP4 영상 열기](./DOCS/assets/portfolio/03-problem-solve-save_demo.mp4) · [GIF 미리보기](./DOCS/assets/portfolio/03-problem-solve-save_demo.gif)
+![문제 풀이 결과와 코드 및 회고 저장](./DOCS/assets/portfolio/03-problem-solve-save_demo.gif)
 
 ## 카테고리 수집과 필터
 
