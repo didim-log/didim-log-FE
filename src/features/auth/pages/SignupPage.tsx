@@ -30,7 +30,7 @@ export const SignupPage: FC = () => {
 
     const oauthState = parseOAuthSignupState(location.state);
 
-    const mergeSignupRequest = (params: { bojId: string; email: string; password: string }): SignupRequest => {
+    const mergeSignupRequest = (params: SignupRequest): SignupRequest => {
         if (!oauthState) {
             return params;
         }
@@ -42,7 +42,7 @@ export const SignupPage: FC = () => {
         };
     };
 
-    const handleComplete = async (data: { bojId: string; email: string; password: string }) => {
+    const handleComplete = async (data: SignupRequest) => {
         setApiError(null); // 새 시도 시 에러 초기화
 
         try {

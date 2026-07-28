@@ -8,7 +8,11 @@ import { authApi } from '../../api/endpoints/auth.api';
 
 interface UseBojVerifyReturn {
     issueCode: () => Promise<void>;
-    verify: (bojId: string) => Promise<{ verified: boolean; verifiedBojId: string | null }>;
+    verify: (bojId: string) => Promise<{
+        verified: boolean;
+        verifiedBojId: string | null;
+        verificationSessionId: string;
+    }>;
     sessionId: string | null;
     code: string | null;
     isLoading: boolean;
@@ -28,23 +32,26 @@ export const useBojVerify = (): UseBojVerifyReturn => {
     });
 
     const verifyMutation = useMutation({
-        mutationFn: (bojId: string) => {
-            if (!sessionId) {
-                throw new Error('세션이 없습니다. 먼저 인증 코드를 발급받아주세요.');
-            }
-            return authApi.verifyBoj({ sessionId, bojId });
-        },
+        mutationFn: authApi.verifyBoj,
     });
 
     const issueCode = async (): Promise<void> => {
         await issueCodeMutation.mutateAsync();
     };
 
-    const verify = async (bojId: string): Promise<{ verified: boolean; verifiedBojId: string | null }> => {
-        const result = await verifyMutation.mutateAsync(bojId);
+    const verify = async (
+        bojId: string
+    ): Promise<{ verified: boolean; verifiedBojId: string | null; verificationSessionId: string }> => {
+        const verificationSessionId = sessionId;
+        if (!verificationSessionId) {
+            throw new Error('세션이 없습니다. 먼저 인증 코드를 발급받아주세요.');
+        }
+
+        const result = await verifyMutation.mutateAsync({ sessionId: verificationSessionId, bojId });
         return {
             verified: result.verified,
             verifiedBojId: result.verifiedBojId || null,
+            verificationSessionId,
         };
     };
 
@@ -57,4 +64,3 @@ export const useBojVerify = (): UseBojVerifyReturn => {
         error: issueCodeMutation.error || verifyMutation.error || null,
     };
 };
-
