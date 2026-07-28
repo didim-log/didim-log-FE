@@ -13,7 +13,12 @@ import type { OAuthSignupState } from '@/types/auth/oauth.types';
 type Step = 1 | 2 | 3;
 
 interface SignupWizardProps {
-    onComplete: (data: { bojId: string; email: string; password: string }) => void;
+    onComplete: (data: {
+        bojId: string;
+        email: string;
+        password: string;
+        verificationSessionId: string;
+    }) => void;
     onClearApiError?: () => void;
     oauthSignupState?: OAuthSignupState | null;
     apiError?: {
@@ -32,18 +37,20 @@ export const SignupWizard: FC<SignupWizardProps> = ({
 }) => {
     const [currentStep, setCurrentStep] = useState<Step>(1);
     const [bojId, setBojId] = useState('');
+    const [verificationSessionId, setVerificationSessionId] = useState('');
 
     const handleStep1Complete = () => {
         setCurrentStep(2);
     };
 
-    const handleStep2Complete = (verifiedBojId: string) => {
+    const handleStep2Complete = (verifiedBojId: string, verifiedSessionId: string) => {
         setBojId(verifiedBojId);
+        setVerificationSessionId(verifiedSessionId);
         setCurrentStep(3);
     };
 
     const handleStep3Complete = (data: { email: string; password: string }) => {
-        onComplete({ bojId, ...data });
+        onComplete({ bojId, verificationSessionId, ...data });
     };
 
     const isDuplicateBojId = apiError?.code === 'DUPLICATE_BOJ_ID';
@@ -117,6 +124,7 @@ export const SignupWizard: FC<SignupWizardProps> = ({
                         }
                         onClearApiError?.();
                         setBojId('');
+                        setVerificationSessionId('');
                         setCurrentStep(2);
                     }}
                 />

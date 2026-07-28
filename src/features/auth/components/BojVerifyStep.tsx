@@ -18,7 +18,7 @@ import { BojVerifyErrorGuide } from './BojVerifyErrorGuide';
 import type { BojVerifyErrorGuide as BojVerifyErrorGuideModel } from '../utils/bojVerifyError';
 
 interface BojVerifyStepProps {
-    onNext: (bojId: string) => void;
+    onNext: (bojId: string, verificationSessionId: string) => void;
     onBack: () => void;
     duplicateError?: string | null;
     onErrorClear?: () => void;
@@ -145,7 +145,7 @@ export const BojVerifyStep: FC<BojVerifyStepProps> = ({ onNext, onBack, duplicat
             // 인증 성공: verifiedBojId를 사용하여 다음 단계로 진행
             // 백엔드에서 반환한 verifiedBojId가 있으면 사용, 없으면 입력한 bojId 사용
             const verifiedBojId = result.verifiedBojId || bojId.trim();
-            onNext(verifiedBojId);
+            onNext(verifiedBojId, result.verificationSessionId);
         } catch (err: unknown) {
             setVerifyError(err);
         }

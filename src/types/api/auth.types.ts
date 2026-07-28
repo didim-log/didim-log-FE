@@ -6,6 +6,7 @@ export interface SignupRequest {
     bojId: string;
     password: string;
     email: string;
+    verificationSessionId: string;
     provider?: 'GOOGLE' | 'GITHUB' | 'NAVER';
     providerId?: string;
 }
