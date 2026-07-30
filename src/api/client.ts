@@ -84,7 +84,7 @@ export const removeAuthHeader = (): void => {
 
 /**
  * 요청 인터셉터: 토큰 자동 주입
- * Refresh Token API 호출 시에는 토큰을 추가하지 않음 (무한 루프 방지)
+ * 인증 정보를 새로 발급하는 API 호출에는 기존 Access Token을 추가하지 않음
  */
 apiClient.interceptors.request.use(
     (config) => {
@@ -93,10 +93,10 @@ apiClient.interceptors.request.use(
             config.url = url.slice(1);
         }
 
-        // Refresh Token API 호출 시에는 토큰을 추가하지 않음
-        const isRefreshEndpoint = config.url?.includes('auth/refresh');
-        if (isRefreshEndpoint) {
-            // Refresh API는 Request Body에 refreshToken을 포함하므로 Authorization 헤더 제거
+        const isCredentialExchangeEndpoint =
+            config.url?.includes('auth/refresh') ||
+            config.url?.includes('auth/oauth/exchange');
+        if (isCredentialExchangeEndpoint) {
             delete config.headers.Authorization;
             return config;
         }

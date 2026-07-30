@@ -21,6 +21,8 @@ import type {
     BojIdDuplicateCheckResponse,
     RefreshTokenRequest,
     SignupFinalizeRequest,
+    OAuthCodeExchangeRequest,
+    OAuthCodeExchangeResponse,
 } from '../../types/api/auth.types';
 
 type InFlightLogin = {
@@ -29,7 +31,13 @@ type InFlightLogin = {
     promise: Promise<AuthResponse>;
 };
 
+type InFlightOAuthExchange = {
+    code: string;
+    promise: Promise<OAuthCodeExchangeResponse>;
+};
+
 let inFlightLogin: InFlightLogin | null = null;
+let inFlightOAuthExchange: InFlightOAuthExchange | null = null;
 
 const createLoginKey = (data: LoginRequest): string => {
     return `${data.bojId}:${data.password}`;
@@ -79,6 +87,27 @@ export const authApi = {
             });
 
         inFlightLogin = { key, startedAt: now, promise };
+        return await promise;
+    },
+
+    /**
+     * OAuth 성공 redirect로 받은 단일 사용 code를 로그인 토큰으로 교환한다.
+     */
+    exchangeOAuthCode: async (data: OAuthCodeExchangeRequest): Promise<OAuthCodeExchangeResponse> => {
+        if (inFlightOAuthExchange?.code === data.code) {
+            return await inFlightOAuthExchange.promise;
+        }
+
+        const promise = apiClient
+            .post<OAuthCodeExchangeResponse>('/auth/oauth/exchange', data)
+            .then((response) => response.data)
+            .finally(() => {
+                if (inFlightOAuthExchange?.promise === promise) {
+                    inFlightOAuthExchange = null;
+                }
+            });
+
+        inFlightOAuthExchange = { code: data.code, promise };
         return await promise;
     },
 
