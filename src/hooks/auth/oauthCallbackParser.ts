@@ -3,24 +3,40 @@
  */
 
 import { toOAuthProvider } from '../../types/auth/oauth.types';
-import type { OAuthProvider, OAuthSignupState, OAuthTokens } from '../../types/auth/oauth.types';
+import type { OAuthProvider, OAuthTokens } from '../../types/auth/oauth.types';
+
+export const OAUTH_SIGNUP_UNSUPPORTED_MESSAGE =
+    'OAuth 신규 회원가입은 현재 지원하지 않습니다. BOJ 계정으로 회원가입한 뒤 다시 로그인해 주세요.';
+export const OAUTH_LOGIN_FAILED_MESSAGE =
+    'OAuth 로그인 정보를 확인할 수 없습니다. 로그인 화면에서 다시 시도해 주세요.';
 
 type OAuthCallbackError = {
     kind: 'error';
     reason: string;
 };
 
-type OAuthCallbackSignup = {
-    kind: 'signup';
-    state: OAuthSignupState;
+type OAuthCallbackExchange = {
+    kind: 'exchange';
+    code: string;
 };
 
 type OAuthCallbackLogin = {
     kind: 'login';
     tokens: OAuthTokens;
+    provider: OAuthProvider | null;
 };
 
-export type OAuthCallbackParseResult = OAuthCallbackError | OAuthCallbackSignup | OAuthCallbackLogin;
+type OAuthCallbackLegacyLogin = {
+    kind: 'legacy-login';
+    accessToken: string;
+    provider: OAuthProvider | null;
+};
+
+export type OAuthCallbackParseResult =
+    | OAuthCallbackError
+    | OAuthCallbackExchange
+    | OAuthCallbackLogin
+    | OAuthCallbackLegacyLogin;
 
 const getParam = (searchParams: URLSearchParams, key: string): string => {
     return searchParams.get(key) ?? '';
@@ -38,65 +54,48 @@ const parseProvider = (searchParams: URLSearchParams): OAuthProvider | null => {
     return toOAuthProvider(providerRaw);
 };
 
-const parseProfileImage = (searchParams: URLSearchParams): string | null => {
-    const profileImage = getParam(searchParams, 'profileImage');
-    if (!profileImage) {
-        return null;
-    }
-    return profileImage;
-};
-
-const parseSignupState = (searchParams: URLSearchParams): OAuthSignupState | null => {
-    const provider = parseProvider(searchParams);
-    if (!provider) {
-        return null;
-    }
-
-    const providerId = getParam(searchParams, 'providerId');
-    if (!providerId) {
-        return null;
-    }
-
-    const email = getParam(searchParams, 'email');
-    const profileImage = parseProfileImage(searchParams);
-
-    return { email, provider, providerId, profileImage };
-};
-
-const parseTokens = (searchParams: URLSearchParams): OAuthTokens | null => {
+const parseAccessToken = (searchParams: URLSearchParams): string => {
     const accessToken = getParam(searchParams, 'accessToken') || getParam(searchParams, 'token');
-    if (!accessToken) {
-        return null;
-    }
+    return accessToken.trim();
+};
 
-    const refreshToken = getParam(searchParams, 'refreshToken');
-    if (!refreshToken) {
-        return null;
+const parseOAuthError = (error: string): string => {
+    if (error.trim().toLowerCase() === 'oauth_signup_not_supported') {
+        return OAUTH_SIGNUP_UNSUPPORTED_MESSAGE;
     }
-
-    return { accessToken, refreshToken };
+    return OAUTH_LOGIN_FAILED_MESSAGE;
 };
 
 export const parseOAuthCallbackParams = (searchParams: URLSearchParams): OAuthCallbackParseResult => {
     const error = getParam(searchParams, 'error');
     if (error) {
-        return { kind: 'error', reason: error };
+        return { kind: 'error', reason: parseOAuthError(error) };
     }
 
     const isNewUser = getBooleanParam(searchParams, 'isNewUser');
     if (isNewUser) {
-        const state = parseSignupState(searchParams);
-        if (!state) {
-            return { kind: 'error', reason: '신규 유저 회원가입 정보가 올바르지 않습니다.' };
-        }
-        return { kind: 'signup', state };
+        return { kind: 'error', reason: OAUTH_SIGNUP_UNSUPPORTED_MESSAGE };
     }
 
-    const tokens = parseTokens(searchParams);
-    if (!tokens) {
-        return { kind: 'error', reason: '로그인 토큰이 없습니다.' };
+    const code = getParam(searchParams, 'code').trim();
+    if (code) {
+        return { kind: 'exchange', code };
     }
 
-    return { kind: 'login', tokens };
+    const accessToken = parseAccessToken(searchParams);
+    if (!accessToken) {
+        return { kind: 'error', reason: OAUTH_LOGIN_FAILED_MESSAGE };
+    }
+
+    const provider = parseProvider(searchParams);
+    const refreshToken = getParam(searchParams, 'refreshToken').trim();
+    if (!refreshToken) {
+        return { kind: 'legacy-login', accessToken, provider };
+    }
+
+    return {
+        kind: 'login',
+        tokens: { accessToken, refreshToken },
+        provider,
+    };
 };
-

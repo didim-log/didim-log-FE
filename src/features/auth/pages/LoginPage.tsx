@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import type { FC, ChangeEvent, FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useLogin } from '../../../hooks/auth/useLogin';
 import { Button } from '../../../components/ui/Button';
 import { validation } from '../../../utils/validation';
@@ -12,21 +12,42 @@ import { systemApi } from '../../../api/endpoints/system.api';
 import type { SystemStatusResponse } from '../../../types/api/system.types';
 import { ThemeToggle } from '../../../components/common/ThemeToggle';
 import { SERVER_ROOT } from '../../../config/env';
+import { rememberOAuthProvider } from '../../../utils/oauthProviderSession';
+
+type LoginServerError = {
+    message: string;
+    status?: number;
+    remainingAttempts?: number;
+    unlockTime?: string;
+};
+
+export const getOAuthLoginError = (locationState: unknown): string | null => {
+    if (typeof locationState !== 'object' || locationState === null) {
+        return null;
+    }
+
+    const error = (locationState as { error?: unknown }).error;
+    if (typeof error !== 'string') {
+        return null;
+    }
+
+    const message = error.trim();
+    return message || null;
+};
 
 export const LoginPage: FC = () => {
     const navigate = useNavigate();
+    const location = useLocation();
+    const navigationError = getOAuthLoginError(location.state);
     const [bojId, setBojId] = useState('');
     const [password, setPassword] = useState('');
     const [errors, setErrors] = useState<{ bojId?: { message: string; type?: string }; password?: string }>({});
     const [touched, setTouched] = useState<{ bojId: boolean; password: boolean }>({ bojId: false, password: false });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [shouldFocusPassword, setShouldFocusPassword] = useState(false);
-    const [serverError, setServerError] = useState<{
-        message: string;
-        status?: number;
-        remainingAttempts?: number;
-        unlockTime?: string;
-    } | null>(null);
+    const [serverError, setServerError] = useState<LoginServerError | null>(
+        navigationError ? { message: navigationError } : null
+    );
     const passwordInputRef = useRef<HTMLInputElement>(null);
     const submitLockRef = useRef(false);
     const lastSubmitAtRef = useRef(0);
@@ -34,6 +55,15 @@ export const LoginPage: FC = () => {
     const [isCheckingMaintenance, setIsCheckingMaintenance] = useState(true);
 
     const { login } = useLogin();
+
+    useEffect(() => {
+        if (!navigationError) {
+            return;
+        }
+
+        setServerError({ message: navigationError });
+        navigate(location.pathname, { replace: true, state: null });
+    }, [location.pathname, navigate, navigationError]);
 
     // 유지보수 상태 확인
     useEffect(() => {
@@ -197,6 +227,7 @@ export const LoginPage: FC = () => {
     };
 
     const handleOAuthLogin = (provider: 'google' | 'github' | 'naver') => {
+        rememberOAuthProvider(provider);
         window.location.href = `${SERVER_ROOT}/oauth2/authorization/${provider}`;
     };
 

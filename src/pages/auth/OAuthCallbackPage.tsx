@@ -2,10 +2,10 @@
  * OAuth 콜백 페이지
  *
  * - 화면은 최소한의 "처리 중" UI만 보여준다.
- * - Query String을 파싱해 신규 가입 / 로그인 성공 / 실패로 분기한다.
+ * - Query String을 파싱해 code 교환 / 호환 로그인 / 실패로 분기한다.
  */
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import type { FC } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useOAuthCallback } from '../../hooks/auth/useOAuthCallback';
@@ -13,9 +13,14 @@ import { useOAuthCallback } from '../../hooks/auth/useOAuthCallback';
 export const OAuthCallbackPage: FC = () => {
     const [searchParams] = useSearchParams();
     const { handleOAuthCallback } = useOAuthCallback();
+    const hasStartedRef = useRef(false);
 
     useEffect(() => {
-        handleOAuthCallback(searchParams);
+        if (hasStartedRef.current) {
+            return;
+        }
+        hasStartedRef.current = true;
+        void handleOAuthCallback(searchParams);
     }, [handleOAuthCallback, searchParams]);
 
     return (

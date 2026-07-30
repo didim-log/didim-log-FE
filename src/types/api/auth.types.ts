@@ -32,6 +32,14 @@ export interface AuthResponse {
     tierLevel: number;
 }
 
+export interface OAuthCodeExchangeRequest {
+    code: string;
+}
+
+export interface OAuthCodeExchangeResponse extends AuthResponse {
+    provider: string;
+}
+
 export interface RefreshTokenRequest {
     refreshToken: string;
 }
