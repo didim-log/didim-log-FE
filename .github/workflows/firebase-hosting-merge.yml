@@ -11,13 +11,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'npm'
 
       - run: npm ci
+
+      - run: npm run lint
+
+      - run: npm test
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
 
       # 빌드 전 캐시 및 이전 빌드 산출물 정리
       - name: Clean build artifacts and cache
