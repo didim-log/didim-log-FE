@@ -11,8 +11,17 @@ import { PublicRoute } from './routes/PublicRoute';
 import { PrivateRoute } from './routes/PrivateRoute';
 import { AdminRoute } from './routes/AdminRoute';
 
-const DemoHomePage = lazy(() =>
-    import('./features/demo/pages/DemoHomePage').then((m) => ({ default: m.DemoHomePage }))
+const DemoLoginPage = lazy(() =>
+    import('./features/demo/pages/DemoLoginPage').then((m) => ({ default: m.DemoLoginPage }))
+);
+const DemoSignupPage = lazy(() =>
+    import('./features/demo/pages/DemoSignupPage').then((m) => ({ default: m.DemoSignupPage }))
+);
+const DemoDashboardPage = lazy(() =>
+    import('./features/demo/pages/DemoDashboardPage').then((m) => ({ default: m.DemoDashboardPage }))
+);
+const DemoProblemDetailPage = lazy(() =>
+    import('./features/demo/pages/DemoProblemDetailPage').then((m) => ({ default: m.DemoProblemDetailPage }))
 );
 const LoginPage = lazy(() => import('./features/auth/pages/LoginPage').then((m) => ({ default: m.LoginPage })));
 const SignupPage = lazy(() => import('./features/auth/pages/SignupPage').then((m) => ({ default: m.SignupPage })));
@@ -196,7 +205,22 @@ const NotFoundPage = () => {
 export const router = createBrowserRouter([
     {
         path: '/',
-        element: withRouteSuspense(<DemoHomePage />),
+        element: withRouteSuspense(<DemoLoginPage />),
+        errorElement: <ErrorPage />,
+    },
+    {
+        path: '/demo/boj',
+        element: withRouteSuspense(<DemoSignupPage />),
+        errorElement: <ErrorPage />,
+    },
+    {
+        path: '/demo/dashboard',
+        element: withRouteSuspense(<DemoDashboardPage />),
+        errorElement: <ErrorPage />,
+    },
+    {
+        path: '/demo/problems/:problemId',
+        element: withRouteSuspense(<DemoProblemDetailPage />),
         errorElement: <ErrorPage />,
     },
     {

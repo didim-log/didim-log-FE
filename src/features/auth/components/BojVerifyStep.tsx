@@ -18,17 +18,31 @@ import { BojVerifyErrorGuide } from './BojVerifyErrorGuide';
 import type { BojVerifyErrorGuide as BojVerifyErrorGuideModel } from '../utils/bojVerifyError';
 
 interface BojVerifyStepProps {
+    demoMode?: boolean;
     onNext: (bojId: string, verificationSessionId: string) => void;
     onBack: () => void;
     duplicateError?: string | null;
     onErrorClear?: () => void;
 }
 
-export const BojVerifyStep: FC<BojVerifyStepProps> = ({ onNext, onBack, duplicateError, onErrorClear }) => {
-    const [bojId, setBojId] = useState('');
+const DEMO_BOJ_ID = 'pDemo';
+const DEMO_VERIFICATION_CODE = 'DIDIM-VERIFY-7H2K';
+const DEMO_VERIFICATION_SESSION_ID = 'didim-demo-verification-session';
+
+export const BojVerifyStep: FC<BojVerifyStepProps> = ({
+    demoMode = false,
+    onNext,
+    onBack,
+    duplicateError,
+    onErrorClear,
+}) => {
+    const [bojId, setBojId] = useState(() => (demoMode ? DEMO_BOJ_ID : ''));
     const [localError, setLocalError] = useState<string | null>(null);
     const [errorGuide, setErrorGuide] = useState<BojVerifyErrorGuideModel | null>(null);
-    const { issueCode, verify, code, isLoading } = useBojVerify();
+    const [demoCode, setDemoCode] = useState<string | null>(null);
+    const { issueCode, verify, code: issuedCode, isLoading: isRequestPending } = useBojVerify();
+    const code = demoMode ? demoCode : issuedCode;
+    const isLoading = demoMode ? false : isRequestPending;
     const error = duplicateError ?? localError;
 
     // bojId가 변경되면 중복 에러 초기화
@@ -58,6 +72,11 @@ export const BojVerifyStep: FC<BojVerifyStepProps> = ({ onNext, onBack, duplicat
         const bojIdValidation = validation.isValidBojId(bojId.trim());
         if (!bojIdValidation.valid) {
             setLocalError(bojIdValidation.message ?? '올바른 BOJ ID 형식이 아닙니다.');
+            return;
+        }
+
+        if (demoMode) {
+            setDemoCode(DEMO_VERIFICATION_CODE);
             return;
         }
 
@@ -132,6 +151,16 @@ export const BojVerifyStep: FC<BojVerifyStepProps> = ({ onNext, onBack, duplicat
             return;
         }
 
+        if (demoMode) {
+            if (!code) {
+                setLocalError('먼저 인증 코드를 발급해주세요.');
+                return;
+            }
+
+            onNext(DEMO_BOJ_ID, DEMO_VERIFICATION_SESSION_ID);
+            return;
+        }
+
         try {
             // BOJ 소유권 인증
             const result = await verify(bojId.trim());
@@ -168,6 +197,7 @@ export const BojVerifyStep: FC<BojVerifyStepProps> = ({ onNext, onBack, duplicat
                         error={error && !error.includes('이미 가입된') ? error : undefined}
                         placeholder="백준 온라인 저지 ID"
                         disabled={isLoading}
+                        readOnly={demoMode}
                     />
                     {error && error.includes('이미 가입된') && (
                         <div className="mt-1.5">
@@ -214,22 +244,30 @@ export const BojVerifyStep: FC<BojVerifyStepProps> = ({ onNext, onBack, duplicat
                             </div>
                             <div className="flex items-start gap-2">
                                 <span className="font-semibold text-blue-900 dark:text-blue-100 min-w-[1.5rem]">2.</span>
-                                <span>
-                                    <a
-                                        href="https://www.acmicpc.net/modify"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline font-medium"
-                                    >
-                                        백준 프로필 수정 페이지
-                                        <ExternalLink className="w-4 h-4" />
-                                    </a>
-                                    에서 <strong>"상태 메시지"</strong>에 코드를 붙여넣고 저장하세요
-                                </span>
+                                {demoMode ? (
+                                    <span>데모에서는 백준 프로필을 수정하지 않아도 됩니다.</span>
+                                ) : (
+                                    <span>
+                                        <a
+                                            href="https://www.acmicpc.net/modify"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline font-medium"
+                                        >
+                                            백준 프로필 수정 페이지
+                                            <ExternalLink className="w-4 h-4" />
+                                        </a>
+                                        에서 <strong>"상태 메시지"</strong>에 코드를 붙여넣고 저장하세요
+                                    </span>
+                                )}
                             </div>
                             <div className="flex items-start gap-2">
                                 <span className="font-semibold text-blue-900 dark:text-blue-100 min-w-[1.5rem]">3.</span>
-                                <span>저장 후 아래 "인증 확인" 버튼을 클릭하세요</span>
+                                <span>
+                                    {demoMode
+                                        ? '아래 "인증 확인"을 누르면 샘플 인증이 완료됩니다.'
+                                        : '저장 후 아래 "인증 확인" 버튼을 클릭하세요'}
+                                </span>
                             </div>
                         </div>
                         
@@ -240,7 +278,7 @@ export const BojVerifyStep: FC<BojVerifyStepProps> = ({ onNext, onBack, duplicat
                 )}
 
                 {/* 프로필 확인 링크 - 인증 코드가 발급된 후에만 표시 */}
-                {code && bojId.trim() && validation.isValidBojId(bojId.trim()).valid && (
+                {!demoMode && code && bojId.trim() && validation.isValidBojId(bojId.trim()).valid && (
                     <div className="flex justify-center mt-4">
                         <a
                             href={`https://www.acmicpc.net/user/${bojId.trim()}`}

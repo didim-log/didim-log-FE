@@ -18,6 +18,7 @@ import {
 const SOLVED_AC_URL = 'https://solved.ac/';
 
 interface SignupFormStepProps {
+    demoMode?: boolean;
     bojId: string;
     onComplete: (data: { email: string; password: string }) => void;
     onBack: () => void;
@@ -81,6 +82,7 @@ const isSolvedAcOnboardingHintTargetError = (errorMessage?: string): boolean => 
 };
 
 export const SignupFormStep: FC<SignupFormStepProps> = ({
+    demoMode = false,
     bojId,
     onComplete,
     onBack,
@@ -89,9 +91,9 @@ export const SignupFormStep: FC<SignupFormStepProps> = ({
 }) => {
     const oauthEmailViewModel = getOAuthSignupEmailViewModel(oauthSignupState);
 
-    const [email, setEmail] = useState(() => oauthEmailViewModel.email);
-    const [password, setPassword] = useState('');
-    const [passwordConfirm, setPasswordConfirm] = useState('');
+    const [email, setEmail] = useState(() => (demoMode ? 'demo@didimlog.dev' : oauthEmailViewModel.email));
+    const [password, setPassword] = useState(() => (demoMode ? 'Demo1234!' : ''));
+    const [passwordConfirm, setPasswordConfirm] = useState(() => (demoMode ? 'Demo1234!' : ''));
     const [errors, setErrors] = useState<SignupFormErrors>(() => createErrorsFromApiError(apiError));
     const [passwordPolicy, setPasswordPolicy] = useState(validation.getPasswordPolicyDetails(''));
     const bojIdInputRef = useRef<HTMLInputElement>(null);

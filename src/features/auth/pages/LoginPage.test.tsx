@@ -2,16 +2,24 @@ import { describe, expect, it, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { MemoryRouter } from 'react-router-dom';
 
+const { mockLogin, mockUseLogin, mockGetSystemStatus } = vi.hoisted(() => ({
+    mockLogin: vi.fn(),
+    mockUseLogin: vi.fn(),
+    mockGetSystemStatus: vi.fn(),
+}));
+
 vi.mock('../../../hooks/auth/useLogin', () => ({
-    useLogin: () => ({
-        login: vi.fn(),
-        isLoading: false,
-    }),
+    useLogin: mockUseLogin,
+}));
+
+mockUseLogin.mockImplementation(() => ({
+    login: mockLogin,
+    isLoading: false,
 }));
 
 vi.mock('../../../api/endpoints/system.api', () => ({
     systemApi: {
-        getSystemStatus: vi.fn(),
+        getSystemStatus: mockGetSystemStatus,
     },
 }));
 
@@ -43,6 +51,25 @@ describe('LoginPage OAuth 오류 안내', () => {
         );
 
         expect(html).toContain('BOJ 계정으로 회원가입한 뒤 다시 로그인해 주세요.');
+    });
+
+    it('데모 모드는 실제 로그인 훅 없이 고정 입력값과 전달받은 배너를 렌더링한다', () => {
+        mockUseLogin.mockClear();
+        mockGetSystemStatus.mockClear();
+
+        const html = renderToStaticMarkup(
+            <MemoryRouter initialEntries={['/']}>
+                <LoginPage demoMode banner={<p>샘플 데이터는 저장되지 않습니다.</p>} />
+            </MemoryRouter>
+        );
+
+        expect(html).toContain('value="pDemo"');
+        expect(html).toContain('value="demo-only"');
+        expect(html).toContain('data-testid="demo-login-submit"');
+        expect(html).toContain('샘플 데이터는 저장되지 않습니다.');
+        expect(mockUseLogin).not.toHaveBeenCalled();
+        expect(mockGetSystemStatus).not.toHaveBeenCalled();
+        expect(mockLogin).not.toHaveBeenCalled();
     });
 
     it('문자열이 아니거나 빈 error state는 무시한다', () => {

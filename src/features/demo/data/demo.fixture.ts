@@ -1,109 +1,11 @@
-export type DemoCategoryKey = 'ALL' | 'GRAPH' | 'DP' | 'GREEDY';
-
-export type DemoProblemCategory = 'GRAPH' | 'BFS' | 'DFS' | 'DP' | 'GREEDY';
-export type DemoProblemLanguage = 'ko' | 'en';
-
-export interface DemoProblem {
-    id: number;
-    title: string;
-    tierLevel: number;
-    language: DemoProblemLanguage;
-    categories: readonly DemoProblemCategory[];
-    url: string;
-}
-
-export interface DemoCategoryOption {
-    value: DemoCategoryKey;
-    label: string;
-    description: string;
-}
-
-export const DEMO_PROBLEMS = [
-    {
-        id: 9251,
-        title: 'LCS',
-        tierLevel: 10,
-        language: 'en',
-        categories: ['DP'],
-        url: 'https://www.acmicpc.net/problem/9251',
-    },
-    {
-        id: 1260,
-        title: 'DFS와 BFS',
-        tierLevel: 7,
-        language: 'ko',
-        categories: ['GRAPH', 'BFS', 'DFS'],
-        url: 'https://www.acmicpc.net/problem/1260',
-    },
-    {
-        id: 1931,
-        title: '회의실 배정',
-        tierLevel: 9,
-        language: 'ko',
-        categories: ['GREEDY'],
-        url: 'https://www.acmicpc.net/problem/1931',
-    },
-    {
-        id: 7576,
-        title: 'Tomato',
-        tierLevel: 9,
-        language: 'en',
-        categories: ['GRAPH', 'BFS'],
-        url: 'https://www.acmicpc.net/problem/7576',
-    },
-    {
-        id: 2748,
-        title: '피보나치 수 2',
-        tierLevel: 6,
-        language: 'ko',
-        categories: ['DP'],
-        url: 'https://www.acmicpc.net/problem/2748',
-    },
-    {
-        id: 12865,
-        title: 'Ordinary Knapsack',
-        tierLevel: 11,
-        language: 'en',
-        categories: ['DP'],
-        url: 'https://www.acmicpc.net/problem/12865',
-    },
-    {
-        id: 2178,
-        title: '미로 탐색',
-        tierLevel: 8,
-        language: 'ko',
-        categories: ['GRAPH', 'BFS'],
-        url: 'https://www.acmicpc.net/problem/2178',
-    },
-    {
-        id: 2839,
-        title: '설탕 배달',
-        tierLevel: 6,
-        language: 'ko',
-        categories: ['GREEDY'],
-        url: 'https://www.acmicpc.net/problem/2839',
-    },
-    {
-        id: 1012,
-        title: 'Organic Cabbage',
-        tierLevel: 7,
-        language: 'en',
-        categories: ['GRAPH', 'DFS'],
-        url: 'https://www.acmicpc.net/problem/1012',
-    },
-    {
-        id: 10026,
-        title: '적록색약',
-        tierLevel: 10,
-        language: 'ko',
-        categories: ['GRAPH', 'DFS'],
-        url: 'https://www.acmicpc.net/problem/10026',
-    },
-] as const satisfies readonly DemoProblem[];
-
-export type DemoProblemId = (typeof DEMO_PROBLEMS)[number]['id'];
-
-export const DEMO_SOLVED_PROBLEM_IDS = [1260, 2839] as const satisfies readonly DemoProblemId[];
+import type { DashboardResponse } from '../../../types/api/dashboard.types';
+import type { NoticeResponse } from '../../../types/api/notice.types';
+import type {
+    ProblemCategoryMetaResponse,
+    ProblemDetailResponse,
+    ProblemResponse,
+} from '../../../types/api/problem.types';
+import type { StatisticsResponse } from '../../../types/api/statistics.types';
 
 export const DEMO_PROFILE = {
     bojId: 'pDemo',
@@ -111,29 +13,292 @@ export const DEMO_PROFILE = {
     rating: 800,
     tierLevel: 8,
     tierLabel: 'Silver III',
-    preferredLanguage: 'ko',
-    solvedProblemIds: DEMO_SOLVED_PROBLEM_IDS,
+    preferredLanguage: 'KOTLIN',
 } as const;
 
-export const DEMO_CATEGORY_OPTIONS = [
+export const DEMO_DASHBOARD = {
+    studentProfile: {
+        nickname: DEMO_PROFILE.displayName,
+        bojId: DEMO_PROFILE.bojId,
+        currentTier: 'SILVER',
+        currentTierLevel: DEMO_PROFILE.tierLevel,
+        consecutiveSolveDays: 12,
+        primaryLanguage: DEMO_PROFILE.preferredLanguage,
+        isOnboardingFinished: true,
+    },
+    todaySolvedCount: 2,
+    todaySolvedProblems: [
+        {
+            problemId: '2178',
+            result: 'SUCCESS',
+            solvedAt: '2026-08-05T01:24:00Z',
+        },
+        {
+            problemId: '1931',
+            result: 'SUCCESS',
+            solvedAt: '2026-08-05T02:05:00Z',
+        },
+    ],
+    quote: {
+        id: 'demo-quote',
+        content: '작은 풀이 기록이 다음 문제를 고르는 기준이 됩니다.',
+        author: '디딤로그',
+    },
+    currentTierTitle: 'Silver III',
+    nextTierTitle: 'Silver II',
+    currentRating: DEMO_PROFILE.rating,
+    requiredRatingForNextTier: 900,
+    progressPercentage: 72,
+} satisfies DashboardResponse;
+
+export const DEMO_STATISTICS = {
+    monthlyHeatmap: [
+        { date: '2026-07-30', count: 1, problemIds: ['2748'] },
+        { date: '2026-08-01', count: 2, problemIds: ['2178', '1931'] },
+        { date: '2026-08-03', count: 1, problemIds: ['10026'] },
+        { date: '2026-08-05', count: 2, problemIds: ['1260', '2839'] },
+    ],
+    totalSolved: 84,
+    totalRetrospectives: 31,
+    totalFailures: 7,
+    averageSolveTime: 2_070,
+    successRate: 78.4,
+    categoryStats: [
+        { category: 'BFS', count: 18 },
+        { category: 'DP', count: 14 },
+        { category: 'Greedy', count: 11 },
+        { category: 'DFS', count: 9 },
+        { category: 'Implementation', count: 8 },
+    ],
+    weaknessStats: [
+        { category: 'DP', count: 4 },
+        { category: 'Greedy', count: 2 },
+        { category: 'DFS', count: 1 },
+    ],
+} satisfies StatisticsResponse;
+
+export const DEMO_NOTICES = [
     {
-        value: 'ALL',
-        label: '전체',
-        description: '티어 범위 안의 모든 유형',
+        id: 'demo-notice-1',
+        title: '추천 문제에서 바로 풀이 기록을 시작할 수 있어요',
+        content: '문제 카드를 선택하면 문제 정보와 풀이 시작 화면으로 이어집니다.',
+        isPinned: true,
+        createdAt: '2026-08-04T09:00:00Z',
+        updatedAt: '2026-08-04T09:00:00Z',
     },
     {
-        value: 'GRAPH',
-        label: '그래프 탐색',
-        description: 'RELATED 관계인 그래프·BFS·DFS를 함께 탐색',
+        id: 'demo-notice-2',
+        title: '한국어 문제만 보기 조건이 추가됐어요',
+        content: '추천 조건에서 한국어로 제공되는 문제만 골라볼 수 있습니다.',
+        isPinned: false,
+        createdAt: '2026-08-02T09:00:00Z',
+        updatedAt: '2026-08-02T09:00:00Z',
+    },
+] satisfies NoticeResponse[];
+
+export const DEMO_CATEGORY_META = [
+    {
+        canonical: 'implementation',
+        englishName: 'Implementation',
+        koreanName: '구현',
+        aliases: ['구현'],
+        parents: [],
+        children: ['simulation'],
+        related: ['simulation'],
     },
     {
-        value: 'DP',
-        label: '동적 계획법',
-        description: '동적 계획법 문제만 탐색',
+        canonical: 'greedy',
+        englishName: 'Greedy',
+        koreanName: '그리디',
+        aliases: ['탐욕법'],
+        parents: [],
+        children: [],
+        related: ['sorting'],
     },
     {
-        value: 'GREEDY',
-        label: '그리디',
-        description: '그리디 문제만 탐색',
+        canonical: 'breadth_first_search',
+        englishName: 'BFS',
+        koreanName: '너비 우선 탐색',
+        aliases: ['Breadth-first Search'],
+        parents: ['graph'],
+        children: [],
+        related: ['graph', 'depth_first_search'],
     },
-] as const satisfies readonly DemoCategoryOption[];
+    {
+        canonical: 'depth_first_search',
+        englishName: 'DFS',
+        koreanName: '깊이 우선 탐색',
+        aliases: ['Depth-first Search'],
+        parents: ['graph'],
+        children: [],
+        related: ['graph', 'breadth_first_search'],
+    },
+    {
+        canonical: 'dynamic_programming',
+        englishName: 'DP',
+        koreanName: '동적 계획법',
+        aliases: ['Dynamic Programming'],
+        parents: [],
+        children: [],
+        related: [],
+    },
+    {
+        canonical: 'graph',
+        englishName: 'Graph',
+        koreanName: '그래프',
+        aliases: ['Graph Theory', '그래프 이론'],
+        parents: [],
+        children: ['breadth_first_search', 'depth_first_search'],
+        related: ['breadth_first_search', 'depth_first_search'],
+    },
+] satisfies ProblemCategoryMetaResponse[];
+
+export const DEMO_PROBLEMS = [
+    {
+        id: '2178',
+        title: '미로 탐색',
+        category: 'BFS',
+        primaryCategory: 'BFS',
+        secondaryCategories: ['Graph'],
+        normalizedTags: ['BFS', 'Graph'],
+        difficulty: 'SILVER',
+        difficultyLevel: 8,
+        url: 'https://www.acmicpc.net/problem/2178',
+        language: 'ko',
+        matchedByPrimary: true,
+        matchedByTags: true,
+        expandedFrom: ['Graph'],
+    },
+    {
+        id: '1931',
+        title: '회의실 배정',
+        category: 'Greedy',
+        primaryCategory: 'Greedy',
+        secondaryCategories: ['Sorting'],
+        normalizedTags: ['Greedy', 'Sorting'],
+        difficulty: 'SILVER',
+        difficultyLevel: 9,
+        url: 'https://www.acmicpc.net/problem/1931',
+        language: 'ko',
+        matchedByPrimary: true,
+        matchedByTags: false,
+        expandedFrom: ['Greedy'],
+    },
+    {
+        id: '2748',
+        title: '피보나치 수 2',
+        category: 'DP',
+        primaryCategory: 'DP',
+        secondaryCategories: [],
+        normalizedTags: ['DP'],
+        difficulty: 'BRONZE',
+        difficultyLevel: 6,
+        url: 'https://www.acmicpc.net/problem/2748',
+        language: 'ko',
+        matchedByPrimary: true,
+        matchedByTags: false,
+        expandedFrom: ['DP'],
+    },
+    {
+        id: '10026',
+        title: '적록색약',
+        category: 'DFS',
+        primaryCategory: 'DFS',
+        secondaryCategories: ['BFS', 'Graph'],
+        normalizedTags: ['DFS', 'BFS', 'Graph'],
+        difficulty: 'GOLD',
+        difficultyLevel: 10,
+        url: 'https://www.acmicpc.net/problem/10026',
+        language: 'ko',
+        matchedByPrimary: false,
+        matchedByTags: true,
+        expandedFrom: ['Graph'],
+    },
+    {
+        id: '7576',
+        title: '토마토',
+        category: 'BFS',
+        primaryCategory: 'BFS',
+        secondaryCategories: ['Graph'],
+        normalizedTags: ['BFS', 'Graph'],
+        difficulty: 'GOLD',
+        difficultyLevel: 9,
+        url: 'https://www.acmicpc.net/problem/7576',
+        language: 'ko',
+        matchedByPrimary: false,
+        matchedByTags: true,
+        expandedFrom: ['Graph'],
+    },
+    {
+        id: '9251',
+        title: 'LCS',
+        category: 'DP',
+        primaryCategory: 'DP',
+        secondaryCategories: [],
+        normalizedTags: ['DP'],
+        difficulty: 'GOLD',
+        difficultyLevel: 10,
+        url: 'https://www.acmicpc.net/problem/9251',
+        language: 'en',
+        matchedByPrimary: true,
+        matchedByTags: false,
+        expandedFrom: ['DP'],
+    },
+] satisfies ProblemResponse[];
+
+export const DEMO_PROBLEM_DETAILS: Readonly<Record<string, ProblemDetailResponse>> = {
+    '2178': {
+        ...DEMO_PROBLEMS[0],
+        descriptionHtml: '<p>N×M 크기의 미로에서 시작점부터 도착점까지 이동하는 최소 칸 수를 구합니다.</p>',
+        inputDescriptionHtml: '<p>첫 줄에 N과 M이 주어지고, 다음 N개 줄에 이동 가능한 칸이 주어집니다.</p>',
+        outputDescriptionHtml: '<p>도착점까지 이동할 때 지나야 하는 최소 칸 수를 출력합니다.</p>',
+        sampleInputs: ['4 6\n101111\n101010\n101011\n111011'],
+        sampleOutputs: ['15'],
+        tags: ['너비 우선 탐색', '그래프 탐색'],
+    },
+    '1931': {
+        ...DEMO_PROBLEMS[1],
+        descriptionHtml: '<p>사용 시간이 겹치지 않도록 선택할 수 있는 회의의 최대 개수를 구합니다.</p>',
+        inputDescriptionHtml: '<p>회의 수와 각 회의의 시작·종료 시각이 주어집니다.</p>',
+        outputDescriptionHtml: '<p>배정할 수 있는 회의의 최대 개수를 출력합니다.</p>',
+        sampleInputs: ['3\n1 3\n2 4\n3 5'],
+        sampleOutputs: ['2'],
+        tags: ['그리디', '정렬'],
+    },
+    '2748': {
+        ...DEMO_PROBLEMS[2],
+        descriptionHtml: '<p>주어진 순서의 피보나치 수를 계산합니다.</p>',
+        inputDescriptionHtml: '<p>구하려는 순서 n이 주어집니다.</p>',
+        outputDescriptionHtml: '<p>n번째 피보나치 수를 출력합니다.</p>',
+        sampleInputs: ['10'],
+        sampleOutputs: ['55'],
+        tags: ['동적 계획법'],
+    },
+    '10026': {
+        ...DEMO_PROBLEMS[3],
+        descriptionHtml: '<p>색을 인식하는 방식이 다른 두 관찰자가 보는 구역의 개수를 각각 구합니다.</p>',
+        inputDescriptionHtml: '<p>격자의 크기와 각 칸의 색 정보가 주어집니다.</p>',
+        outputDescriptionHtml: '<p>두 관찰자가 구분한 구역 수를 차례로 출력합니다.</p>',
+        sampleInputs: ['5\nRRRBB\nGGBBB\nBBBRR\nBBRRR\nRRRRR'],
+        sampleOutputs: ['4 3'],
+        tags: ['깊이 우선 탐색', '너비 우선 탐색', '그래프 탐색'],
+    },
+    '7576': {
+        ...DEMO_PROBLEMS[4],
+        descriptionHtml: '<p>상자 안의 모든 토마토가 익는 데 걸리는 최소 날짜를 구합니다.</p>',
+        inputDescriptionHtml: '<p>상자의 크기와 토마토 상태가 주어집니다.</p>',
+        outputDescriptionHtml: '<p>모든 토마토가 익는 최소 날짜를 출력합니다.</p>',
+        sampleInputs: ['6 4\n0 0 0 0 0 0\n0 0 0 0 0 0\n0 0 0 0 0 0\n0 0 0 0 0 1'],
+        sampleOutputs: ['8'],
+        tags: ['너비 우선 탐색', '그래프 탐색'],
+    },
+    '9251': {
+        ...DEMO_PROBLEMS[5],
+        descriptionHtml: '<p>두 문자열이 공통으로 가지는 부분 수열 가운데 가장 긴 길이를 구합니다.</p>',
+        inputDescriptionHtml: '<p>두 문자열이 한 줄씩 주어집니다.</p>',
+        outputDescriptionHtml: '<p>최장 공통 부분 수열의 길이를 출력합니다.</p>',
+        sampleInputs: ['ACAYKP\nCAPCAK'],
+        sampleOutputs: ['4'],
+        tags: ['동적 계획법'],
+    },
+} satisfies Record<string, ProblemDetailResponse>;

@@ -15,12 +15,78 @@ import { getCategoryDisplayLabel } from '../../../constants/categoryMapping';
 import { LanguageBadge } from '../../../components/common/LanguageBadge';
 import { buildRepresentativeCategoriesFromSource } from '../../../utils/problemCategory';
 import { getCategoryLabel } from '../../../utils/constants';
+import type { User } from '../../../types/domain/user.types';
+import type { ProblemCategoryMetaResponse } from '../../../types/api/problem.types';
 
 const BOJ_STEP_URL = 'https://www.acmicpc.net/step';
 const DASHBOARD_CATEGORY_STORAGE_KEY = 'dashboard.recommend.category';
 const DASHBOARD_CATEGORY_SCROLL_STORAGE_KEY = 'dashboard.recommend.category.scrollLeft';
 const normalizeCategoryKey = (value: string): string =>
     value.trim().toLowerCase().replace(/['`]/g, '').replace(/[-_]/g, ' ').replace(/\s+/g, ' ');
+
+const getCategoryMetaKeys = (meta: ProblemCategoryMetaResponse): string[] => [
+    meta.canonical,
+    meta.englishName,
+    meta.koreanName,
+    ...meta.aliases,
+];
+
+const getProblemCategoryKeys = (problem: ProblemResponse): string[] => [
+    problem.category,
+    problem.primaryCategory,
+    ...(problem.secondaryCategories ?? []),
+    ...(problem.normalizedTags ?? []),
+    ...(problem.expandedFrom ?? []),
+].filter((value): value is string => Boolean(value));
+
+// eslint-disable-next-line react-refresh/only-export-components
+export const filterDemoProblems = ({
+    problems,
+    categoryMeta,
+    category,
+    onlyKorean,
+    excludedProblemIds = [],
+}: {
+    problems: readonly ProblemResponse[];
+    categoryMeta: readonly ProblemCategoryMetaResponse[];
+    category: string | null;
+    onlyKorean: boolean;
+    excludedProblemIds?: readonly string[];
+}): ProblemResponse[] => {
+    const excludedIds = new Set(excludedProblemIds);
+    let filtered = problems.filter((problem) => !excludedIds.has(problem.id));
+
+    if (category) {
+        const normalizedCategory = normalizeCategoryKey(category);
+        const selectedMeta = categoryMeta.find((meta) =>
+            getCategoryMetaKeys(meta).some((key) => normalizeCategoryKey(key) === normalizedCategory)
+        );
+        const relatedCanonicalKeys = selectedMeta?.related ?? [];
+        const relatedMeta = categoryMeta.filter((meta) =>
+            relatedCanonicalKeys.some(
+                (canonical) => normalizeCategoryKey(canonical) === normalizeCategoryKey(meta.canonical)
+            )
+        );
+        const allowedCategories = new Set(
+            [
+                category,
+                ...(selectedMeta ? getCategoryMetaKeys(selectedMeta) : []),
+                ...relatedCanonicalKeys,
+                ...relatedMeta.flatMap(getCategoryMetaKeys),
+            ].map(normalizeCategoryKey)
+        );
+
+        filtered = filtered.filter((problem) =>
+            getProblemCategoryKeys(problem).some((key) => allowedCategories.has(normalizeCategoryKey(key)))
+        );
+    }
+
+    if (onlyKorean) {
+        filtered = filtered.filter((problem) => problem.language.toLowerCase() === 'ko');
+    }
+
+    return filtered;
+};
 
 /**
  * 추천 문제 태그 필터 목록 (대기업 코딩 테스트 출제 빈도 순)
@@ -46,12 +112,36 @@ const RECOMMENDED_TAGS = [
 interface RecommendedProblemsProps {
     count?: number;
     category?: string;
+    demoMode?: boolean;
+    demoProblems?: readonly ProblemResponse[];
+    demoCategoryMeta?: readonly ProblemCategoryMetaResponse[];
+    userOverride?: Pick<User, 'rating' | 'tierLevel'> | null;
+    excludedProblemIds?: readonly string[];
+    problemPath?: (problemId: string) => string;
+    problemListPath?: string | null;
 }
 
-export const RecommendedProblems: FC<RecommendedProblemsProps> = ({ count = 4, category: initialCategory }) => {
-    const { user } = useAuthStore();
+const defaultProblemPath = (problemId: string) => `/problems/${problemId}`;
+
+export const RecommendedProblems: FC<RecommendedProblemsProps> = ({
+    count = 4,
+    category: initialCategory,
+    demoMode = false,
+    demoProblems,
+    demoCategoryMeta,
+    userOverride,
+    excludedProblemIds,
+    problemPath = defaultProblemPath,
+    problemListPath: problemListPathOverride,
+}) => {
+    const isDemoMode = demoMode || demoProblems !== undefined;
+    const problemListPath = problemListPathOverride === undefined
+        ? isDemoMode ? null : '/problems'
+        : problemListPathOverride;
+    const { user: authenticatedUser } = useAuthStore();
+    const user = userOverride === undefined ? authenticatedUser : userOverride;
     const [selectedCategory, setSelectedCategory] = useState<string | null>(() => {
-        if (typeof window === 'undefined') {
+        if (isDemoMode || typeof window === 'undefined') {
             return initialCategory || null;
         }
         const saved = window.sessionStorage.getItem(DASHBOARD_CATEGORY_STORAGE_KEY);
@@ -63,15 +153,50 @@ export const RecommendedProblems: FC<RecommendedProblemsProps> = ({ count = 4, c
     const [onlyKorean, setOnlyKorean] = useState<boolean>(false);
     const [showLeftArrow, setShowLeftArrow] = useState(false);
     const [showRightArrow, setShowRightArrow] = useState(true);
-    const { data: categoryMeta } = useProblemCategoryMeta();
+    const categoryMetaQuery = useProblemCategoryMeta({ enabled: !isDemoMode });
+    const categoryMeta = useMemo(
+        () => demoCategoryMeta ?? (isDemoMode ? [] : categoryMetaQuery.data ?? []),
+        [categoryMetaQuery.data, demoCategoryMeta, isDemoMode]
+    );
     // 백엔드 @Min(1) 변경으로 count만큼 직접 요청 가능 (최적화)
-    const { data: problems, isLoading, error, refetch } = useProblemRecommend({ 
-        count, 
-        category: selectedCategory || undefined,
-        language: onlyKorean ? 'ko' : undefined,
-        filterMode: 'RELATED',
-    });
-    const problemList = Array.isArray(problems) ? problems : null;
+    const recommendationQuery = useProblemRecommend(
+        {
+            count,
+            category: selectedCategory || undefined,
+            language: onlyKorean ? 'ko' : undefined,
+            filterMode: 'RELATED',
+        },
+        { enabled: !isDemoMode },
+    );
+    const demoProblemList = useMemo(
+        () => filterDemoProblems({
+            problems: demoProblems ?? [],
+            categoryMeta,
+            category: selectedCategory,
+            onlyKorean,
+            excludedProblemIds,
+        }).slice(0, count),
+        [categoryMeta, count, demoProblems, excludedProblemIds, onlyKorean, selectedCategory]
+    );
+    const visibleTags = useMemo(
+        () => isDemoMode
+            ? RECOMMENDED_TAGS.filter((category) => filterDemoProblems({
+                problems: demoProblems ?? [],
+                categoryMeta,
+                category,
+                onlyKorean: false,
+                excludedProblemIds,
+            }).length > 0)
+            : [...RECOMMENDED_TAGS],
+        [categoryMeta, demoProblems, excludedProblemIds, isDemoMode]
+    );
+    const problemList = isDemoMode
+        ? demoProblemList
+        : Array.isArray(recommendationQuery.data)
+            ? recommendationQuery.data
+            : null;
+    const isLoading = !isDemoMode && recommendationQuery.isLoading;
+    const error = !isDemoMode ? recommendationQuery.error : null;
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
@@ -93,7 +218,7 @@ export const RecommendedProblems: FC<RecommendedProblemsProps> = ({ count = 4, c
     }, [categoryMetaMap]);
 
     useEffect(() => {
-        if (typeof window === 'undefined') {
+        if (isDemoMode || typeof window === 'undefined') {
             return;
         }
         if (!selectedCategory) {
@@ -101,7 +226,7 @@ export const RecommendedProblems: FC<RecommendedProblemsProps> = ({ count = 4, c
             return;
         }
         window.sessionStorage.setItem(DASHBOARD_CATEGORY_STORAGE_KEY, selectedCategory);
-    }, [selectedCategory]);
+    }, [isDemoMode, selectedCategory]);
 
     const isTierZeroUser = useMemo(() => {
         if (!user) {
@@ -113,10 +238,11 @@ export const RecommendedProblems: FC<RecommendedProblemsProps> = ({ count = 4, c
 
     // 사용자 티어 기반 개인화된 빈 상태 버튼 정보 계산
     const personalizedEmptyState = useMemo(() => {
+        const targetUrl = problemListPath ?? '/login';
         if (!user) {
             return {
                 buttonText: '알고리즘 입문하기 (Bronze)',
-                targetUrl: '/problems',
+                targetUrl,
             };
         }
 
@@ -127,7 +253,7 @@ export const RecommendedProblems: FC<RecommendedProblemsProps> = ({ count = 4, c
         if (userRating === 0 || userTierLevel === 0) {
             return {
                 buttonText: '알고리즘 입문하기 (Bronze)',
-                targetUrl: '/problems',
+                targetUrl,
             };
         }
 
@@ -141,9 +267,11 @@ export const RecommendedProblems: FC<RecommendedProblemsProps> = ({ count = 4, c
         
         return {
             buttonText: `내 수준에 맞는 ${tierName} 문제 풀기`,
-            targetUrl: `/problems?minLevel=${currentTierMinLevel}&maxLevel=${currentTierMaxLevel}`,
+            targetUrl: problemListPath
+                ? `${problemListPath}?minLevel=${currentTierMinLevel}&maxLevel=${currentTierMaxLevel}`
+                : '/login',
         };
-    }, [user]);
+    }, [problemListPath, user]);
 
 
     // 스크롤 위치에 따라 화살표 버튼 표시/숨김
@@ -161,7 +289,7 @@ export const RecommendedProblems: FC<RecommendedProblemsProps> = ({ count = 4, c
         const container = scrollContainerRef.current;
         if (!container) return;
 
-        if (typeof window !== 'undefined') {
+        if (!isDemoMode && typeof window !== 'undefined') {
             const savedScrollLeft = Number(window.sessionStorage.getItem(DASHBOARD_CATEGORY_SCROLL_STORAGE_KEY) || '0');
             if (!Number.isNaN(savedScrollLeft) && savedScrollLeft > 0) {
                 container.scrollLeft = savedScrollLeft;
@@ -173,7 +301,7 @@ export const RecommendedProblems: FC<RecommendedProblemsProps> = ({ count = 4, c
 
         const handleScroll = () => {
             updateArrowVisibility();
-            if (typeof window !== 'undefined') {
+            if (!isDemoMode && typeof window !== 'undefined') {
                 window.sessionStorage.setItem(DASHBOARD_CATEGORY_SCROLL_STORAGE_KEY, String(container.scrollLeft));
             }
         };
@@ -191,7 +319,7 @@ export const RecommendedProblems: FC<RecommendedProblemsProps> = ({ count = 4, c
             container.removeEventListener('scroll', handleScroll);
             resizeObserver.disconnect();
         };
-    }, [updateArrowVisibility]);
+    }, [isDemoMode, updateArrowVisibility]);
 
     // 선택된 카테고리가 변경되면 해당 버튼으로 스크롤
     useEffect(() => {
@@ -228,6 +356,9 @@ export const RecommendedProblems: FC<RecommendedProblemsProps> = ({ count = 4, c
     }, []);
 
     const problemListLink = useMemo(() => {
+        if (!problemListPath) {
+            return null;
+        }
         const params = new URLSearchParams();
         if (selectedCategory) {
             params.set('category', selectedCategory);
@@ -237,8 +368,8 @@ export const RecommendedProblems: FC<RecommendedProblemsProps> = ({ count = 4, c
             params.set('language', 'ko');
         }
         const query = params.toString();
-        return query ? `/problems?${query}` : '/problems';
-    }, [onlyKorean, selectedCategory]);
+        return query ? `${problemListPath}?${query}` : problemListPath;
+    }, [onlyKorean, problemListPath, selectedCategory]);
 
     const renderContent = () => {
         if (isLoading) {
@@ -246,7 +377,7 @@ export const RecommendedProblems: FC<RecommendedProblemsProps> = ({ count = 4, c
         }
 
         if (error) {
-            return <RecommendedProblemsErrorState isRetrying={isLoading} onRetry={() => refetch()} />;
+            return <RecommendedProblemsErrorState isRetrying={isLoading} onRetry={() => recommendationQuery.refetch()} />;
         }
 
         if (problemList === null) {
@@ -263,7 +394,7 @@ export const RecommendedProblems: FC<RecommendedProblemsProps> = ({ count = 4, c
         if (isEmpty && onlyKorean) {
             return (
                 <RecommendedProblemsLanguageFilteredEmptyState
-                    onRetry={() => refetch()}
+                    onRetry={isDemoMode ? undefined : () => recommendationQuery.refetch()}
                     onShowAllLanguages={() => setOnlyKorean(false)}
                 />
             );
@@ -281,7 +412,7 @@ export const RecommendedProblems: FC<RecommendedProblemsProps> = ({ count = 4, c
         return (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {problemList.map((problem: ProblemResponse) => (
-                    <ProblemCard key={problem.id} problem={problem} />
+                    <ProblemCard key={problem.id} problem={problem} problemPath={problemPath} />
                 ))}
             </div>
         );
@@ -294,12 +425,14 @@ export const RecommendedProblems: FC<RecommendedProblemsProps> = ({ count = 4, c
                 <h3 className="text-base font-semibold text-gray-900 dark:text-white">추천 문제</h3>
                 <div className="flex items-center gap-3">
                     <OnlyKoreanToggle value={onlyKorean} onChange={setOnlyKorean} />
-                    <Link
-                        to={problemListLink}
-                        className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
-                    >
-                        더보기 &gt;
-                    </Link>
+                    {problemListLink && (
+                        <Link
+                            to={problemListLink}
+                            className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                        >
+                            더보기 &gt;
+                        </Link>
+                    )}
                 </div>
             </div>
 
@@ -349,7 +482,7 @@ export const RecommendedProblems: FC<RecommendedProblemsProps> = ({ count = 4, c
                     </button>
 
                     {/* 카테고리 칩 버튼들 */}
-                    {RECOMMENDED_TAGS.map((category) => (
+                    {visibleTags.map((category) => (
                         <button
                             key={category}
                             ref={(el) => { buttonRefs.current[category] = el; }}
@@ -461,7 +594,7 @@ const RecommendedProblemsDefaultEmptyState: FC<RecommendedProblemsDefaultEmptySt
 };
 
 interface RecommendedProblemsLanguageFilteredEmptyStateProps {
-    onRetry: () => void;
+    onRetry?: () => void;
     onShowAllLanguages: () => void;
 }
 
@@ -498,13 +631,15 @@ const RecommendedProblemsLanguageFilteredEmptyState: FC<RecommendedProblemsLangu
                 >
                     전체 언어 보기
                 </button>
-                <button
-                    type="button"
-                    onClick={onRetry}
-                    className="px-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                >
-                    다시 조회
-                </button>
+                {onRetry && (
+                    <button
+                        type="button"
+                        onClick={onRetry}
+                        className="px-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    >
+                        다시 조회
+                    </button>
+                )}
             </div>
         </div>
     );
@@ -552,9 +687,10 @@ const RecommendedProblemsUnratedEmptyState: FC = () => {
 
 interface ProblemCardProps {
     problem: ProblemResponse;
+    problemPath: (problemId: string) => string;
 }
 
-const ProblemCard: FC<ProblemCardProps> = ({ problem }) => {
+const ProblemCard: FC<ProblemCardProps> = ({ problem, problemPath }) => {
     const difficultyDisplay = formatTierFromDifficulty(problem.difficulty, problem.difficultyLevel);
     const representative = buildRepresentativeCategoriesFromSource(problem, 3);
     const primaryCategory = representative[0] ? getCategoryLabel(representative[0]) : problem.category;
@@ -562,7 +698,7 @@ const ProblemCard: FC<ProblemCardProps> = ({ problem }) => {
 
     return (
         <Link
-            to={`/problems/${problem.id}`}
+            to={problemPath(problem.id)}
             className="block border border-gray-200 dark:border-gray-700 rounded-lg p-3 hover:shadow-md hover:border-blue-500 dark:hover:border-blue-400 transition-all"
         >
             <div className="flex items-start justify-between mb-1.5">

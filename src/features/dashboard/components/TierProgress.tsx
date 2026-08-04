@@ -15,9 +15,10 @@ import { getLanguageLabel, getLanguageColor } from '../../../constants/languageC
 
 interface TierProgressProps {
     dashboard: DashboardResponse;
+    demoMode?: boolean;
 }
 
-export const TierProgress: FC<TierProgressProps> = ({ dashboard }) => {
+export const TierProgress: FC<TierProgressProps> = ({ dashboard, demoMode = false }) => {
     const syncMutation = useSyncBojProfile();
     const [isSyncing, setIsSyncing] = useState(false);
 
@@ -51,6 +52,10 @@ export const TierProgress: FC<TierProgressProps> = ({ dashboard }) => {
     const unratedProgressPercentage = Math.min(100, Math.max(0, (unratedCurrentRating / unratedRequiredRating) * 100));
 
     const handleSync = async () => {
+        if (demoMode) {
+            return;
+        }
+
         setIsSyncing(true);
         try {
             await syncMutation.mutateAsync();
@@ -83,17 +88,19 @@ export const TierProgress: FC<TierProgressProps> = ({ dashboard }) => {
                             );
                         })()}
                     </div>
-                    <button
-                        onClick={handleSync}
-                        disabled={isSyncing || syncMutation.isPending}
-                        className="p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        title="BOJ 정보 동기화"
-                        aria-label="BOJ 정보 동기화"
-                    >
-                        <RefreshCw
-                            className={`w-5 h-5 ${isSyncing || syncMutation.isPending ? 'animate-spin' : ''}`}
-                        />
-                    </button>
+                    {!demoMode && (
+                        <button
+                            onClick={handleSync}
+                            disabled={isSyncing || syncMutation.isPending}
+                            className="p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="BOJ 정보 동기화"
+                            aria-label="BOJ 정보 동기화"
+                        >
+                            <RefreshCw
+                                className={`w-5 h-5 ${isSyncing || syncMutation.isPending ? 'animate-spin' : ''}`}
+                            />
+                        </button>
+                    )}
                 </div>
 
                 {/* 티어 정보 */}

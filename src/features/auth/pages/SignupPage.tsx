@@ -3,7 +3,7 @@
  */
 
 import { useState } from 'react';
-import type { FC } from 'react';
+import type { FC, ReactNode } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { SignupWizard } from '../components/SignupWizard';
 import { authApi } from '../../../api/endpoints/auth.api';
@@ -16,17 +16,51 @@ import { toastApiError } from '../../../utils/toastApiError';
 import { parseOAuthSignupState } from '../../../types/auth/oauth.types';
 import type { SignupRequest } from '../../../types/api/auth.types';
 
-export const SignupPage: FC = () => {
+interface SignupPageProps {
+    demoMode?: boolean;
+    banner?: ReactNode;
+}
+
+type SignupApiError = {
+    message: string;
+    code?: string;
+    status?: number;
+    fieldErrors?: Record<string, string[]>;
+};
+
+interface SignupPageLayoutProps extends SignupPageProps {
+    onComplete: (data: SignupRequest) => void;
+    apiError?: SignupApiError | null;
+    onClearApiError?: () => void;
+    oauthSignupState?: ReturnType<typeof parseOAuthSignupState>;
+}
+
+export const SignupPage: FC<SignupPageProps> = ({ demoMode = false, banner }) => {
+    if (demoMode) {
+        return <DemoSignupPage banner={banner} />;
+    }
+
+    return <LiveSignupPage banner={banner} />;
+};
+
+const DemoSignupPage: FC<Pick<SignupPageProps, 'banner'>> = ({ banner }) => {
+    const navigate = useNavigate();
+
+    return (
+        <SignupPageLayout
+            demoMode
+            banner={banner}
+            onComplete={() => navigate('/demo/dashboard')}
+        />
+    );
+};
+
+const LiveSignupPage: FC<Pick<SignupPageProps, 'banner'>> = ({ banner }) => {
     const navigate = useNavigate();
     const location = useLocation();
     const { setIsNewUser } = useOnboardingStore();
     const { setTokens, setUser } = useAuthStore();
-    const [apiError, setApiError] = useState<{
-        message: string;
-        code?: string;
-        status?: number;
-        fieldErrors?: Record<string, string[]>;
-    } | null>(null);
+    const [apiError, setApiError] = useState<SignupApiError | null>(null);
 
     const oauthState = parseOAuthSignupState(location.state);
 
@@ -105,8 +139,27 @@ export const SignupPage: FC = () => {
     };
 
     return (
+        <SignupPageLayout
+            banner={banner}
+            onComplete={handleComplete}
+            apiError={apiError}
+            onClearApiError={() => setApiError(null)}
+            oauthSignupState={oauthState}
+        />
+    );
+};
+
+const SignupPageLayout: FC<SignupPageLayoutProps> = ({
+    demoMode = false,
+    banner,
+    onComplete,
+    apiError,
+    onClearApiError,
+    oauthSignupState,
+}) => {
+    return (
         <div className="relative min-h-screen flex items-center justify-center bg-white dark:bg-gray-900 py-12 px-4">
-            <ThemeToggle className="absolute top-4 right-4" />
+            {!demoMode && <ThemeToggle className="absolute top-4 right-4" />}
             <div className="max-w-3xl w-full space-y-8 p-8">
                 <div className="text-center">
                     <h1 className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-2">디딤로그</h1>
@@ -114,11 +167,14 @@ export const SignupPage: FC = () => {
                     <p className="text-gray-600 dark:text-gray-400 text-sm">체계적인 알고리즘 학습을 시작하세요</p>
                 </div>
 
+                {banner}
+
                 <SignupWizard
-                    onComplete={handleComplete}
+                    demoMode={demoMode}
+                    onComplete={onComplete}
                     apiError={apiError}
-                    onClearApiError={() => setApiError(null)}
-                    oauthSignupState={oauthState}
+                    onClearApiError={onClearApiError}
+                    oauthSignupState={oauthSignupState}
                 />
             </div>
         </div>

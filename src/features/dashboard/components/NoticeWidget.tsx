@@ -8,9 +8,20 @@ import { Link } from 'react-router-dom';
 import { useNotices } from '../../../hooks/api/useNotice';
 import { Spinner } from '../../../components/ui/Spinner';
 import { formatKST } from '../../../utils/dateUtils';
+import type { NoticeResponse } from '../../../types/api/notice.types';
 
-export const NoticeWidget: FC = () => {
-    const { data, isLoading, error } = useNotices({ page: 1, size: 3 });
+interface NoticeWidgetProps {
+    dataOverride?: readonly NoticeResponse[];
+    queryEnabled?: boolean;
+}
+
+export const NoticeWidget: FC<NoticeWidgetProps> = ({ dataOverride, queryEnabled = true }) => {
+    const query = useNotices(
+        { page: 1, size: 3 },
+        { enabled: queryEnabled && dataOverride === undefined },
+    );
+    const isLoading = queryEnabled && dataOverride === undefined && query.isLoading;
+    const error = queryEnabled && dataOverride === undefined ? query.error : null;
 
     if (isLoading) {
         return (
@@ -34,19 +45,23 @@ export const NoticeWidget: FC = () => {
         );
     }
 
-    const notices = data?.content || [];
+    const notices = dataOverride ?? (queryEnabled ? query.data?.content : undefined) ?? [];
 
     return (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 border border-gray-200 dark:border-gray-700 max-h-[180px] flex flex-col">
             {/* 헤더 */}
             <div className="flex items-center justify-between mb-2">
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-white">공지사항</h3>
-                <Link
-                    to="/notices"
-                    className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
-                >
-                    더보기 &gt;
-                </Link>
+                {queryEnabled && dataOverride === undefined ? (
+                    <Link
+                        to="/notices"
+                        className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                    >
+                        더보기 &gt;
+                    </Link>
+                ) : (
+                    <span className="text-xs font-medium text-blue-600 dark:text-blue-400">샘플</span>
+                )}
             </div>
 
             {/* 본문: 컴팩트 리스트 */}
@@ -62,29 +77,37 @@ export const NoticeWidget: FC = () => {
                         // 날짜 포맷팅 (YYYY-MM-DD)
                         const date = formatKST(notice.createdAt, 'dateOnly');
 
-                        return (
+                        const content = (
+                            <div className="flex items-center gap-2 min-w-0">
+                                {notice.isPinned ? (
+                                    <span className="shrink-0 px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 text-xs font-semibold">
+                                        필독
+                                    </span>
+                                ) : (
+                                    <span className="shrink-0 px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-xs font-medium">
+                                        공지
+                                    </span>
+                                )}
+                                <span className="flex-1 min-w-0 text-xs font-medium text-gray-900 dark:text-white truncate">
+                                    {notice.title}
+                                </span>
+                                <span className="shrink-0 text-xs text-gray-500 dark:text-gray-400">
+                                    {date}
+                                </span>
+                            </div>
+                        );
+
+                        return !queryEnabled || dataOverride !== undefined ? (
+                            <div key={notice.id} className="block py-1.5 px-2 rounded">
+                                {content}
+                            </div>
+                        ) : (
                             <Link
                                 key={notice.id}
                                 to={`/notices/${notice.id}`}
                                 className="block py-1.5 px-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
                             >
-                                <div className="flex items-center gap-2 min-w-0">
-                                    {notice.isPinned ? (
-                                        <span className="shrink-0 px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 text-xs font-semibold">
-                                            필독
-                                        </span>
-                                    ) : (
-                                        <span className="shrink-0 px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-xs font-medium">
-                                            공지
-                                        </span>
-                                    )}
-                                    <span className="flex-1 min-w-0 text-xs font-medium text-gray-900 dark:text-white truncate">
-                                        {notice.title}
-                                    </span>
-                                    <span className="shrink-0 text-xs text-gray-500 dark:text-gray-400">
-                                        {date}
-                                    </span>
-                                </div>
+                                {content}
                             </Link>
                         );
                     })}
