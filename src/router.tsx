@@ -10,8 +10,10 @@ import { createBrowserRouter, useRouteError, Link, useNavigate } from 'react-rou
 import { PublicRoute } from './routes/PublicRoute';
 import { PrivateRoute } from './routes/PrivateRoute';
 import { AdminRoute } from './routes/AdminRoute';
-import { RootRedirect } from './routes/RootRedirect';
 
+const DemoHomePage = lazy(() =>
+    import('./features/demo/pages/DemoHomePage').then((m) => ({ default: m.DemoHomePage }))
+);
 const LoginPage = lazy(() => import('./features/auth/pages/LoginPage').then((m) => ({ default: m.LoginPage })));
 const SignupPage = lazy(() => import('./features/auth/pages/SignupPage').then((m) => ({ default: m.SignupPage })));
 const OAuthCallbackPage = lazy(() =>
@@ -194,7 +196,7 @@ const NotFoundPage = () => {
 export const router = createBrowserRouter([
     {
         path: '/',
-        element: <RootRedirect />,
+        element: withRouteSuspense(<DemoHomePage />),
         errorElement: <ErrorPage />,
     },
     {
