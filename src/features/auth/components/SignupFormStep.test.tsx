@@ -40,4 +40,18 @@ describe('SignupFormStep', () => {
         expect(html).not.toContain('방금 만든 계정인가요?');
         expect(html).not.toContain('href="https://solved.ac/"');
     });
+
+    it('데모 모드는 마지막 가입 폼에 샘플 이메일과 비밀번호를 채운다', () => {
+        const html = renderToStaticMarkup(
+            <SignupFormStep
+                demoMode
+                bojId="pDemo"
+                onComplete={() => undefined}
+                onBack={() => undefined}
+            />
+        );
+
+        expect(html).toContain('value="demo@didimlog.dev"');
+        expect(html.match(/value="Demo1234!"/g)).toHaveLength(2);
+    });
 });

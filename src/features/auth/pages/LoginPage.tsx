@@ -3,9 +3,10 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import type { FC, ChangeEvent, FormEvent } from 'react';
+import type { FC, ChangeEvent, FormEvent, ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useLogin } from '../../../hooks/auth/useLogin';
+import type { LoginHandlers, LoginRequest } from '../../../hooks/auth/useLogin';
 import { Button } from '../../../components/ui/Button';
 import { validation } from '../../../utils/validation';
 import { systemApi } from '../../../api/endpoints/system.api';
@@ -21,6 +22,19 @@ type LoginServerError = {
     unlockTime?: string;
 };
 
+interface LoginPageProps {
+    demoMode?: boolean;
+    banner?: ReactNode;
+}
+
+type LoginAction = (data: LoginRequest, handlers?: LoginHandlers) => void;
+
+interface LoginPageContentProps extends LoginPageProps {
+    login: LoginAction;
+}
+
+const demoLogin: LoginAction = () => undefined;
+
 export const getOAuthLoginError = (locationState: unknown): string | null => {
     if (typeof locationState !== 'object' || locationState === null) {
         return null;
@@ -35,12 +49,25 @@ export const getOAuthLoginError = (locationState: unknown): string | null => {
     return message || null;
 };
 
-export const LoginPage: FC = () => {
+export const LoginPage: FC<LoginPageProps> = ({ demoMode = false, banner }) => {
+    if (demoMode) {
+        return <LoginPageContent demoMode banner={banner} login={demoLogin} />;
+    }
+
+    return <LiveLoginPage banner={banner} />;
+};
+
+const LiveLoginPage: FC<Pick<LoginPageProps, 'banner'>> = ({ banner }) => {
+    const { login } = useLogin();
+    return <LoginPageContent banner={banner} login={login} />;
+};
+
+const LoginPageContent: FC<LoginPageContentProps> = ({ demoMode = false, banner, login }) => {
     const navigate = useNavigate();
     const location = useLocation();
     const navigationError = getOAuthLoginError(location.state);
-    const [bojId, setBojId] = useState('');
-    const [password, setPassword] = useState('');
+    const [bojId, setBojId] = useState(() => (demoMode ? 'pDemo' : ''));
+    const [password, setPassword] = useState(() => (demoMode ? 'demo-only' : ''));
     const [errors, setErrors] = useState<{ bojId?: { message: string; type?: string }; password?: string }>({});
     const [touched, setTouched] = useState<{ bojId: boolean; password: boolean }>({ bojId: false, password: false });
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -52,9 +79,7 @@ export const LoginPage: FC = () => {
     const submitLockRef = useRef(false);
     const lastSubmitAtRef = useRef(0);
     const [maintenanceStatus, setMaintenanceStatus] = useState<SystemStatusResponse | null>(null);
-    const [isCheckingMaintenance, setIsCheckingMaintenance] = useState(true);
-
-    const { login } = useLogin();
+    const [isCheckingMaintenance, setIsCheckingMaintenance] = useState(!demoMode);
 
     useEffect(() => {
         if (!navigationError) {
@@ -67,6 +92,10 @@ export const LoginPage: FC = () => {
 
     // 유지보수 상태 확인
     useEffect(() => {
+        if (demoMode) {
+            return;
+        }
+
         let isMounted = true;
 
         const checkMaintenanceStatus = async () => {
@@ -93,7 +122,7 @@ export const LoginPage: FC = () => {
         return () => {
             isMounted = false;
         };
-    }, []);
+    }, [demoMode]);
 
     // 비밀번호 입력창 포커스 이동 (입력창이 enabled 된 이후에만)
     useEffect(() => {
@@ -206,6 +235,11 @@ export const LoginPage: FC = () => {
         lastSubmitAtRef.current = now;
         setIsSubmitting(true);
 
+        if (demoMode) {
+            navigate('/demo/boj');
+            return;
+        }
+
         login(
             { bojId: bojId.trim(), password },
             {
@@ -227,6 +261,13 @@ export const LoginPage: FC = () => {
     };
 
     const handleOAuthLogin = (provider: 'google' | 'github' | 'naver') => {
+        if (demoMode) {
+            navigate('/login', {
+                state: { error: '소셜 로그인은 실제 로그인 화면에서 이용해주세요.' },
+            });
+            return;
+        }
+
         rememberOAuthProvider(provider);
         window.location.href = `${SERVER_ROOT}/oauth2/authorization/${provider}`;
     };
@@ -266,7 +307,7 @@ export const LoginPage: FC = () => {
 
     return (
         <div className="relative min-h-screen flex items-center justify-center bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
-            <ThemeToggle className="absolute top-4 right-4" />
+            {!demoMode && <ThemeToggle className="absolute top-4 right-4" />}
             <div className="max-w-md w-full space-y-8 p-8">
                 {/* 헤더 */}
                 <div className="text-center">
@@ -274,6 +315,8 @@ export const LoginPage: FC = () => {
                     <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-2">로그인</h2>
                     <p className="text-gray-600 dark:text-gray-400 text-sm">체계적인 알고리즘 학습을 시작하세요</p>
                 </div>
+
+                {banner}
 
                 {/* 유지보수 알림 배너 */}
                 {isUnderMaintenance && (
@@ -461,6 +504,7 @@ export const LoginPage: FC = () => {
                                 ? 'bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white shadow-md hover:shadow-lg transform hover:-translate-y-0.5'
                                 : 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
                         }`}
+                        data-testid={demoMode ? 'demo-login-submit' : undefined}
                     >
                         {isSubmitting ? '로그인 중...' : '로그인'}
                     </Button>
@@ -545,7 +589,7 @@ export const LoginPage: FC = () => {
                 {/* 회원가입 링크 */}
                 <div className="text-center text-sm">
                     <span className="text-gray-600 dark:text-gray-400">계정이 없으신가요? </span>
-                    <Link to="/signup" className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium">
+                    <Link to={demoMode ? '/demo/boj' : '/signup'} className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium">
                         회원가입
                     </Link>
                 </div>

@@ -9,9 +9,15 @@ import { formatKST } from '../../../utils/dateUtils';
 
 interface TodaySolvedListProps {
     problems: TodaySolvedProblemResponse[];
+    problemPath?: (problemId: string) => string;
 }
 
-export const TodaySolvedList: FC<TodaySolvedListProps> = ({ problems }) => {
+const defaultProblemPath = (problemId: string) => `/problems/${problemId}`;
+
+export const TodaySolvedList: FC<TodaySolvedListProps> = ({
+    problems,
+    problemPath = defaultProblemPath,
+}) => {
     const getResultColor = (result: string) => {
         const colors: Record<string, string> = {
             SUCCESS: 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30',
@@ -41,7 +47,7 @@ export const TodaySolvedList: FC<TodaySolvedListProps> = ({ problems }) => {
                     {problems.map((problem, index) => (
                         <Link
                             key={index}
-                            to={`/problems/${problem.problemId}`}
+                            to={problemPath(problem.problemId)}
                             className="flex items-center justify-between p-2.5 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                         >
                             <div className="flex items-center gap-2.5">

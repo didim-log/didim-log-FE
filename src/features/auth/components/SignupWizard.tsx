@@ -13,6 +13,7 @@ import type { OAuthSignupState } from '@/types/auth/oauth.types';
 type Step = 1 | 2 | 3;
 
 interface SignupWizardProps {
+    demoMode?: boolean;
     onComplete: (data: {
         bojId: string;
         email: string;
@@ -30,6 +31,7 @@ interface SignupWizardProps {
 }
 
 export const SignupWizard: FC<SignupWizardProps> = ({
+    demoMode = false,
     onComplete,
     onClearApiError,
     oauthSignupState = null,
@@ -111,6 +113,7 @@ export const SignupWizard: FC<SignupWizardProps> = ({
             {displayedStep === 1 && <TermsStep onNext={handleStep1Complete} />}
             {displayedStep === 2 && (
                 <BojVerifyStep
+                    demoMode={demoMode}
                     onNext={handleStep2Complete}
                     onBack={() => setCurrentStep(1)}
                     duplicateError={
@@ -131,6 +134,7 @@ export const SignupWizard: FC<SignupWizardProps> = ({
             )}
             {displayedStep === 3 && (
                 <SignupFormStep
+                    demoMode={demoMode}
                     bojId={bojId}
                     onComplete={handleStep3Complete}
                     onBack={() => setCurrentStep(2)}

@@ -8,9 +8,20 @@ import { useStatistics } from '../../../hooks/api/useStatistics';
 import { Spinner } from '../../../components/ui/Spinner';
 import { BookOpen, Clock, Target, TrendingUp } from 'lucide-react';
 import { formatDuration } from '../../../utils/dateUtils';
+import type { StatisticsResponse } from '../../../types/api/statistics.types';
 
-export const StatisticsPreview: FC = () => {
-    const { data: statistics, isLoading } = useStatistics();
+interface StatisticsPreviewProps {
+    dataOverride?: StatisticsResponse;
+    queryEnabled?: boolean;
+}
+
+export const StatisticsPreview: FC<StatisticsPreviewProps> = ({
+    dataOverride,
+    queryEnabled = true,
+}) => {
+    const query = useStatistics({ enabled: queryEnabled && dataOverride === undefined });
+    const statistics = dataOverride ?? (queryEnabled ? query.data : undefined);
+    const isLoading = queryEnabled && dataOverride === undefined && query.isLoading;
 
     // 핵심 지표 계산 (실제 API 데이터 사용)
     const getMetrics = () => {
@@ -35,13 +46,17 @@ export const StatisticsPreview: FC = () => {
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between mb-3">
                 <h3 className="text-base font-semibold text-gray-900 dark:text-white">통계</h3>
-                <Link
-                    to="/statistics"
-                    className="text-sm text-blue-600 dark:text-blue-400 hover:underline font-medium flex items-center gap-1"
-                >
-                    더보기
-                    <TrendingUp className="w-4 h-4" />
-                </Link>
+                {queryEnabled && dataOverride === undefined ? (
+                    <Link
+                        to="/statistics"
+                        className="text-sm text-blue-600 dark:text-blue-400 hover:underline font-medium flex items-center gap-1"
+                    >
+                        더보기
+                        <TrendingUp className="w-4 h-4" />
+                    </Link>
+                ) : (
+                    <span className="text-xs font-medium text-blue-600 dark:text-blue-400">샘플 데이터</span>
+                )}
             </div>
 
             {isLoading ? (

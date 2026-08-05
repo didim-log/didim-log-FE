@@ -6,19 +6,26 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { noticeApi } from '../../api/endpoints/notice.api';
 import type { NoticeCreateRequest, NoticeListRequest, NoticeUpdateRequest } from '../../types/api/notice.types';
 
-export const useNotices = (params: NoticeListRequest) => {
+export const useNotices = (
+    params: NoticeListRequest,
+    { enabled = true }: { enabled?: boolean } = {},
+) => {
     return useQuery({
         queryKey: ['notices', 'list', params],
         queryFn: () => noticeApi.getNotices(params),
+        enabled,
         staleTime: 30 * 1000, // 30초
     });
 };
 
-export const useNotice = (noticeId: string) => {
+export const useNotice = (
+    noticeId: string,
+    { enabled = true }: { enabled?: boolean } = {},
+) => {
     return useQuery({
         queryKey: ['notices', noticeId],
         queryFn: () => noticeApi.getNotice(noticeId),
-        enabled: !!noticeId,
+        enabled: enabled && !!noticeId,
         staleTime: 30 * 1000, // 30초
     });
 };
@@ -55,4 +62,3 @@ export const useDeleteNotice = () => {
         },
     });
 };
-
