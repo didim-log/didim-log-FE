@@ -55,10 +55,11 @@ flowchart LR
 
 ### BOJ 인증과 가입
 
-1. 백엔드에서 일회용 BOJ 인증 코드를 발급받습니다.
-2. 사용자가 코드를 BOJ 프로필 상태 메시지에 등록합니다.
-3. DidimLog가 프로필을 확인해 BOJ ID 소유권을 검증합니다.
-4. 인증된 BOJ ID와 계정 정보를 저장하고 가입을 완료합니다.
+<p align="center">
+  <img src="./DOCS/assets/portfolio/didimlog-boj-ownership-flow.svg" width="900" alt="BOJ 프로필 상태 메시지로 계정 소유권을 확인한 뒤 가입하는 흐름" />
+</p>
+
+인증 코드 발급부터 Redis 세션 소비와 MongoDB 사용자 저장까지의 서버 경계는 [Backend 상세 문서](https://github.com/didim-log/didim-log-BE/blob/main/DOCS/portfolio/BOJ_SIGNUP_FLOW.md)에 정리했습니다.
 
 ### 문제 풀이 결과, 코드 로그, 회고 저장
 
@@ -74,22 +75,17 @@ flowchart LR
 
 03 영상의 `Local fixture` 표시는 외부 BOJ·solved.ac 응답을 고정한 녹화 환경임을 뜻합니다. 01도 같은 fixture 경계에서 촬영했으며, 두 영상의 FE, API, Redis와 MongoDB 동작은 실제 로컬 서비스입니다.
 
-| 데모 | 기능 요약 |
-| --- | --- |
-| `01` | BOJ 상태 메시지 인증 → 회원 정보 입력 → 가입 완료 → 대시보드 이동 |
-| `03` | 풀이 결과 저장 → 입력 코드 로그 저장 → 코드가 포함된 회고 저장·조회 |
+아래 이미지는 BOJ 소유권 확인을 마치고 회원 정보를 입력하는 대표 장면입니다. 이미지를 선택하면 가입 완료까지의 원본 GIF가 열립니다.
 
-### 1. BOJ 계정 인증과 회원가입
+[![BOJ 소유권 확인 후 회원 정보 입력 화면](./DOCS/assets/portfolio/01-boj-signup-poster.png)](./DOCS/assets/portfolio/01-boj-signup_demo.gif)
 
-BOJ ID 입력, 인증 코드 발급, 프로필 상태 메시지 검증과 가입 완료까지의 흐름입니다.
+<details>
+<summary>원본 화면 흐름 2개 보기</summary>
 
-![BOJ 계정 인증과 회원가입](./DOCS/assets/portfolio/01-boj-signup_demo.gif)
+- [BOJ 상태 메시지 인증 → 회원가입 → 대시보드](./DOCS/assets/portfolio/01-boj-signup_demo.gif)
+- [풀이 결과 → 코드 로그 → 회고 저장·조회](./DOCS/assets/portfolio/03-problem-solve-save_demo.gif)
 
-### 2. 문제 풀이 결과와 코드·회고 저장
-
-문제 풀이 화면에서 코드를 작성한 뒤 결과를 기록하고, 코드 로그와 회고를 차례로 저장해 목록에서 확인합니다.
-
-![문제 풀이 결과와 코드 및 회고 저장](./DOCS/assets/portfolio/03-problem-solve-save_demo.gif)
+</details>
 
 ## 카테고리 수집과 필터
 

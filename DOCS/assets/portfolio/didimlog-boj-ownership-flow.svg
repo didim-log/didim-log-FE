@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">DidimLog BOJ 계정 소유권 인증 흐름</title>
+  <desc id="desc">Redis에 인증 코드를 저장하고 BOJ 프로필 상태 메시지를 확인한 뒤 인증된 BOJ ID로 회원가입하는 흐름</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#2563EB" />
+    </marker>
+    <style>
+      text { font-family: Inter, Pretendard, "Noto Sans KR", "Apple SD Gothic Neo", Arial, sans-serif; }
+      .label { font-size: 16px; font-weight: 600; letter-spacing: 0.08em; fill: #2563EB; }
+      .title { font-size: 34px; font-weight: 700; fill: #0F172A; }
+      .body { font-size: 16px; font-weight: 400; fill: #475569; }
+      .step-no { font-family: "JetBrains Mono", "SFMono-Regular", Menlo, monospace; font-size: 15px; font-weight: 700; fill: #2563EB; }
+      .step-title { font-size: 18px; font-weight: 700; fill: #0F172A; }
+      .step-copy { font-size: 14px; font-weight: 400; fill: #475569; }
+      .note-title { font-size: 18px; font-weight: 700; fill: #0F172A; }
+      .note-copy { font-size: 15px; font-weight: 400; fill: #475569; }
+      .result { font-size: 18px; font-weight: 700; fill: #047857; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="675" fill="#FFFFFF" />
+  <text class="label" x="90" y="76">DIDIMLOG · OWNERSHIP BOUNDARY</text>
+  <text class="title" x="90" y="122">BOJ ID를 입력받는 대신, 소유권을 먼저 확인했습니다</text>
+  <text class="body" x="90" y="154">프로필을 수정할 수 있는 사용자만 인증 세션을 거쳐 가입할 수 있습니다.</text>
+  <path d="M90 182 H1110" stroke="#E2E8F0" stroke-width="2" />
+
+  <path d="M270 304 H294" stroke="#2563EB" stroke-width="3" marker-end="url(#arrow)" />
+  <path d="M474 304 H498" stroke="#2563EB" stroke-width="3" marker-end="url(#arrow)" />
+  <path d="M678 304 H702" stroke="#2563EB" stroke-width="3" marker-end="url(#arrow)" />
+  <path d="M882 304 H906" stroke="#2563EB" stroke-width="3" marker-end="url(#arrow)" />
+
+  <g transform="translate(90 232)">
+    <path d="M0 0 H180 V144 H0" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="2" />
+    <text class="step-no" x="16" y="28">01</text>
+    <text class="step-title" x="16" y="60">코드 발급</text>
+    <text class="step-copy" x="16" y="92">Redis에 코드·세션</text>
+    <text class="step-copy" x="16" y="116">TTL 5분 저장</text>
+  </g>
+  <g transform="translate(294 232)">
+    <path d="M0 0 H180 V144 H0" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="2" />
+    <text class="step-no" x="16" y="28">02</text>
+    <text class="step-title" x="16" y="60">프로필에 기록</text>
+    <text class="step-copy" x="16" y="92">사용자가 BOJ</text>
+    <text class="step-copy" x="16" y="116">상태 메시지 수정</text>
+  </g>
+  <g transform="translate(498 232)">
+    <path d="M0 0 H180 V144 H0" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="2" />
+    <text class="step-no" x="16" y="28">03</text>
+    <text class="step-title" x="16" y="60">소유권 확인</text>
+    <text class="step-copy" x="16" y="92">BOJ 프로필 조회</text>
+    <text class="step-copy" x="16" y="116">코드 1회 소비</text>
+  </g>
+  <g transform="translate(702 232)">
+    <path d="M0 0 H180 V144 H0" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="2" />
+    <text class="step-no" x="16" y="28">04</text>
+    <text class="step-title" x="16" y="60">인증 상태 저장</text>
+    <text class="step-copy" x="16" y="92">검증된 BOJ ID를</text>
+    <text class="step-copy" x="16" y="116">세션에 5분 보관</text>
+  </g>
+  <g transform="translate(906 232)">
+    <path d="M0 0 H204 V144 H0" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="2" />
+    <text class="step-no" x="16" y="28">05</text>
+    <text class="step-title" x="16" y="60">회원가입 완료</text>
+    <text class="step-copy" x="16" y="92">MongoDB 사용자 저장</text>
+    <text class="step-copy" x="16" y="116">JWT·Refresh 발급</text>
+  </g>
+
+  <circle cx="111" cy="430" r="8" fill="#10B981" />
+  <text class="result" x="132" y="437">ID 문자열이 아니라 프로필 수정 권한을 가입 조건으로 사용</text>
+
+  <path d="M90 488 H1110" stroke="#E2E8F0" stroke-width="2" />
+  <text class="label" x="90" y="530">DEMO FIXTURE BOUNDARY</text>
+  <text class="note-title" x="90" y="568">외부 응답만 고정하고, 인증 상태와 저장 경로는 실제 서비스 코드를 사용했습니다.</text>
+  <text class="note-copy" x="90" y="602">고정: BOJ 상태 메시지·solved.ac 사용자 응답</text>
+  <text class="note-copy" x="90" y="630">실제 경로: Redis 세션 소비 · 비밀번호 암호화 · MongoDB 저장 · 토큰 발급</text>
+</svg>
